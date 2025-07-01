@@ -12,7 +12,7 @@ jobs:
       with:
         persist-credentials: false
     - name: upgrade pip
-      run: python -m pip install --upgrade pip
+      run: /usr/local/bin/python -m pip install --upgrade pip
     - name: Build HTML
       uses: ammaraskar/sphinx-action@master
     - name: Upload artifacts
