@@ -11,10 +11,12 @@ jobs:
     - uses: actions/checkout@v4
       with:
         persist-credentials: false
-    - name: upgrade pip
-      run: sudo python -m pip install --upgrade pip
+    # - name: upgrade pip
+    #   run: sudo python -m pip install --upgrade pip
     - name: Build HTML
       uses: ammaraskar/sphinx-action@master
+      with:
+        pre-build_command: python -m pip install --upgrade pip
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
