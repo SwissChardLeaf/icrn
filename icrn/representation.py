@@ -1,3 +1,7 @@
+"""
+representation.py
+Module for building ICRNs.
+"""
 from abc import ABC, abstractmethod
 from sympy import Idx, IndexedBase, Indexed, oo, S, Pow, Mul, Min, Add, Function, Atom, Tuple, symbols, Symbol, sympify, Number, Expr
 

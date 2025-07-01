@@ -1,0 +1,5 @@
+training_logs/
+**/*.pyc
+.DS_Store
+.vscode
+docs/_build
