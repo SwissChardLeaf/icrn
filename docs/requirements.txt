@@ -1,4 +1,4 @@
-jax==0.5.3
+jax==0.4.13
 numpy==2.3.1
 optax==0.2.5
 PyYAML==5.4.1
