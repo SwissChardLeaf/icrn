@@ -16,7 +16,7 @@ jobs:
     - name: Build HTML
       uses: ammaraskar/sphinx-action@master
       with:
-        pre-build-command: python -m pip install --upgrade pip
+        pre-build-command: sudo -H python -m pip install --upgrade pip
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
