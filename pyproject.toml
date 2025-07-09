@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "icrn"
+version = "0.0.0-alpha"
+authors = [
+  { name="Inhoo Lee", email="research22426@gmail.com" },
+]
+description = "Indexed Chemical Reaction Networks in a differentiable, tensor-based framework"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+
+[project.urls]
+Homepage = "https://github.com/SwissChardLeaf/icrn"
+Issues = "https://github.com/SwissChardLeaf/icrn/issues"
