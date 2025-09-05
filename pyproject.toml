@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "icrn"
-version = "0.0.0-alpha"
+version = "0.0.0"
 authors = [
   { name="Inhoo Lee", email="research22426@gmail.com" },
 ]
