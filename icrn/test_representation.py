@@ -485,6 +485,11 @@ class RateConstantFunctionTests(unittest.TestCase):
         self.relu_alpha_ij = relu(self.alpha_ij)
         self.relu_alpha_12 = relu(self.alpha_12)
 
+        self.relu_neg_alpha = relu(-self.alpha)
+        self.relu_neg_alpha_ii = relu(-self.alpha_ii)
+        self.relu_neg_alpha_ij = relu(-self.alpha_ij)
+        self.relu_neg_alpha_12 = relu(-self.alpha_12)
+
     def test_get_index_symbols_set(self):
         i, j = many_index_symbols("i, j", 5)
 
@@ -542,6 +547,26 @@ class RateConstantFunctionTests(unittest.TestCase):
             RateConstantFunction(jax.nn.relu, alpha[1,2])
         )
         
+        self.assertEqual(
+            self.relu_neg_alpha.index_symbols_replace({i:1, j:2}),
+            RateConstantFunction(jax.nn.relu, RateConstantFunction(jnp.negative, alpha))
+        )
+
+        self.assertEqual(
+            self.relu_neg_alpha_ii.index_symbols_replace({i:1, j:2}),
+            RateConstantFunction(jax.nn.relu, RateConstantFunction(jnp.negative, alpha[1,1]))
+        )
+
+        self.assertEqual(
+            self.relu_neg_alpha_ij.index_symbols_replace({i:1, j:2}),
+            RateConstantFunction(jax.nn.relu, RateConstantFunction(jnp.negative, alpha[1,2]))
+        )
+
+        self.assertEqual(
+            self.relu_neg_alpha_12.index_symbols_replace({i:1, j:2}),
+            RateConstantFunction(jax.nn.relu, RateConstantFunction(jnp.negative, alpha[1,2]))
+        )
+
     def test_eval(self):
         alpha = RateConstant("alpha")
 
@@ -588,6 +613,27 @@ class RateConstantFunctionTests(unittest.TestCase):
             self.relu_alpha_12.eval(tensor_data) == \
             jnp.array(0)
         ))
+
+        self.assertTrue(jnp.all(
+            self.relu_neg_alpha.eval(tensor_data) == \
+            jnp.array([[0, 2, 0], [0, 4, 6]])
+        ))
+
+        self.assertTrue(jnp.all(
+            self.relu_neg_alpha_ii.eval(tensor_data) == \
+            jnp.array([[0, 2, 0], [0, 4, 6]])
+        ))
+
+        self.assertTrue(jnp.all(
+            self.relu_neg_alpha_ij.eval(tensor_data) == \
+            jnp.array([[0, 2, 0], [0, 4, 6]])
+        ))
+
+        self.assertTrue(jnp.all(
+            self.relu_neg_alpha_12.eval(tensor_data) == \
+            jnp.array(6)
+        ))
+
 
     def test_einsum_index_symbol_string(self):
         self.assertEqual(self.add_one_alpha.einsum_index_symbol_string(False, False), "")

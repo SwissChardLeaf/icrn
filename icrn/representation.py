@@ -584,6 +584,8 @@ class RateConstantFunction(IndexedObject, RateConstantExpr):
             return RateConstantFunction(self.fn, tuple(map(replace_helper, self.args)))
         elif isinstance(self.args, IndexedRateConstant):
             return RateConstantFunction(self.fn, self.args.index_symbols_replace(values_dict))
+        elif isinstance(self.args, RateConstantFunction):
+            return RateConstantFunction(self.fn, self.args.index_symbols_replace(values_dict))
         else:
             return RateConstantFunction(self.fn, self.args)
     
