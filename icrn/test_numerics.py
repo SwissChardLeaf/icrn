@@ -5,6 +5,7 @@ from jax import numpy as jnp
 from icrn.dict_utils import load_sjdict, SJDict, sjdict_allclose, load_dict_yaml
 from icrn.representation import relu, many_species, many_index_symbols, many_rate_constants, BulkReaction, FastReaction, ICRN
 import os
+import numpy as np
 
 class NumericsFunctions(unittest.TestCase):
 
@@ -67,7 +68,7 @@ class NumericsFunctions(unittest.TestCase):
 
         self.assertTrue(jnp.allclose(computed_lap_op2, target_lap_op2))
 
-    def test_per_species_diffuse(self):
+    def test_spectral_per_species_diffuse(self):
         lap_op = numerics.compute_lap_op((5,5), 1, 1)
 
         initial_state1 = jnp.array([
@@ -85,22 +86,22 @@ class NumericsFunctions(unittest.TestCase):
             [0.03760443, 0.03843226, 0.03896552, 0.03843226, 0.03760443]
         ])
 
-        computed_state1 = numerics._species_diffuse(initial_state1, kd=jnp.array(10.0), lap_op=lap_op, dt=2.0)
+        computed_state1 = numerics._spectral_species_diffuse(initial_state1, kd=jnp.array(10.0), lap_op=lap_op, dt=2.0)
         self.assertTrue(jnp.allclose(computed_state1, target_state1))
 
         initial_state2 = jnp.repeat(initial_state1[..., jnp.newaxis], repeats=3, axis=-1)
 
         target_state2 = jnp.stack([
-            numerics._species_diffuse(initial_state1, kd=jnp.array(1), lap_op=lap_op, dt=2.0),
-            numerics._species_diffuse(initial_state1, kd=jnp.array(2), lap_op=lap_op, dt=2.0),
-            numerics._species_diffuse(initial_state1, kd=jnp.array(10), lap_op=lap_op, dt=2.0)
+            numerics._spectral_species_diffuse(initial_state1, kd=jnp.array(1), lap_op=lap_op, dt=2.0),
+            numerics._spectral_species_diffuse(initial_state1, kd=jnp.array(2), lap_op=lap_op, dt=2.0),
+            numerics._spectral_species_diffuse(initial_state1, kd=jnp.array(10), lap_op=lap_op, dt=2.0)
         ], axis=-1)
 
-        computed_state2 = numerics._species_diffuse(initial_state2, kd=jnp.array([1, 2, 10]), lap_op=lap_op, dt=2.0)
+        computed_state2 = numerics._spectral_species_diffuse(initial_state2, kd=jnp.array([1, 2, 10]), lap_op=lap_op, dt=2.0)
         self.assertTrue(jnp.allclose(computed_state2, target_state2))
         self.assertTrue(jnp.allclose(computed_state2[..., 2], target_state1))
 
-    def test_diffuse(self):
+    def test_spectral_diffuse(self):
         lap_op = numerics.compute_lap_op((5,5), 1, 1)
 
         initial_state = jnp.array([
@@ -130,9 +131,9 @@ class NumericsFunctions(unittest.TestCase):
         target_state_sjdict = SJDict({
             A : target_state,
             B: jnp.stack([
-                    numerics._species_diffuse(initial_state, kd=jnp.array(1), lap_op=lap_op, dt=2.0),
-                    numerics._species_diffuse(initial_state, kd=jnp.array(2), lap_op=lap_op, dt=2.0),
-                    numerics._species_diffuse(initial_state, kd=jnp.array(10), lap_op=lap_op, dt=2.0)
+                    numerics._spectral_species_diffuse(initial_state, kd=jnp.array(1), lap_op=lap_op, dt=2.0),
+                    numerics._spectral_species_diffuse(initial_state, kd=jnp.array(2), lap_op=lap_op, dt=2.0),
+                    numerics._spectral_species_diffuse(initial_state, kd=jnp.array(10), lap_op=lap_op, dt=2.0)
                 ], axis=-1),
             C : jnp.tile(target_state[..., jnp.newaxis, jnp.newaxis], (1, 1, 2, 3))
         })
@@ -146,9 +147,115 @@ class NumericsFunctions(unittest.TestCase):
             ])
         })
 
-        computed_state = numerics.diffuse(initial_state_sjdict, kd_sjdict, lap_op, dt=2.0)
+        computed_state = numerics.spectral_diffuse(initial_state_sjdict, kd_sjdict, lap_op, dt=2.0)
         self.assertTrue(sjdict_allclose(computed_state, target_state_sjdict))
-    
+
+    def test_conv_species_diffuse(self):
+        # scalar species
+        initial_state = jnp.array([
+            [0., 0., 0., 0., 0.],
+            [0., 0., 0., 0., 0.],
+            [0., 0., 1., 0., 0.],
+            [0., 0., 0., 0., 0.],
+            [0., 0., 0., 0., 0.],
+        ])
+
+        target_state = jnp.array([
+            [0.        , 0.        , 0.        , 0.        , 0.        ],
+            [0.        , 0.01666667, 0.06666667, 0.01666667, 0.        ],
+            [0.        , 0.06666667, 0.6666666 , 0.06666667, 0.        ],
+            [0.        , 0.01666667, 0.06666667, 0.01666667, 0.        ],
+            [0.        , 0.        , 0.        , 0.        , 0.        ]
+        ])
+
+        computed_state = numerics._conv_species_diffuse(initial_state, jnp.array(1.), dt=0.1, dh=1, dw=1)
+        self.assertTrue(jnp.allclose(computed_state, target_state))
+        
+        # indexed species
+        init_small = np.zeros((5,5,3))
+        init_small[1,1,0] = 1
+        init_small[2,2,1] = 1
+        init_small[3,3,2] = 1
+
+        initial_state = jnp.array(init_small)
+
+        target_state_index0 = jnp.array([
+            [0.01666667, 0.06666667, 0.01666667, 0.        , 0.        ],
+            [0.06666667, 0.6666666 , 0.06666667, 0.        , 0.        ],
+            [0.01666667, 0.06666667, 0.01666667, 0.        , 0.        ],
+            [0.        , 0.        , 0.        , 0.        , 0.        ],
+            [0.        , 0.        , 0.        , 0.        , 0.        ]
+        ])
+
+        target_state_index1 = jnp.array([
+            [0.        , 0.        , 0.        , 0.        , 0.        ],
+            [0.        , 0.03333334, 0.13333334, 0.03333334, 0.        ],
+            [0.        , 0.13333334, 0.3333333 , 0.13333334, 0.        ],
+            [0.        , 0.03333334, 0.13333334, 0.03333334, 0.        ],
+            [0.        , 0.        , 0.        , 0.        , 0.        ]
+        ])
+
+        target_state_index2 = jnp.array([
+            [0.  , 0.  , 0.  , 0.  , 0.  ],
+            [0.  , 0.  , 0.  , 0.  , 0.  ],
+            [0.  , 0.  , 0.05, 0.2 , 0.05],
+            [0.  , 0.  , 0.2 , 0.  , 0.2 ],
+            [0.  , 0.  , 0.05, 0.2 , 0.05]
+        ])
+
+        target_state = jnp.stack(
+            [target_state_index0, target_state_index1, target_state_index2],
+            axis=-1
+        )
+
+        computed_state = numerics._conv_species_diffuse(initial_state, jnp.array([1., 2., 3.]), dt=0.1, dh=1, dw=1)
+        self.assertTrue(jnp.allclose(computed_state, target_state))
+
+        # indexed species with spatially varying rate constant
+        init_state = np.zeros((5,5,3))
+        init_state[1:4,1,0] = 1
+        init_state[1:4,2,1] = 1
+        init_state[1:4,3,2] = 1
+        initial_state = jnp.array(init_state)
+
+        diff_const = np.zeros((5,5,3))
+        diff_const[1,1:4,0] = np.arange(3)/2
+        diff_const[2,1:4,1] = np.arange(3)/2
+        diff_const[3,1:4,2] = np.arange(3)/2
+        diff_constant = jnp.array(diff_const)
+
+        target_state_index0 = jnp.array([
+            [0.        , 0.        , 0.        , 0.        , 0.        ],
+            [0.        , 1.        , 0.04166667, 0.        , 0.        ],
+            [0.        , 1.        , 0.        , 0.        , 0.        ],
+            [0.        , 1.        , 0.        , 0.        , 0.        ],
+            [0.        , 0.        , 0.        , 0.        , 0.        ]
+        ])
+
+        target_state_index1 = jnp.array([
+            [0.        , 0.        , 0.        , 0.        , 0.        ],
+            [0.        , 0.        , 1.        , 0.        , 0.        ],
+            [0.        , 0.        , 0.90000004, 0.1       , 0.        ],
+            [0.        , 0.        , 1.        , 0.        , 0.        ],
+            [0.        , 0.        , 0.        , 0.        , 0.        ]
+        ])
+
+        target_state_index2 = jnp.array([
+            [0.        , 0.        , 0.        , 0.        , 0.        ],
+            [0.        , 0.        , 0.        , 1.        , 0.        ],
+            [0.        , 0.        , 0.        , 1.        , 0.        ],
+            [0.        , 0.        , 0.04166667, 0.73333335, 0.        ],
+            [0.        , 0.        , 0.        , 0.        , 0.        ]
+        ])
+
+        target_state = jnp.stack(
+            [target_state_index0, target_state_index1, target_state_index2],
+            axis=-1
+        )
+
+        computed_state = numerics._conv_species_diffuse(initial_state, diff_constant, dt=0.1, dh=1, dw=1)
+        self.assertTrue(jnp.allclose(computed_state, target_state))
+
     def test_fast_react(self):
         A, B, C, D, E, F, G = many_species("A, B, C, D, E, F, G")
 
