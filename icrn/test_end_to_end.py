@@ -323,5 +323,11 @@ class EndToEnd(unittest.TestCase):
         Up_max_abs_error = max_abs_error(sim_concs[Up], target_Up)
         Un_max_abs_error = max_abs_error(sim_concs[Un], target_Un)
 
+    def test_heat_gradient_catalytic_species(self):
+        pass
+
+    def test_heat_gradient_spatially_varying_rate_constant(self):
+        pass
+
 if __name__ == "__main__":
     unittest.main()

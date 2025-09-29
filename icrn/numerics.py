@@ -30,13 +30,13 @@ DIM_NUM = lax.conv_dimension_numbers((0,0,0,0), (0,0,0,0), ('HWNC', 'HWIO', 'HWN
 def compute_lap_op(spatial_dim, dh ,dw):
     h, w = spatial_dim
 
-    kx = fftfreq(w, d=dw) * 2 * jnp.pi
-    ky = fftfreq(h, d=dh) * 2 * jnp.pi
+    kh = fftfreq(h, d=dh) * 2 * jnp.pi
+    kw = fftfreq(w, d=dw) * 2 * jnp.pi
 
-    Kx, Ky = jnp.meshgrid(kx, ky)
-    Kx = jnp.transpose(Kx, axes=[1, 0])
-    Ky = jnp.transpose(Ky, axes=[1, 0])
-    return -(Kx**2) - (Ky**2)
+    Kh, Kw = jnp.meshgrid(kh, kw)
+    Kh = jnp.transpose(Kh, axes=[1, 0])
+    Kw = jnp.transpose(Kw, axes=[1, 0])
+    return -(Kh**2) - (Kw**2)
 
 def _spectral_species_diffuse(conc, kd, lap_op, dt):
     x_hat = fftn(conc, axes=[0, 1])

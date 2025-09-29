@@ -51,22 +51,26 @@ class NumericsFunctions(unittest.TestCase):
         computed_lap_op1 = numerics.compute_lap_op((4,3), 1, 1)
         
         target_lap_op1 = jnp.array([
-            [ -0.       ,  -2.4674013,  -9.869605 ,  -2.4674013],
-            [ -4.3864913,  -6.8538923, -14.256096 ,  -6.8538923],
-            [ -4.3864913,  -6.8538923, -14.256096 ,  -6.8538923]
+            [ -0.       ,  -4.3864913,  -4.3864913],
+            [ -2.4674013,  -6.8538923,  -6.8538923],
+            [ -9.869605 , -14.256096 , -14.256096 ],
+            [ -2.4674013,  -6.8538923,  -6.8538923]
         ])
 
         self.assertTrue(jnp.allclose(computed_lap_op1, target_lap_op1))
 
-        computed_lap_op2 = numerics.compute_lap_op((2,3), 0.5, 0.5)
-        
+        computed_lap_op2 = numerics.compute_lap_op((2,3), 0.5, 2.0)
+
         target_lap_op2 = jnp.array([
-            [ -0.,       -39.47842 ],
-            [-17.545965, -57.024384],
-            [-17.545965, -57.024384]
+            [ -0.       ,  -1.0966228,  -1.0966228],
+            [-39.47842  , -40.575043 , -40.575043 ]
         ])
 
         self.assertTrue(jnp.allclose(computed_lap_op2, target_lap_op2))
+
+        computed_lap_op3 = numerics.compute_lap_op((1,4), 1, 1)
+        target_lap_op3 = jnp.array([[-0.       , -2.4674013, -9.869605 , -2.4674013]])
+        self.assertTrue(jnp.allclose(computed_lap_op3, target_lap_op3))
 
     def test_spectral_per_species_diffuse(self):
         lap_op = numerics.compute_lap_op((5,5), 1, 1)
