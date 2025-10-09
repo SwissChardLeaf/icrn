@@ -43,45 +43,6 @@ documentation for details.</p>
 <dd></dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="icrn.representation.BulkReaction">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">icrn.representation.</span></span><span class="sig-name descname"><span class="pre">BulkReaction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reactants</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">products</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rule=&lt;function</span> <span class="pre">mass_action&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name=None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#icrn.representation.BulkReaction" title="Link to this definition">¶</a></dt>
-<dd><dl class="py method">
-<dt class="sig sig-object py" id="icrn.representation.BulkReaction.get_index_symbols_set">
-<span class="sig-name descname"><span class="pre">get_index_symbols_set</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#icrn.representation.BulkReaction.get_index_symbols_set" title="Link to this definition">¶</a></dt>
-<dd><p>Method for retrieving the IndexSymbols.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A list of the Species in a complex, sorted.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>list of IndexSymbols</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="icrn.representation.BulkReaction.index_symbols_replace">
-<span class="sig-name descname"><span class="pre">index_symbols_replace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#icrn.representation.BulkReaction.index_symbols_replace" title="Link to this definition">¶</a></dt>
-<dd><p>Method for replacing the IndexSymbols with a combination of values
-from their index sets.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>values</strong> (<em>tuple</em><em> of </em><em>ints</em>) – An IndexSymbol will be replaced by the component of <cite>values</cite> that
-corresponds to the component of the IndexSymbol in a sorted list
-of indreturned by index_symbols().</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>An IndexedObject with index symbols replaced by values.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#icrn.representation.IndexedObject" title="icrn.representation.IndexedObject">IndexedObject</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
 <dt class="sig sig-object py" id="icrn.representation.Complex">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">icrn.representation.</span></span><span class="sig-name descname"><span class="pre">Complex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">count_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#icrn.representation.Complex" title="Link to this definition">¶</a></dt>
 <dd><dl class="py method">
@@ -296,10 +257,43 @@ of indreturned by index_symbols().</p>
 
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py class">
 <dt class="sig sig-object py" id="icrn.representation.MassActionReaction">
-<span class="sig-prename descclassname"><span class="pre">icrn.representation.</span></span><span class="sig-name descname"><span class="pre">MassActionReaction</span></span><a class="headerlink" href="#icrn.representation.MassActionReaction" title="Link to this definition">¶</a></dt>
-<dd><p>alias of <a class="reference internal" href="#icrn.representation.BulkReaction" title="icrn.representation.BulkReaction"><code class="xref py py-class docutils literal notranslate"><span class="pre">BulkReaction</span></code></a></p>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">icrn.representation.</span></span><span class="sig-name descname"><span class="pre">MassActionReaction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reactants</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">products</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rule=&lt;function</span> <span class="pre">mass_action&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name=None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#icrn.representation.MassActionReaction" title="Link to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="icrn.representation.MassActionReaction.get_index_symbols_set">
+<span class="sig-name descname"><span class="pre">get_index_symbols_set</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#icrn.representation.MassActionReaction.get_index_symbols_set" title="Link to this definition">¶</a></dt>
+<dd><p>Method for retrieving the IndexSymbols.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of the Species in a complex, sorted.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of IndexSymbols</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icrn.representation.MassActionReaction.index_symbols_replace">
+<span class="sig-name descname"><span class="pre">index_symbols_replace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#icrn.representation.MassActionReaction.index_symbols_replace" title="Link to this definition">¶</a></dt>
+<dd><p>Method for replacing the IndexSymbols with a combination of values
+from their index sets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>values</strong> (<em>tuple</em><em> of </em><em>ints</em>) – An IndexSymbol will be replaced by the component of <cite>values</cite> that
+corresponds to the component of the IndexSymbol in a sorted list
+of indreturned by index_symbols().</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An IndexedObject with index symbols replaced by values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#icrn.representation.IndexedObject" title="icrn.representation.IndexedObject">IndexedObject</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
