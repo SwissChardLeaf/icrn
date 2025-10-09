@@ -708,6 +708,46 @@ def mass_action(reactants, products, aux, spatial_dim, spatial_rate_constant):
     
     return dynamics_func
 
+def michaelis_menten(substrate, enzyme, product, rate_constant, aux):
+    # assume aux is scalar
+    einsum_str = ""
+
+    einsum_str += rate_constant.einsum_index_symbol_string(False, False)
+    einsum_str += ","
+    einsum_str += substrate.einsum_index_symbol_string(False, False)
+    einsum_str += ","
+    einsum_str += enzyme.einsum_index_symbol_string(False, False)
+    einsum_str += "->"
+
+    s_einsum_str = einsum_str + substrate.einsum_index_symbol_string(False, False)
+    p_einsum_str = einsum_str + product.einsum_index_symbol_string(False, False)
+
+    def get_tensor_vals(tensor_data):
+        return rate_constant.eval(tensor_data), substrate.eval(tensor_data), \
+               enzyme.eval(tensor_data)
+
+    s_key = substrate
+    if isinstance(substrate, IndexedSpecies):
+        s_key = substrate.base
+    
+    p_key = product
+    if isinstance(product, IndexedSpecies):
+        p_key = product.base
+
+    def dynamics_func(tensor_data):
+        dynamics_dict = dict()
+
+        rc_val, s_val, e_val = get_tensor_vals(tensor_data)
+
+        # should not cause shape issues if aux is scalar
+        s_rat = s_val / (s_val + aux)
+
+        dynamics_dict[s_key] = - jnp.einsum(s_einsum_str, rc_val, s_rat, e_val)
+        dynamics_dict[p_key] = jnp.einsum(p_einsum_str, rc_val, s_rat, e_val)
+
+        return dynamics_dict
+    return dynamics_func
+
 def get_aux_shape(aux):
     if isinstance(aux, RateConstant):
         return {aux : ()}
@@ -723,7 +763,7 @@ def get_aux_shape(aux):
         else:
             return get_aux_shape(aux.args)
 
-class BulkReaction(IndexedObject):
+class MassActionReaction(IndexedObject):
     def __init__(self, reactants, products, aux, rule=mass_action, name=None):
         if isinstance(reactants, int) and reactants == 0:
             self._reactants = Complex({})
@@ -819,7 +859,7 @@ class BulkReaction(IndexedObject):
             new_aux = self.aux.index_symbols_replace(values)
 
         
-        return BulkReaction(
+        return MassActionReaction(
             self.reactants.index_symbols_replace(values),
             self.products.index_symbols_replace(values),
             new_aux,
@@ -836,9 +876,138 @@ class BulkReaction(IndexedObject):
         combos = product(*list(map(lambda x : range(x.index_set), idx_syms_list)))
 
         return [self.index_symbols_replace(dict(zip(idx_syms_list, combo))) for combo in combos]
-        
 
-MassActionReaction = BulkReaction
+
+# class MichaelisMentenReaction(IndexedObject):
+class MichaelisMentenReaction():
+    def __init__(self, substrate, enzyme, product, rate_constant, aux, name=None):
+        # if isinstance(reactants, int) and reactants == 0:
+        #     self._reactants = Complex({})
+        # elif not isinstance(reactants, Complex):
+        #     self._reactants = Complex({reactants : 1})
+        # else:
+        #     self._reactants = reactants
+
+        # if isinstance(products, int) and products == 0:
+        #     self._products = Complex({})
+        # elif not isinstance(products, Complex):
+        #     self._products = Complex({products : 1})
+        # else:
+        #     self._products = products
+
+        # if isinstance(aux, RateConstantExpr):
+        #     self._aux = aux
+        # else:
+        #     self._aux = NumericRateConstant(aux)
+
+        self._substrate = substrate
+        self._product = product
+        self._enzyme = enzyme
+        self._rate_constant = rate_constant
+        self._aux = aux
+        self._rule = michaelis_menten
+        self._name = name
+
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def substrate(self):
+        return self._substrate
+    
+    @property
+    def enzyme(self):
+        return self._enzyme
+    
+    @property
+    def product(self):
+        return self._product
+
+    @property
+    def rate_constant(self):
+        return self._rate_constant
+
+    @property
+    def aux(self):
+        return self._aux
+    
+    @property
+    def rule(self):
+        return self._rule
+
+    # def __eq__(self, other):
+    #     return self.name == other.name and \
+    #            self.reactants == other.reactants and \
+    #            self.products == other.products and \
+    #            self.aux == other.aux and \
+    #            self.rule == other.rule
+    
+    def shapes(self):
+        species_set = {
+            self.substrate,
+            self.product,
+            self.enzyme,
+            self.rate_constant
+        }
+
+        shapes_dict = dict()
+
+        for s in species_set:
+            shape = ()
+            key = s
+
+            if isinstance(s, IndexedSpecies):
+                shape = tuple(map(lambda x : x.index_set, s.index_symbols))
+                key = s.base
+
+            if isinstance(s, ConcreteSpecies):
+                continue
+
+            if key in shapes_dict:
+                if shapes_dict[key] != shape:
+                    raise RepresentationError
+            else:
+                shapes_dict[key] = shape
+
+        # aux_shape_dict = get_aux_shape(self.aux)
+        # if aux_shape_dict is not None:
+        #     shapes_dict = shapes_dict | aux_shape_dict
+
+        return shapes_dict
+        
+    # def get_index_symbols_set(self):
+    #     return_set = self.reactants.get_index_symbols_set() | self.products.get_index_symbols_set()
+    #     if isinstance(self.aux, IndexedRateConstant) or isinstance(self.aux, RateConstantFunction):
+    #         return_set = return_set | self.aux.get_index_symbols_set()
+
+    #     return return_set
+
+    # def index_symbols_replace(self, values):
+    #     new_aux = self.aux
+
+    #     if isinstance(self.aux, IndexedRateConstant) or isinstance(self.aux, RateConstantFunction):
+    #         new_aux = self.aux.index_symbols_replace(values)
+
+        
+    #     return BulkReaction(
+    #         self.reactants.index_symbols_replace(values),
+    #         self.products.index_symbols_replace(values),
+    #         new_aux,
+    #         self.rule,
+    #         self.name
+    #     )
+
+    def build_flux(self, spatial_dim, spatial_rate_constant):
+        return self.rule(self.substrate, self.enzyme, self.product, self.rate_constant, self.aux)
+
+    # def enumerate(self):
+    #     idx_syms_list = list(self.get_index_symbols_set())
+    #     idx_syms_list.sort()
+    #     combos = product(*list(map(lambda x : range(x.index_set), idx_syms_list)))
+
+    #     return [self.index_symbols_replace(dict(zip(idx_syms_list, combo))) for combo in combos]
 
 class FastReaction(IndexedObject):
     def __init__(self, reactants, products, name=None):

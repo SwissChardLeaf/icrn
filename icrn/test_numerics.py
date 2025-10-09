@@ -3,7 +3,7 @@ import icrn.numerics as numerics
 import jax
 from jax import numpy as jnp
 from icrn.dict_utils import load_sjdict, SJDict, sjdict_allclose, load_dict_yaml
-from icrn.representation import relu, many_species, many_index_symbols, many_rate_constants, BulkReaction, FastReaction, ICRN
+from icrn.representation import relu, many_species, many_index_symbols, many_rate_constants, MassActionReaction, FastReaction, ICRN
 import os
 import numpy as np
 
@@ -15,10 +15,10 @@ class NumericsFunctions(unittest.TestCase):
         i, j, k = many_index_symbols("i, j, k", 10)
 
         self.rxns1 = [
-            BulkReaction(A[i,j]+2*B[j,k], A[i,j] + C[i,k], alpha[i]),
-            BulkReaction(D + E, F, relu(gamma[i,j])),
-            BulkReaction(0, B[i,j], beta),
-            BulkReaction(A[1,2], 2*B[2,3], 2.),
+            MassActionReaction(A[i,j]+2*B[j,k], A[i,j] + C[i,k], alpha[i]),
+            MassActionReaction(D + E, F, relu(gamma[i,j])),
+            MassActionReaction(0, B[i,j], beta),
+            MassActionReaction(A[1,2], 2*B[2,3], 2.),
             FastReaction(D + 2*F, 3*G),
             FastReaction(A[i,j] + C[i,j], 0),
         ]
@@ -41,8 +41,8 @@ class NumericsFunctions(unittest.TestCase):
         })
 
         self.rxns2 = [
-            BulkReaction(A[i,j]+2*B[j,k], A[i,j] + C[i,k], alpha[i]),
-            BulkReaction(D + E, F, relu(gamma[i,j])),
+            MassActionReaction(A[i,j]+2*B[j,k], A[i,j] + C[i,k], alpha[i]),
+            MassActionReaction(D + E, F, relu(gamma[i,j])),
             FastReaction(D + 2*F, 3*G)
         ]
         self.icrn2 = ICRN(self.rxns2)
@@ -308,8 +308,8 @@ class NumericsFunctions(unittest.TestCase):
         i, j = many_index_symbols("i, j", 3)
 
         test_icrn = ICRN([
-            BulkReaction(A[i,j]+2*B[j], A[i,j], alpha[i]),
-            BulkReaction(A[i,j], B[i], relu(beta[i]))
+            MassActionReaction(A[i,j]+2*B[j], A[i,j], alpha[i]),
+            MassActionReaction(A[i,j], B[i], relu(beta[i]))
         ])
 
         conc_data = SJDict({

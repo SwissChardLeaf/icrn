@@ -2,9 +2,9 @@ import unittest
 from icrn import Species, RateConstant, many_species, many_rate_constants, \
                  many_index_symbols, IndexSymbol, IndexedRateConstant, \
                  IndexedSpecies, ConcreteSpecies, Complex, \
-                 ConcreteRateConstant, BulkReaction, relu, \
+                 ConcreteRateConstant, MassActionReaction, relu, \
                  NumericRateConstant, RateConstantFunction, FastReaction, \
-                 ICRN
+                 ICRN, MichaelisMentenReaction
 import jax.numpy as jnp
 import jax
 
@@ -736,17 +736,17 @@ class ManyObjectsTests(unittest.TestCase):
         self.assertEqual(beta1, beta2)
         self.assertEqual(gamma1, gamma2)
 
-class BulkReactionTests(unittest.TestCase):
+class MassActionReactionTests(unittest.TestCase):
     def setUp(self):
         A, B, C, D, E, F, G = many_species("A, B, C, D, E, F, G")
         alpha, beta, gamma = many_rate_constants("alpha, beta, gamma")
         i, j, k = many_index_symbols("i, j, k", 10)
 
-        self.rxn1 = BulkReaction(A[i,j]+2*B[j,k], A[i,j] + C[i,k], alpha[i])
-        self.rxn2 = BulkReaction(D + E, F, relu(gamma[i,j]))
-        self.rxn3 = BulkReaction(D + B[i,j] + 3 * G[i], 2 * D + B[j, i] + G[k], 2.)
-        self.rxn4 = BulkReaction(D + D, E + F, beta)
-        self.rxn5 = BulkReaction(A[1,1] + B[2,3], 2 * C[1,2], alpha[4])
+        self.rxn1 = MassActionReaction(A[i,j]+2*B[j,k], A[i,j] + C[i,k], alpha[i])
+        self.rxn2 = MassActionReaction(D + E, F, relu(gamma[i,j]))
+        self.rxn3 = MassActionReaction(D + B[i,j] + 3 * G[i], 2 * D + B[j, i] + G[k], 2.)
+        self.rxn4 = MassActionReaction(D + D, E + F, beta)
+        self.rxn5 = MassActionReaction(A[1,1] + B[2,3], 2 * C[1,2], alpha[4])
 
     def test_shapes(self):
         A, B, C, D, E, F, G = many_species("A, B, C, D, E, F, G")
@@ -805,7 +805,7 @@ class BulkReactionTests(unittest.TestCase):
         values_dict = {i:1, j:2, k:3}
 
         rxn1_replaced = self.rxn1.index_symbols_replace(values_dict)
-        rxn1_target = BulkReaction(A[1,2]+2*B[2,3], A[1,2] + C[1,3], alpha[1])
+        rxn1_target = MassActionReaction(A[1,2]+2*B[2,3], A[1,2] + C[1,3], alpha[1])
         self.assertEqual(rxn1_replaced.reactants, rxn1_target.reactants)
         self.assertEqual(rxn1_replaced.products, rxn1_target.products)
         self.assertEqual(rxn1_replaced.aux, rxn1_target.aux)
@@ -813,7 +813,7 @@ class BulkReactionTests(unittest.TestCase):
         self.assertEqual(rxn1_replaced.rule, rxn1_target.rule)
 
         rxn2_replaced = self.rxn2.index_symbols_replace(values_dict)
-        rxn2_target = BulkReaction(D + E, F, relu(gamma[1,2]))
+        rxn2_target = MassActionReaction(D + E, F, relu(gamma[1,2]))
         self.assertEqual(rxn2_replaced.reactants, rxn2_target.reactants)
         self.assertEqual(rxn2_replaced.products, rxn2_target.products)
         self.assertEqual(rxn2_replaced.aux, rxn2_target.aux)
@@ -821,7 +821,7 @@ class BulkReactionTests(unittest.TestCase):
         self.assertEqual(rxn2_replaced.rule, rxn2_target.rule)
 
         rxn3_replaced = self.rxn3.index_symbols_replace(values_dict)
-        rxn3_target = BulkReaction(D + B[1,2] + 3 * G[1], 2 * D + B[2, 1] + G[3], 2.)
+        rxn3_target = MassActionReaction(D + B[1,2] + 3 * G[1], 2 * D + B[2, 1] + G[3], 2.)
         self.assertEqual(rxn3_replaced.reactants, rxn3_target.reactants)
         self.assertEqual(rxn3_replaced.products, rxn3_target.products)
         self.assertEqual(rxn3_replaced.aux, rxn3_target.aux)
@@ -829,7 +829,7 @@ class BulkReactionTests(unittest.TestCase):
         self.assertEqual(rxn3_replaced.rule, rxn3_target.rule)
 
         rxn4_replaced = self.rxn4.index_symbols_replace(values_dict)
-        rxn4_target = BulkReaction(D + D, E + F, beta)
+        rxn4_target = MassActionReaction(D + D, E + F, beta)
         self.assertEqual(rxn4_replaced.reactants, rxn4_target.reactants)
         self.assertEqual(rxn4_replaced.products, rxn4_target.products)
         self.assertEqual(rxn4_replaced.aux, rxn4_target.aux)
@@ -837,7 +837,7 @@ class BulkReactionTests(unittest.TestCase):
         self.assertEqual(rxn4_replaced.rule, rxn4_target.rule)
 
         rxn5_replaced = self.rxn5.index_symbols_replace(values_dict)
-        rxn5_target = BulkReaction(A[1,1] + B[2,3], 2 * C[1,2], alpha[4])
+        rxn5_target = MassActionReaction(A[1,1] + B[2,3], 2 * C[1,2], alpha[4])
         self.assertEqual(rxn5_replaced.reactants, rxn5_target.reactants)
         self.assertEqual(rxn5_replaced.products, rxn5_target.products)
         self.assertEqual(rxn5_replaced.aux, rxn5_target.aux)
@@ -1012,6 +1012,74 @@ class BulkReactionTests(unittest.TestCase):
         enum_list5 = self.rxn5.enumerate()
         self.assertEqual(enum_list5, [self.rxn5.index_symbols_replace({})])
 
+class MichaelisMentenReactionTests(unittest.TestCase):
+    def setUp(self):
+        S, E, P = many_species("S, E, P")
+        k = many_rate_constants("k")
+        i, j = many_index_symbols("i, j", 5)
+
+        self.rxn1 = MichaelisMentenReaction(S, E, P, k, 1.)
+        self.rxn2 = MichaelisMentenReaction(S[i], E[i], P[i], k[i], 1.)
+        self.rxn3 = MichaelisMentenReaction(S[i], E[j], P[i], k[j,i], 1.)
+
+    def test_shapes(self):
+        pass
+        
+    def test_flux(self):
+        S, E, P = many_species("S, E, P")
+        k = many_rate_constants("k")
+
+        tensor_data1 = {
+            S : jnp.array(2.),
+            E : jnp.array(3.),
+            P : jnp.array(1.1),
+            k : jnp.array(0.5)
+        }
+
+        dynamics_dict1 = self.rxn1.build_flux(None, False)(tensor_data1)
+        self.assertEqual(dynamics_dict1.keys(), {S, P})
+        self.assertTrue(jnp.allclose(dynamics_dict1[S],
+                                     - 0.5 * 2. * 3. / (2. + 1.)))
+        self.assertTrue(jnp.allclose(dynamics_dict1[P],
+                                     0.5 * 2. * 3. / (2. + 1.)))
+        
+        tensor_data2 = {
+            S : jnp.arange(5),
+            E : jnp.arange(5),
+            P : jnp.arange(5),
+            k : jnp.arange(5)
+        }
+
+        dynamics_dict2 = self.rxn2.build_flux(None, False)(tensor_data2)
+        self.assertEqual(dynamics_dict2.keys(), {S, P})
+
+        range_5 = jnp.arange(5)
+        change = range_5 * range_5 * range_5 / (range_5 + 1.)
+        self.assertTrue(jnp.allclose(dynamics_dict2[S],
+                                     -change))
+        self.assertTrue(jnp.allclose(dynamics_dict2[P],
+                                     change))
+        
+        tensor_data3 = {
+            S : jnp.arange(5),
+            E : jnp.arange(5),
+            P : jnp.arange(5),
+            k : jnp.arange(25).reshape((5,5))
+        }
+
+        dynamics_dict3 = self.rxn3.build_flux(None, False)(tensor_data3)
+        self.assertEqual(dynamics_dict3.keys(), {S, P})
+
+        range_5 = jnp.arange(5)
+        range_25 = jnp.arange(25).reshape((5,5))
+        change = jnp.einsum("ji,i,j->i", range_25, range_5 / (range_5 + 1.), range_5)
+        self.assertTrue(jnp.allclose(dynamics_dict3[S],
+                                     -change))
+        self.assertTrue(jnp.allclose(dynamics_dict3[P],
+                                     change))
+        
+
+        
 class FastReactionTests(unittest.TestCase):
     def setUp(self):
         A, B, C, D, E, F, G = many_species("A, B, C, D, E, F, G")
@@ -1173,10 +1241,10 @@ class ICRNTests(unittest.TestCase):
         i, j, k = many_index_symbols("i, j, k", 10)
 
         self.rxns = [
-            BulkReaction(A[i,j]+2*B[j,k], A[i,j] + C[i,k], alpha[i]),
-            BulkReaction(D + E, F, relu(gamma[i,j])),
-            BulkReaction(0, B[i,j], beta),
-            BulkReaction(A[1,2], 2*B[2,3], 2.),
+            MassActionReaction(A[i,j]+2*B[j,k], A[i,j] + C[i,k], alpha[i]),
+            MassActionReaction(D + E, F, relu(gamma[i,j])),
+            MassActionReaction(0, B[i,j], beta),
+            MassActionReaction(A[1,2], 2*B[2,3], 2.),
             FastReaction(D + 2*F, 3*G),
             FastReaction(A[i,j] + C[i,j], 0),
         ]
