@@ -25,7 +25,7 @@ def sjdict_allequal(d1, d2):
     bool_dict = jax_tree.tree_map(lambda x, y : jnp.all(x == y), d1, d2)
     return all(bool_dict.dict.values())
 def save_sjdict(d, save_path):
-    for k, v in d.items():
+    for k, v in d.dict.items():
         jnp_path = os.path.join(save_path, str(k) + '.npy')
         jnp.save(jnp_path, v)
 
@@ -81,7 +81,7 @@ def sjdict_builder(shapes_dict, concs_spec, rate_constant_spec, diff_spec, batch
     return SJDict(concs_data), SJDict(rate_constant_data), SJDict(diff_data)
 
 @jax_tree.register_pytree_node_class
-class SJDict(dict):
+class SJDict():
     def __init__(self, d=dict()):
         self._dict = d
 
