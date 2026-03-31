@@ -21,38 +21,59 @@ The non-state is a dict mapping rate constants to their values or species to the
 
 #     return solver
 
-def _function_from_ops(ops: list[AbstractOperator]):
+def _rxns_to_ops_lst(rxns: list[AbstractReaction], reaction_solver, spatial_info, splitting, diffusion_solver):
+    if not spatial_info:
+        return _rxn_well_mixed_to_ops_lst(rxns, reaction_solver)
+    else:
+        return _rxn_reaction_diffusion_to_ops_lst(rxns, reaction_solver, spatial_info, splitting, diffusion_solver)
+
+def _function_from_ops_lst(ops: list[AbstractOperator]):
     return lambda state, non_state, dt, key: fori_loop(0, len(ops), lambda i, x: ops[i](x, non_state, dt, key), state)
 
+
 class AbstractOperator(ABC):
+
     @abstractmethod
-    def __call__(self, state, non_state, dt, key):
+    def update_state(self, state, non_state, dt, key):
         pass
+
+    def __call__(self, state, non_state, dt, key):
+        return self.update_state(state, non_state, dt, key)
 
     @abstractmethod
     def __repr__(self):
         pass
 
 class ReactionsOperator(AbstractOperator):
-    def __init__(self, rxns: list[AbstractReaction], reaction_solver, mode):
+    def __init__(self, rxns: Iterator[AbstractReaction], reaction_solver, mode):
+        for rxn in rxns:
+            if not isinstance(rxn, AbstractReaction):
+                raise ValueError(f"rxns must be an iterator of AbstractReactions, got {rxn} of type {type(rxn)}")
+
         self.rxns = rxns
         self.reaction_solver = reaction_solver
         self.mode = mode
-        self.op = _rxns_to_op(rxns, reaction_solver)
+        self.update_f = _rxns_to_update_f(rxns, reaction_solver)
 
     def __call__(self, state, non_state, dt, key):
         return self.op(state, non_state, dt, key)
 
     def __repr__(self):
+        return f"{self.__class__.__name__}(rxns={self.rxns}, reaction_solver={self.reaction_solver}, mode={self.mode})"
+
 class FastReactionsOperator(AbstractOperator):
-    def __init__(self, rxns: list[AbstractReaction], reaction_solver, mode):
-        self.rxns = rxns
-        self.reaction_solver = reaction_solver
+    def __init__(self, fast_rxns: Iterable[FastReaction], mode):
+        # check that fast reactions are compatible.
+        for rxn in fast_rxns:
+            if not isinstance(rxn, FastReaction):
+                raise ValueError(f"fast_rxns must be a list of FastReactions, got {rxn} of type {type(rxn)}")
+        
+        self.fast_rxns = fast_rxns
         self.mode = mode
-        self.op = _fast_rxns_to_op(rxns, reaction_solver)
+        self.update_f = _fast_rxns_to_update_f(fast_rxns, mode)
 
     def __call__(self, state, non_state, dt, key):
-        return _fast_rxns_to_op(self.rxns, self.reaction_solver)(state, non_state, dt, key)
+        return self.op_f(state)
 
     def __repr__(self):
         return f"{self.__class__.__name__}(rxns={self.rxns}, reaction_solver={self.reaction_solver})"
@@ -81,7 +102,9 @@ class ConvolutionalDiffusionOperator(AbstractOperator):
         return f"{self.__class__.__name__}(xs={self.xs}, dxs={self.dxs}, diffusion_solver={self.diffusion_solver})"
 
 def _rxns_to_op(
-    rxns: list[AbstractReaction], spatial_dims: int | None = None, reaction_solver="RK4"
+    rxns: list[AbstractReaction], 
+    spatial_dims: int = 0, 
+    reaction_solver="RK4"
 ):
     dyn_f = _rxns_to_dynamics(rxns)
 
@@ -93,7 +116,9 @@ def _rxns_to_op(
     else:
         raise ValueError(f"Invalid reaction solver: {reaction_solver}")
 
-    if spatial_dims:
+    res_f = 
+
+    if spatial_dims > 0:
         vmap_solver_f = solver_f
 
         for _ in range(spatial_dims):
@@ -110,7 +135,6 @@ def _rxns_to_op(
         return spatial_rxns_op
 
     else:
-
         def rxns_op(state, non_state, dt, key):
             return solver_f(state, non_state, dyn_f, dt)
 

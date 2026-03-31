@@ -9,6 +9,7 @@ from .symbols import (
     TensorLiteral,
 )
 
+
 class TestReactionHelpers(unittest.TestCase):
     def test_matching_shapes(self):
         A, B, C = many_species("A, B, C")
@@ -18,7 +19,7 @@ class TestReactionHelpers(unittest.TestCase):
 
         _matching_shapes(set([A[i], B[j], A[j], B[i]]))
         _matching_shapes(set([A[l], B[j], A[m], B[n]]))
-        _matching_shapes(set([A[i, n], B[j], A[l,j], B[o]]))
+        _matching_shapes(set([A[i, n], B[j], A[l, j], B[o]]))
         _matching_shapes(set([A[i, j, m], A[j, l, o], A[n, i, j]]))
 
         with self.assertRaises(ValueError):
@@ -33,6 +34,7 @@ class TestReactionHelpers(unittest.TestCase):
         with self.assertRaises(ValueError):
             _matching_shapes(set([A[i, j, m], A[l, m, o]]))
 
+
 class TestExtendAbstractReaction(unittest.TestCase):
     def setUp(self):
         class TestReaction(AbstractReaction):
@@ -45,6 +47,7 @@ class TestExtendAbstractReaction(unittest.TestCase):
             def flux(self):
                 def flux_fn(state, rate_constant_data):
                     return {self.reactants: -self.aux, self.products: self.aux}
+
                 return flux_fn
 
         self.TestReaction = TestReaction(A, B, alpha)
@@ -53,6 +56,7 @@ class TestExtendAbstractReaction(unittest.TestCase):
         A, B = many_species("A, B")
         alpha = RateConstant("alpha")
         self.assertEqual(self.TestReaction.flux(), {A: -alpha, B: alpha})
+
 
 class TestMassActionReaction(unittest.TestCase):
     def test_init(self):
@@ -94,7 +98,7 @@ class TestMassActionReaction(unittest.TestCase):
             rxn.aux = beta
         with self.assertRaises(FrozenInstanceError):
             rxn.rate_expr = beta
-        
+
     def test_init_validation(self):
         A, B, C = many_species("A, B, C")
         alpha = RateConstant("alpha")
@@ -108,7 +112,7 @@ class TestMassActionReaction(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             MassActionReaction(B, C, None)
-        
+
 
 class MassActionReactionTests(unittest.TestCase):
     def test_flux_prep(self):

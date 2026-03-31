@@ -22,7 +22,8 @@ from .symbols import (
     TensorLiteral,
     TensorSymbol,
 )
-from .mass_action import mass_action_flux_f
+from .._numerics._mass_action import mass_action_flux_f
+from .._numerics._fast_flux import _fast_flux_f
 
 
 type TensorSymbolDict = dict[TensorSymbol]
@@ -65,23 +66,30 @@ def _rxns_to_dynamics(rxns: list[AbstractReaction]):
 
     return dyn
 
+
 def _matching_shapes(all_species: set[Species]):
     shapes = dict()
-    
+
     for s in all_species:
         base_s = s[()]
-        shape_s = tuple(map(lambda x: x.index_set if x.index_set > 0 else None, s.index_symbols))
+        shape_s = tuple(
+            map(lambda x: x.index_set if x.index_set > 0 else None, s.index_symbols)
+        )
 
         if base_s in shapes:
             existing_shape = shapes[base_s]
             if len(existing_shape) != len(shape_s):
-                raise ValueError(f"Shapes of {s} must be the same, got {existing_shape} and {shape_s}")
-            
+                raise ValueError(
+                    f"Shapes of {s} must be the same, got {existing_shape} and {shape_s}"
+                )
+
             update_shape = []
             for i in range(len(existing_shape)):
                 if existing_shape[i] and shape_s[i]:
                     if existing_shape[i] != shape_s[i]:
-                        raise ValueError(f"Shapes of {base_s} must be the same, got {existing_shape} and {shape_s}")
+                        raise ValueError(
+                            f"Shapes of {base_s} must be the same, got {existing_shape} and {shape_s}"
+                        )
                 elif not existing_shape[i] or not shape_s[i]:
                     update_shape.append(None)
                 else:
@@ -91,6 +99,7 @@ def _matching_shapes(all_species: set[Species]):
         else:
             shapes[base_s] = shape_s
 
+
 class MassActionReaction(AbstractReaction):
     def __init__(
         self,
@@ -98,22 +107,30 @@ class MassActionReaction(AbstractReaction):
         products: Complex,
         rate_expr: TensorExpression,
     ):
-        if not (isinstance(reactants, Complex|Species) or reactants == 0):
-            raise ValueError(f"Reactants must be a Complex or Species or 0, got {type(reactants)}")
+        if not (isinstance(reactants, Complex | Species) or reactants == 0):
+            raise ValueError(
+                f"Reactants must be a Complex or Species or 0, got {type(reactants)}"
+            )
         if isinstance(reactants, Species):
             reactants = Complex({reactants: 1})
         elif isinstance(reactants, int) and reactants == 0:
             reactants = Complex({})
 
-        if not (isinstance(products, Complex|Species) or products == 0):
-            raise ValueError(f"Products must be a Complex or Species, got {type(products)}")
+        if not (isinstance(products, Complex | Species) or products == 0):
+            raise ValueError(
+                f"Products must be a Complex or Species, got {type(products)}"
+            )
         if isinstance(products, Species):
             products = Complex({products: 1})
         elif isinstance(products, int) and products == 0:
             products = Complex({})
 
-        if not isinstance(rate_expr, TensorExpression | Numeric) or isinstance(rate_expr, Species):
-            raise ValueError(f"Rate expression must be a TensorExpression (not Species)or Numeric, got {type(rate_expr)}")
+        if not isinstance(rate_expr, TensorExpression | Numeric) or isinstance(
+            rate_expr, Species
+        ):
+            raise ValueError(
+                f"Rate expression must be a TensorExpression (not Species)or Numeric, got {type(rate_expr)}"
+            )
         if isinstance(rate_expr, Numeric):
             rate_expr = TensorLiteral(rate_expr)
 
@@ -122,8 +139,8 @@ class MassActionReaction(AbstractReaction):
             products_set = set(products.count_dict.keys())
             _matching_shapes(reactants_set | products_set)
         except ValueError:
-            raise 
-        
+            raise
+
         object.__setattr__(self, "reactants", reactants)
         object.__setattr__(self, "products", products)
         object.__setattr__(self, "aux", rate_expr)
@@ -146,12 +163,49 @@ class MassActionReaction(AbstractReaction):
     def shapes(self):
         pass
 
-
-
 class FastReaction(AbstractReaction):
+
     def __init__(self, reactants, products):
+        if not (isinstance(reactants, Complex | Species)):
+            raise ValueError(
+                f"Reactants must be a Complex or Species, got {type(reactants)}"
+            )
+
+        if isinstance(reactants, Species):
+            reactants = Complex({reactants: 1})
+
+        reactants_index_symbols = None
+        for s in reactants.count_dict.keys():
+            if reactants_index_symbols:
+                if reactants_index_symbols != s.index_symbols:
+                    raise ValueError(
+                        f"The index symbols must be the same for all species in the reactants, got {reactants_index_symbols} and {s.index_symbols}"
+                    )
+            else:
+                reactants_index_symbols = s.index_symbols
+
+        if not (isinstance(products, Complex | Species) or products == 0):
+            raise ValueError(
+                f"Products must be a Complex or Species or 0, got {type(products)}"
+            )
+        if isinstance(products, Species):
+            products = Complex({products: 1})
+        elif isinstance(products, int) and products == 0:
+            products = Complex({})
+
+        for s in products.count_dict.keys():
+            if set(s.index_symbols) - set(reactants_index_symbols) != set():
+                raise ValueError(
+                    f"The index symbols of the products must be a subset of the index symbols of the reactants, got {set(s.index_symbols)} and {index_symbols_set}"
+                )
+
         object.__setattr__(self, "reactants", reactants)
         object.__setattr__(self, "products", products)
+        object.__setattr__(self, "aux", None)
+
+    def flux(self):
+        return _fast_flux_f(self.reactants, self.products)
+
 
     # @rate_constant_expr.setter
     # def index_set(self, index_set):

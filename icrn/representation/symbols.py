@@ -34,7 +34,9 @@ class OrderedHashableSymbol(ABC):
     def __ge__(self, other):
         return self > other or self == other
 
+
 Numeric = ArrayLike
+
 
 def _is_tensor_literal(x):
     return isinstance(x, Numeric)
@@ -46,6 +48,7 @@ def _index_symbols_for_arg(arg):
     if _is_tensor_literal(arg):
         return None
     raise TypeError(f"Unsupported argument type {type(arg)}")
+
 
 def _index_symbols_empty(s):
     return s is None or s == ()
@@ -71,18 +74,23 @@ def _unify_index_symbols(args):
 def _binary_op_helper(fn, a, b):
     if isinstance(a, Species) or isinstance(b, Species):
         raise NotImplementedError
-    elif isinstance(a, TensorExpression | Numeric) or isinstance(b, TensorExpression | Numeric):
+    elif isinstance(a, TensorExpression | Numeric) or isinstance(
+        b, TensorExpression | Numeric
+    ):
         if isinstance(a, Numeric):
             a = TensorLiteral(a)
         if isinstance(b, Numeric):
             b = TensorLiteral(b)
 
         if a.index_symbols != b.index_symbols:
-            raise ValueError(f"Index symbols must be the same, got {a.index_symbols} and {b.index_symbols}")
+            raise ValueError(
+                f"Index symbols must be the same, got {a.index_symbols} and {b.index_symbols}"
+            )
 
         return TensorFunction(fn, (a, b))
     else:
         raise NotImplementedError
+
 
 def _check_shape(res: ArrayLike, index_symbols):
     if not isinstance(res, ArrayLike):
@@ -90,18 +98,24 @@ def _check_shape(res: ArrayLike, index_symbols):
     if not isinstance(index_symbols, tuple):
         raise ValueError(f"Index symbols must be a tuple, got {type(index_symbols)}")
     if not all(isinstance(i, IndexSymbol) for i in index_symbols):
-        raise ValueError(f"Index symbols must be a tuple of IndexSymbols, got {type(index_symbols)}")
+        raise ValueError(
+            f"Index symbols must be a tuple of IndexSymbols, got {type(index_symbols)}"
+        )
 
     res_shape = res.shape
 
     if len(res_shape) != len(index_symbols):
         return False
-    
+
     for i in range(len(res_shape)):
-        if index_symbols[i].index_set > 0 and res_shape[i] != index_symbols[i].index_set:
+        if (
+            index_symbols[i].index_set > 0
+            and res_shape[i] != index_symbols[i].index_set
+        ):
             return False
 
     return True
+
 
 class TensorExpression(ABC):
     def eval_with_check(self, data):
@@ -109,7 +123,9 @@ class TensorExpression(ABC):
         if _check_shape(res, self.index_symbols):
             return res
         else:
-            raise ValueError(f"Shape of {res} does not match index symbols {self.index_symbols}")
+            raise ValueError(
+                f"Shape of {res} does not match index symbols {self.index_symbols}"
+            )
 
     @abstractmethod
     def eval(self, data):
@@ -146,6 +162,7 @@ class TensorExpression(ABC):
 
     def __neg__(self):
         return TensorFunction(jnp.negative, (self,))
+
 
 # class IndexExpression(ABC):
 #     def __init__(self, op, args: tuple[IndexExpression]):
@@ -184,15 +201,17 @@ class TensorExpression(ABC):
 
 
 class IndexSymbol(OrderedHashableSymbol):
-    def __init__(self, label: str, index_set: int=0):
+    def __init__(self, label: str, index_set: int = 0):
         if not isinstance(label, str):
             raise ValueError(f"Label must be a string, got {type(label)}")
         if index_set:
             if not isinstance(index_set, int):
                 raise ValueError(f"Index set must be an integer, got {type(index_set)}")
             if index_set < 0:
-                raise ValueError(f"Index set must be greater than or equal to 0, got {index_set}")
-    
+                raise ValueError(
+                    f"Index set must be greater than or equal to 0, got {index_set}"
+                )
+
         object.__setattr__(self, "label", label)
         object.__setattr__(self, "aux", index_set)
 
@@ -242,6 +261,7 @@ class IndexSymbol(OrderedHashableSymbol):
         else:
             return self.label + ":0"
 
+
 class TensorSymbol(OrderedHashableSymbol, TensorExpression):
     def __init__(self, label: str, indexing: tuple[IndexSymbol, ...] = ()):
         if not isinstance(label, str):
@@ -253,7 +273,9 @@ class TensorSymbol(OrderedHashableSymbol, TensorExpression):
         # if isinstance(indexing, IndexSymbol):
         #     indexing = (indexing,)
         if not all(isinstance(i, IndexSymbol) for i in indexing):
-            raise ValueError(f"Indexing must be a tuple of IndexSymbols, got {type(indexing)}")
+            raise ValueError(
+                f"Indexing must be a tuple of IndexSymbols, got {type(indexing)}"
+            )
 
         object.__setattr__(self, "aux", indexing)
 
@@ -279,10 +301,15 @@ class TensorSymbol(OrderedHashableSymbol, TensorExpression):
     def __getitem__(self, index_symbols):
         if not isinstance(index_symbols, tuple):
             index_symbols = (index_symbols,)
-        if not isinstance(index_symbols, tuple) or not all(isinstance(i, IndexSymbol) for i in index_symbols):
-            raise ValueError(f"Index symbols must be a tuple of IndexSymbols, got {type(index_symbols)}")
+        if not isinstance(index_symbols, tuple) or not all(
+            isinstance(i, IndexSymbol) for i in index_symbols
+        ):
+            raise ValueError(
+                f"Index symbols must be a tuple of IndexSymbols, got {type(index_symbols)}"
+            )
 
         return self.__class__(self.label, index_symbols)
+
 
 class Species(TensorSymbol):
     def __add__(self, other):
@@ -306,6 +333,7 @@ class Species(TensorSymbol):
     def __rmul__(self, other):
         return self.__mul__(other)
 
+
 @dataclass(frozen=True)
 class Complex:
     count_dict: dict
@@ -328,7 +356,7 @@ class Complex:
             raise ValueError(f"Count must be an integer, got {type(count)}")
         if count <= 0:
             raise ValueError(f"Count must be greater than 0, got {count}")
-            
+
         new_count_dict = self.count_dict.copy()
         new_count_dict[s] = new_count_dict.get(s, 0) + count
         return Complex(new_count_dict)
@@ -356,14 +384,19 @@ class Complex:
             raise NotImplementedError
 
     def __str__(self):
-        res_str = [str(c) +"*"+ str(s) if c > 1 else str(s) for s, c in self.count_dict.items()]
+        res_str = [
+            str(c) + "*" + str(s) if c > 1 else str(s)
+            for s, c in self.count_dict.items()
+        ]
         return " + ".join(res_str)
 
     def __repr__(self):
         return repr(self.count_dict)
 
+
 class RateConstant(TensorSymbol):
     pass
+
 
 @dataclass(frozen=True)
 class TensorLiteral(TensorExpression):
@@ -371,11 +404,15 @@ class TensorLiteral(TensorExpression):
 
     def __init__(self, numeric_value):
         if not isinstance(numeric_value, Numeric):
-            raise ValueError(f"Numeric value must be a Numeric, got {type(numeric_value)}")
+            raise ValueError(
+                f"Numeric value must be a Numeric, got {type(numeric_value)}"
+            )
 
         val_as_array = jnp.array(numeric_value).astype(float)
         if val_as_array.ndim > 0:
-            raise ValueError(f"Numeric value must be a scalar, got {val_as_array.shape}")
+            raise ValueError(
+                f"Numeric value must be a scalar, got {val_as_array.shape}"
+            )
 
         object.__setattr__(self, "numeric_value", val_as_array)
 
@@ -392,6 +429,7 @@ class TensorLiteral(TensorExpression):
     def __repr__(self):
         return repr(self.numeric_value)
 
+
 @dataclass(frozen=True)
 class TensorFunction(TensorExpression):
     fn: Callable
@@ -406,7 +444,9 @@ class TensorFunction(TensorExpression):
 
         if isinstance(fn, jnp.ufunc):
             if fn.nin != len(args):
-                raise ValueError(f"Function must have {fn.nin} arguments, got {len(args)}")
+                raise ValueError(
+                    f"Function must have {fn.nin} arguments, got {len(args)}"
+                )
         for arg in args:
             _index_symbols_for_arg(arg)
         _unify_index_symbols(args)
@@ -426,13 +466,16 @@ class TensorFunction(TensorExpression):
     @property
     def index_symbols(self):
         return _unify_index_symbols(self.args)
-    
+
 
 def _parse_names(names: str) -> list[str]:
     names_list = names.split(",")
     return list(map(lambda x: x.strip(), names_list))
 
-def many_index_symbols(names: str, index_set: int=0) -> IndexSymbol | list[IndexSymbol]:
+
+def many_index_symbols(
+    names: str, index_set: int = 0
+) -> IndexSymbol | list[IndexSymbol]:
     """
     Instanitate multiple index symbols with the same index sets at once.
 

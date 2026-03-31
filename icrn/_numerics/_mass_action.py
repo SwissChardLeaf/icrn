@@ -1,10 +1,12 @@
-from .symbols import Complex, Species, TensorExpression, TensorLiteral, Numeric
+from ..representation.symbols import Complex, Species, TensorExpression, TensorLiteral, Numeric
 import jax
 import jax.numpy as jnp
 from collections import defaultdict
 
+
 def _tensor_expression_to_index_str(expr: TensorExpression) -> str:
     return "".join(map(str, expr.index_symbols))
+
 
 def _get_diff_dict(reactants: Complex, products: Complex):
     diff_dict = {}
@@ -16,6 +18,7 @@ def _get_diff_dict(reactants: Complex, products: Complex):
         if d != 0:
             diff_dict[s] = d
     return diff_dict
+
 
 def _get_all_index_symbols(*args):
     all_index_symbols = set()
@@ -29,7 +32,10 @@ def _get_all_index_symbols(*args):
             raise ValueError(f"Unsupported argument type {type(arg)}")
     return all_index_symbols
 
-def _get_base_einsum_str(reactants: Complex, rate_exp: TensorExpression, product_index_symbols: set):
+
+def _get_base_einsum_str(
+    reactants: Complex, rate_exp: TensorExpression, product_index_symbols: set
+):
     parts = [_tensor_expression_to_index_str(rate_exp)]
     for s in reactants.count_dict.keys():
         parts.append(_tensor_expression_to_index_str(s))
@@ -40,20 +46,24 @@ def _get_base_einsum_str(reactants: Complex, rate_exp: TensorExpression, product
     parts.extend(product_index_symbols_str)
     return ",".join(parts) + "->"
 
+
 def _product_index_symbols(reactants, products, rate_exp):
     all_index_symbols = _get_all_index_symbols(reactants, products, rate_exp)
     reactants_rate_exp_index_symbols = _get_all_index_symbols(reactants, rate_exp)
     return all_index_symbols - reactants_rate_exp_index_symbols
 
 
-def _get_diff_and_einsum_strs(diff_dict, reactants, rate_exp, product_index_symbols, base_einsum_str):
+def _get_diff_and_einsum_strs(
+    diff_dict, reactants, rate_exp, product_index_symbols, base_einsum_str
+):
     einsum_strs = defaultdict(list)
-    
+
     for s, diff in diff_dict.items():
         einsum_str = base_einsum_str + _tensor_expression_to_index_str(s)
         einsum_strs[s[()]].append((diff, einsum_str))
 
     return einsum_strs
+
 
 def _get_tensors(reactants, rate_expr, product_index_symbols):
     if reactants == Complex({}):
@@ -87,6 +97,7 @@ def _get_tensors(reactants, rate_expr, product_index_symbols):
 
     return get_tensor
 
+
 def _setup_einsums(reactants, products, rate_exp):
     product_index_symbols = _product_index_symbols(reactants, products, rate_exp)
     base_einsum_str = _get_base_einsum_str(reactants, rate_exp, product_index_symbols)
@@ -94,7 +105,9 @@ def _setup_einsums(reactants, products, rate_exp):
     diff_dict = _get_diff_dict(reactants, products)
     einsum_prep = defaultdict(list)
 
-    return _get_diff_and_einsum_strs(diff_dict, reactants, rate_exp, product_index_symbols, base_einsum_str)
+    return _get_diff_and_einsum_strs(
+        diff_dict, reactants, rate_exp, product_index_symbols, base_einsum_str
+    )
 
     # for s, diff in diff_dict.items():
     #     mod, einsum_str = _get_mod_and_einsum_str(s, product_index_symbols, base_einsum_str)
@@ -102,18 +115,21 @@ def _setup_einsums(reactants, products, rate_exp):
 
     # return einsum_prepr
 
+
 def mass_action_flux_f(
     reactants: Complex,
     products: Complex,
     rate_exp: TensorExpression,
 ):
     if not isinstance(reactants, Complex):
-        raise ValueError(f"Reactants must be a Complex, got {type(reactants)}") 
+        raise ValueError(f"Reactants must be a Complex, got {type(reactants)}")
     if not isinstance(products, Complex):
         raise ValueError(f"Products must be a Complex, got {type(products)}")
     if not isinstance(rate_exp, TensorExpression):
-        raise ValueError(f"Rate expression must be a TensorExpression, got {type(rate_exp)}")
-    
+        raise ValueError(
+            f"Rate expression must be a TensorExpression, got {type(rate_exp)}"
+        )
+
     einsum_prep = _setup_einsums(reactants, products, rate_exp)
     product_index_symbols = _product_index_symbols(reactants, products, rate_exp)
     get_tensors = _get_tensors(reactants, rate_exp, product_index_symbols)
@@ -126,5 +142,9 @@ def mass_action_flux_f(
 
     def f(state, non_state):
         tensors = get_tensors(state, non_state)
-        return {s: _sum_of_list(einsum_info_lst, tensors) for s, einsum_info_lst in einsum_prep.items()}
+        return {
+            s: _sum_of_list(einsum_info_lst, tensors)
+            for s, einsum_info_lst in einsum_prep.items()
+        }
+
     return f

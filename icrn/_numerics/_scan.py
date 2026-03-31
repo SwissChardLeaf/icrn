@@ -58,8 +58,10 @@ from icrn.utils.dict_utils import map1, map2
 #     else:
 #         return res_f
 
+
 def _linear_interpolation_from_hist(times, hist, dt):
     pass
+
 
 def _scan_linear_interpolation(
     step_f: Callable,
@@ -81,6 +83,7 @@ def _scan_linear_interpolation(
         return new_state_key_pair, new_state  # return the new state and the new key
 
     if checkpoint_length:
+
         @checkpoint
         def outer_scan_helper(state_key_pair, inner_scan_length):
             inner_state_key_pair, inner_hist = lax.scan(
@@ -89,10 +92,15 @@ def _scan_linear_interpolation(
             inner_state, inner_key = inner_state_key_pair
             return inner_state_key_pair, inner_state
 
-        state, hist = lax.scan(outer_scan_helper, init=(state, key), length=eval_steps[-1] + 1)
+        state, hist = lax.scan(
+            outer_scan_helper, init=(state, key), length=eval_steps[-1] + 1
+        )
 
     def interpolate_hist(hist):
-        return hist[eval_steps] + (hist[eval_steps + 1] - hist[eval_steps]) * fractional_dt * dt
+        return (
+            hist[eval_steps]
+            + (hist[eval_steps + 1] - hist[eval_steps]) * fractional_dt * dt
+        )
 
     state_at_times = jax.tree_map(interpolate_hist, hist)
 

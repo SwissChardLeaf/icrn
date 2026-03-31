@@ -4,6 +4,90 @@ from .._numerics._reaction_numerics import RK4
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
+def solve(
+    rxns: Iterable[AbstractReaction], 
+    state: dict[Species, jnp.ndarray], 
+    non_state: dict[TensorSymbol, jnp.ndarray], 
+    times: Numeric, 
+    dt: Numeric, 
+    key=None, 
+    reaction_solver="RK4", 
+    spatial_info: tuple[int, ...] | None = None, 
+    splitting="LieTrotter", 
+    diffusion_solver="spectral",
+    mode="relu"
+):
+    '''
+    Args:
+        rxns: A list of AbstractReactions.
+        state: A dict mapping Species to their tensor of concentrations.
+        non_state: A dict mapping TensorSymbols to their values.
+        times: A Numeric array of times.
+        dt: A Numeric scalar of the time step.
+        key: A jnp.ndarray of the random key.
+        reaction_solver: A string of the reaction solver.
+        spatial_info: A tuple of the spatial information.
+        splitting: A string of the splitting.
+        diffusion_solver: A string of the diffusion solver.
+
+        The following can be traced through jax.jit:
+        - state
+        - non-state
+        - key
+
+        The following are static:
+        - rxns
+        - times
+        - dt
+        - reaction_solver
+        - spatial_info
+        - splitting
+        - diffusion_solver
+    '''
+
+    for rxn in rxns:
+        if not isinstance(rxn, AbstractReaction):
+            raise ValueError(f"rxns must be a list of AbstractReactions, got {rxn} of type {type(rxn)}")
+
+    if spatial_info is not None:
+        if not isinstance(spatial_info, tuple):
+            raise ValueError(f"spatial_info must be a tuple of ints, got {spatial_info} of type {type(spatial_info)}")
+        if len(spatial_info) == 0:
+            raise ValueError(f"spatial_info must be a non-empty tuple, got {spatial_info}")
+        if len(spatial_info) > 3:
+            raise ValueError(f"spatial_info must be a tuple of at most 3 ints, got {spatial_info} with more than 3 dimensions")
+        for dim in spatial_info:
+            if not isinstance(dim, int):
+                raise ValueError(f"spatial_info must be a tuple of ints, got {spatial_info} of type {type(spatial_info)}")
+            if dim <= 0:
+                raise ValueError(f"spatial_info must be a tuple of positive ints, got {spatial_info} with a dimension less than or equal to 0")
+
+    if not isinstance(times, Numeric):
+        raise ValueError(f"times must be a Numeric, got {times} of type {type(times)}")
+    if jnp.array(times).ndim !- 1:
+        raise ValueError(f"times must be a 1D array, got {times} of shape {jnp.array(times).shape}")
+
+    if not isinstance(dt, Numeric):
+        raise ValueError(f"dt must be a Numeric, got {dt} of type {type(dt)}")
+    if jnp.array(dt).ndim != 0:
+        raise ValueError(f"dt must be a scalar, got {dt} of shape {jnp.array(dt).shape}")
+    if dt <= 0:
+        raise ValueError(f"dt must be a positive float, got {dt} which is less than or equal to 0")
+    if key is not None and not isinstance(key, jnp.ndarray):
+        raise ValueError(f"key must be a jnp.ndarray, got {key} of type {type(key)}")
+
+    if reaction_solver not in ["RK4", "Euler"]:
+        raise ValueError(f"Invalid reaction solver: {reaction_solver}")
+    if splitting not in ["LieTrotter", "Strang"]:
+        raise ValueError(f"Invalid splitting: {splitting}")
+    if diffusion_solver not in ["spectral", "convolutional"]:
+        raise ValueError(f"Invalid diffusion solver: {diffusion_solver}")
+    if mode not in ["none", "relu", "strict"]:
+        raise ValueError(f"Invalid mode: {mode}")
+
+    ops = _rxns_to_ops_lst(rxns, reaction_solver, spatial_info, splitting, diffusion_solver, mode)
+    opf_f = _function_from_ops_lst(ops)
+    return _solve_with_ops_f(ops, state, non_state, times, dt, key, spatial_info)
 
 @dataclass(frozen=True)
 class WellMixedSolver:

@@ -23,13 +23,45 @@ from jax.lax import fori_loop
 #     ops = problem.to_ops(splitting, reaction_solver, diffusion_solver)
 #     return solve_with_ops(ops, state_data, non_state_data, dt)
 
-def solve_well_mixed(reactions, state, non_state, dt, key, times=None, inner_scan_length=None, outer_scan_length=None):
-    ops = to_well_mixed_ops(problem.reactions, problem.reaction_solver)
-    return _solve_with_ops(ops, state, non_state, dt, key, times, inner_scan_length, outer_scan_length)
 
-def solve_reaction_diffusion(reactions, state, non_state, dt, key, times=None, inner_scan_length=None, outer_scan_length=None):
-    ops = to_reaction_diffusion_ops(reactions, problem.dxs, problem.reaction_solver, problem.splitting, problem.diffusion_solver)
-    return _solve_with_ops(ops, state, non_state, dt, key, times, inner_scan_length, outer_scan_length)
+def solve_well_mixed(
+    reactions,
+    state,
+    non_state,
+    dt,
+    key,
+    times=None,
+    inner_scan_length=None,
+    outer_scan_length=None,
+):
+    ops = to_well_mixed_ops(problem.reactions, problem.reaction_solver)
+    return _solve_with_ops(
+        ops, state, non_state, dt, key, times, inner_scan_length, outer_scan_length
+    )
+
+
+def solve_reaction_diffusion(
+    reactions,
+    state,
+    non_state,
+    dt,
+    key,
+    times=None,
+    inner_scan_length=None,
+    outer_scan_length=None,
+):
+    ops = to_reaction_diffusion_ops(
+        reactions,
+        problem.dxs,
+        problem.reaction_solver,
+        problem.splitting,
+        problem.diffusion_solver,
+    )
+    return _solve_with_ops(
+        ops, state, non_state, dt, key, times, inner_scan_length, outer_scan_length
+    )
+
+
 def _solve_with_ops(
     ops_f,
     state,
