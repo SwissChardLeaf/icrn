@@ -2,7 +2,25 @@ import yaml
 import os
 import jax.numpy as jnp
 import jax.tree_util as jax_tree
-from .representation import BaseObject, ConcreteObject, Species, RateConstant
+
+
+from icrn import Species, RateConstant
+
+
+def load_dict_from_file(file_path):
+    pass
+
+
+def save_dict_to_file(d, file_path):
+    pass
+
+
+def add_state(d1, d2):
+    pass
+
+
+def mul_state(d1, d2):
+    pass
 
 
 def _check_valid_binary_operator(s, o):
@@ -157,13 +175,14 @@ class SJDict:
     def __eq__(self, other):
         return sjdict_allequal(self, other)
 
-    def __setitem__(self, key, value):
-        if isinstance(key, BaseObject):
-            self.dict[key] = value
-        elif isinstance(key, ConcreteObject):
-            self.dict[key.base] = self.dict[key.base].at[key.index_symbols].set(value)
-        else:
-            raise KeyError
+    # def __setitem__(self, key, value):
+    #     if (key.index_symbols) is
+    #     if isinstance(key, BaseObject):
+    #         self.dict[key] = value
+    #     elif isinstance(key, ConcreteObject):
+    #         self.dict[key.base] = self.dict[key.base].at[key.index_symbols].set(value)
+    #     else:
+    #         raise KeyError
 
     def __getitem__(self, key):
         if isinstance(key, BaseObject):
@@ -176,18 +195,20 @@ class SJDict:
     def __and__(self, other):
         return jax_tree.tree_map(lambda x, y: jnp.stack([x, y]), self, other)
 
-    def add_with_dict(self, add_dict):
-        for k, v in add_dict.items():
-            if isinstance(k, BaseObject):
-                if k in self._dict:
-                    self.dict[k] = self.dict.get(k, 0) + v
-            elif isinstance(k, ConcreteObject):
-                if k.base in self._dict:
-                    self.dict[k.base] = self.dict[k.base].at[k.index_symbols].add(v)
-            else:
-                raise TypeError
+    # def add_with_dict(self, add_dict):
+    #     for k, v in add_dict.items():
+    #         if k is
 
-        return self
+    #         if isinstance(k, BaseObject):
+    #             if k in self._dict:
+    #                 self.dict[k] = self.dict.get(k, 0) + v
+    #         elif isinstance(k, ConcreteObject):
+    #             if k.base in self._dict:
+    #                 self.dict[k.base] = self.dict[k.base].at[k.index_symbols].add(v)
+    #         else:
+    #             raise TypeError
+
+    #     return self
 
     def zeros(self):
         return jax_tree.tree_map(jnp.zeros_like, self)

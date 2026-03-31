@@ -1,4 +1,15 @@
-**/*.pyc
-.DS_Store
-.vscode
+# Byte-compiled / cache
+__pycache__/
+# Distribution / packaging
+build/
 dist/
+# Type checkers / linters
+.mypy_cache/
+.ruff_cache/
+# Sphinx documentation builds
+docs/_build/
+# Jupyter
+.ipynb_checkpoints/
+# OS / editors
+.DS_Store
+.vscode/

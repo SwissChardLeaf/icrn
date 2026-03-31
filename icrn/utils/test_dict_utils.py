@@ -2,6 +2,7 @@ import unittest
 import os
 import jax.numpy as jnp
 from jax.tree_util import tree_flatten, tree_unflatten, tree_map
+
 from icrn import (
     save_sjdict,
     load_sjdict,

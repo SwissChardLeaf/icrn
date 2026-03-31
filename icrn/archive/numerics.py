@@ -6,7 +6,7 @@ from jax import numpy as jnp
 from jax import vmap
 from jax.numpy.fft import fftfreq, fftn, ifftn
 import jax.tree_util as jax_tree
-from .dict_utils import SJDict
+from .._utils.dict_utils import SJDict
 
 NINE_POINT_STENCIL = jnp.array(
     [[1 / 6, 4 / 6, 1 / 6], [4 / 6, -20 / 6, 4 / 6], [1 / 6, 4 / 6, 1 / 6]],
@@ -266,3 +266,8 @@ def build_forward_step(
         return vmap(res_f, in_axes=reaction_in_axes)
     else:
         return res_f
+
+
+# nested scans
+def _simulate(forward_step_f, conc_data, rate_constant_data, diff_data, dt):
+    pass

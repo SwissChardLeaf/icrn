@@ -1,9 +1,9 @@
 import unittest
-import icrn.numerics as numerics
+import icrn._numerics.numerics as numerics
 import jax
 from jax import numpy as jnp
-from icrn.dict_utils import load_sjdict, SJDict, sjdict_allclose, load_dict_yaml
-from icrn.representation import (
+from icrn._utils.dict_utils import load_sjdict, SJDict, sjdict_allclose, load_dict_yaml
+from icrn.archive.representation import (
     relu,
     many_species,
     many_index_symbols,
