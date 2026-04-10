@@ -10,12 +10,14 @@ def solve(
     non_state: dict[TensorSymbol, jnp.ndarray], 
     times: Numeric, 
     dt: Numeric, 
-    key=None, 
+    key=None,
+    checkpoint_length = None,
+    interpolation_method: str = "linear",
     reaction_solver="RK4", 
     spatial_info: tuple[int, ...] | None = None, 
     splitting="LieTrotter", 
     diffusion_solver="spectral",
-    mode="relu"
+    mode: str | None = None
 ):
     '''
     Args:
@@ -39,6 +41,8 @@ def solve(
         - rxns
         - times
         - dt
+        - checkpoint_length
+        - interpolation_method
         - reaction_solver
         - spatial_info
         - splitting
@@ -87,7 +91,7 @@ def solve(
 
     ops = _rxns_to_ops_lst(rxns, reaction_solver, spatial_info, splitting, diffusion_solver, mode)
     opf_f = _function_from_ops_lst(ops)
-    return _solve_with_ops_f(ops, state, non_state, times, dt, key, spatial_info)
+    return _solve_with_ops_f(ops_f, state, non_state, times, dt, key, spatial_info)
 
 @dataclass(frozen=True)
 class WellMixedSolver:
@@ -105,10 +109,8 @@ class WellMixedSolver:
         )
 
     def solve(self, state, non_state, dt, key=None):
-        return self.solver_f(state, non_state, time, dt, key)
-
-    def __call__(self, state, non_state, time, dt, key=None):
-        return self.solve(state, non_state, time, dt, key)
+        ops_f = _function_from_ops_lst(self.ops)
+        return _solve_with_ops_f(ops_f, state, non_state, dt, key)
 
 
 @dataclass(frozen=True)
@@ -137,10 +139,8 @@ class ReactionDiffusionSolver:
         )
 
     def solve(self, state, non_state, dt, key=None):
-        return self.solve_with_ops(state, non_state, time, dt)
-
-    def __call__(self, state, non_state, time, dt, key=None):
-        return self.solve(state, non_state, dt, key)
+        ops_f = _function_from_ops_lst(self.ops)
+        return _solve_with_ops_f(ops_f, state, non_state, dt, key)
 
 
 # @dataclass

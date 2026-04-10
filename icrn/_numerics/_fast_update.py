@@ -37,11 +37,11 @@ def _get_reactant_unit(standard_reactants, reactants, state):
 
     return run_min
 
-def _fast_flux_f(reactants, products):
+def _fast_update_f(reactants, products):
     standard_reactants, standard_indexing = _standard_reactants_and_indexing(reactants)
     einsum_prep = _einsum_prep(reactants, products, standard_indexing)
 
-    def fast_flux(state):
+    def fast_update(state):
         reactant_unit = _get_reactant_unit(standard_reactants, reactants, state)
 
         def lst_helper(lst):
@@ -55,4 +55,4 @@ def _fast_flux_f(reactants, products):
             output[s] = lst_helper(prep_lst)
         return output
 
-    return fast_flux
+    return fast_update

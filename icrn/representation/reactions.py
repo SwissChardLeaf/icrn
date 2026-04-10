@@ -163,9 +163,26 @@ class MassActionReaction(AbstractReaction):
     def shapes(self):
         pass
 
-class FastReaction(AbstractReaction):
+def _fast_rxns_to_update_f(fast_rxns: Iterable[FastReaction]):
+    update_fs = [_fast_update_f(frxn.reactants, frxn.products) for frxn in fast_rxns]
 
-    def __init__(self, reactants, products):
+    def _fast_updates_f(state):
+        for f in update_fs:
+            state = dict_add(state, f(state))
+        return state
+
+    return _fast_updates_f
+
+@dataclass(frozen=True)
+class FastReaction():
+    reactants: Complex | Species
+    products: Complex | Species | int
+    
+
+    def __post_init__(self):
+        reactants = self.reactants
+        products = self.products
+
         if not (isinstance(reactants, Complex | Species)):
             raise ValueError(
                 f"Reactants must be a Complex or Species, got {type(reactants)}"
@@ -198,13 +215,6 @@ class FastReaction(AbstractReaction):
                 raise ValueError(
                     f"The index symbols of the products must be a subset of the index symbols of the reactants, got {set(s.index_symbols)} and {index_symbols_set}"
                 )
-
-        object.__setattr__(self, "reactants", reactants)
-        object.__setattr__(self, "products", products)
-        object.__setattr__(self, "aux", None)
-
-    def flux(self):
-        return _fast_flux_f(self.reactants, self.products)
 
 
     # @rate_constant_expr.setter

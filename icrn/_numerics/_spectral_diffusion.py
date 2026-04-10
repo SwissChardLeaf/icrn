@@ -1,21 +1,21 @@
 from jax import numpy as jnp
 import jax
 from jax.numpy.fft import fftfreq, fftn, ifftn
-import jax.tree_util as jax_tree
+import jax.tree as jax_tree
 from jaxtyping import Array, Float, PyTree, jaxtyped
 from typeguard import typechecked
 
 
 @jaxtyped(typechecker=typechecked)
-def _compute_lap_op(h: int, w: int, dh: float, dw: float) -> Float[Array, "{h} {w}"]:
+def _compute_lap_op(spatial_dims, dspace):
+    Ks = jax_tree.map(lambda dim, d: fftfreq(dim, d=d) * 2 * jnp.pi, spatial_dims, dspace)
+    grids = jnp.meshgrid(*Ks, indexing="ij")
+    grids_sq = jax_tree.map(lambda grid: grid**2, grids)
 
-    kh = fftfreq(h, d=dh) * 2 * jnp.pi
-    kw = fftfreq(w, d=dw) * 2 * jnp.pi
-
-    Kh, Kw = jnp.meshgrid(kh, kw)
-    Kh = jnp.transpose(Kh, axes=[1, 0])
-    Kw = jnp.transpose(Kw, axes=[1, 0])
-    return -(Kh**2) - (Kw**2)
+    acc = grids_sq[0]
+    for grid_sq in grids_sq[1:]:
+        acc += grid_sq
+    return -acc
 
 
 @jaxtyped(typechecker=typechecked)
@@ -42,8 +42,8 @@ def _spectral_species_diffuse(
 @jaxtyped(typechecker=typechecked)
 def _spectral_diffuse(
     lap_op: Float[Array, "h w"],
-    concs: PyTree[Float[Array, "h w *?dims"], "T"],  # type: ignore
-    diff_data: PyTree[Float[Array, "*?dims"], "T"],  # type: ignore
+    state: PyTree[Float[Array, "h w *?dims"], "T"],  # type: ignore
+    non_state: PyTree[Float[Array, "*?dims"], "T"],  # type: ignore
     dt: float,
     dxs: tuple[float, ...],
 ):

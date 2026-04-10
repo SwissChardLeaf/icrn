@@ -24,68 +24,70 @@ from jax.lax import fori_loop
 #     return solve_with_ops(ops, state_data, non_state_data, dt)
 
 
-def solve_well_mixed(
-    reactions,
-    state,
-    non_state,
-    dt,
-    key,
-    times=None,
-    inner_scan_length=None,
-    outer_scan_length=None,
-):
-    ops = to_well_mixed_ops(problem.reactions, problem.reaction_solver)
-    return _solve_with_ops(
-        ops, state, non_state, dt, key, times, inner_scan_length, outer_scan_length
-    )
+# def solve_well_mixed(
+#     reactions,
+#     state,
+#     non_state,
+#     dt,
+#     key,
+#     times=None,
+#     inner_scan_length=None,
+#     outer_scan_length=None,
+# ):
+#     ops = to_well_mixed_ops(problem.reactions, problem.reaction_solver)
+#     return _solve_with_ops(
+#         ops, state, non_state, dt, key, times, inner_scan_length, outer_scan_length
+#     )
 
 
-def solve_reaction_diffusion(
-    reactions,
-    state,
-    non_state,
-    dt,
-    key,
-    times=None,
-    inner_scan_length=None,
-    outer_scan_length=None,
-):
-    ops = to_reaction_diffusion_ops(
-        reactions,
-        problem.dxs,
-        problem.reaction_solver,
-        problem.splitting,
-        problem.diffusion_solver,
-    )
-    return _solve_with_ops(
-        ops, state, non_state, dt, key, times, inner_scan_length, outer_scan_length
-    )
+# def solve_reaction_diffusion(
+#     reactions,
+#     state,
+#     non_state,
+#     dt,
+#     key,
+#     times=None,
+#     inner_scan_length=None,
+#     outer_scan_length=None,
+# ):
+#     ops = to_reaction_diffusion_ops(
+#         reactions,
+#         problem.dxs,
+#         problem.reaction_solver,
+#         problem.splitting,
+#         problem.diffusion_solver,
+#     )
+#     return _solve_with_ops(
+#         ops, state, non_state, dt, key, times, inner_scan_length, outer_scan_length
+#     )
 
 
-def _solve_with_ops(
+def _solve_with_ops_f(
     ops_f,
     state,
     non_state,
     dt,
     key,
-    times=None,
-    inner_scan_length=None,
-    outer_scan_length=None,
+    times,
+    checkpoint_length=None,
+    interpolation_method: str = "linear",
 ):
-    total_steps = jnp.ceil(times[-1] / dt).astype(int)
+    return _loop_with_checkpointing(ops_f, times, key, state, dt, checkpoint_length, interpolation_method)
+    # err, out = _loop_with_checkpointing(ops_f, times, key, state, dt, checkpoint_length, interpolation_f)
+    # checkify.check_error(err)
+    # return out
+    # total_steps = jnp.ceil(times[-1] / dt).astype(int)
 
-    if times:
-        return _linear_interpolation_eval_hist(times, eval_times, eval_hist)
-    else:
-        if not inner_scan_length or not outer_scan_length:
-            raise ValueError(
-                f"Inner and outer scan lengths must be provided if times are not provided"
-            )
-        return _scan_by_segments_with_checkpointing(
-            ops_f, state, non_state, dt, key, inner_scan_length, outer_scan_length
-        )
-
-
+    # if times:
+    #     return _linear_interpolation_eval_hist(times, eval_times, eval_hist)
+    # else:
+    #     if not inner_scan_length or not outer_scan_length:
+    #         raise ValueError(
+    #             f"Inner and outer scan lengths must be provided if times are not provided"
+    #         )
+    #     return _scan_by_segments_with_checkpointing(
+    #         ops_f, state, non_state, dt, key, inner_scan_length, outer_scan_length
+    #     )
 # these are not jax_jit compatible immediately because of the ops
 # def solve_with_ops(
 #     ops: list[Callable], conc_data, rate_constant_data, diff_data, time, dt, debug=False
