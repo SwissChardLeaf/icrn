@@ -20,36 +20,46 @@ def _compute_lap_op(spatial_dims, dspace):
 
 @jaxtyped(typechecker=typechecked)
 def _spectral_species_diffuse(
-    conc: Float[Array, "h w *dims"],
-    kd: Float[Array, "*dims"],
-    lap_op: Float[Array, "h w"],
-    dt: float,
-) -> Float[Array, "h w *dims"]:
-
-    x_hat = fftn(conc, axes=[0, 1])
-    broadcast_shape = lap_op.shape + kd.shape
-    for i in range(len(kd.shape)):
+#     conc: Float[Array, "h w *dims"],
+#     kd: Float[Array, "*dims"],
+#     lap_op: Float[Array, "h w"],
+#     dt: float,
+# ) -> Float[Array, "h w *dims"]:
+    conc_vals,
+    diffuson_constant_val,
+    lap_op,
+    dt
+):
+    spatial_dims = len(lap_op.shape)
+    spatial_axes = list(range(spatial_dims))
+    x_hat = fftn(conc_vals, axes=spatial_axes)
+    broadcast_shape = lap_op.shape + diffuson_constant_val.shape
+    for i in range(len(diffuson_constant_val.shape)):
         lap_op = jnp.expand_dims(lap_op, axis=-1)
     x_hat = x_hat / (
         1
         - dt
-        * jnp.broadcast_to(kd[None, None, ...], broadcast_shape)
+        * jnp.broadcast_to(diffuson_constant_val, broadcast_shape)
         * jnp.broadcast_to(lap_op, broadcast_shape)
     )
-    return ifftn(x_hat, axes=[0, 1]).real
+    return ifftn(x_hat, axes=spatial_axes).real
 
 
 @jaxtyped(typechecker=typechecked)
 def _spectral_diffuse(
-    lap_op: Float[Array, "h w"],
-    state: PyTree[Float[Array, "h w *?dims"], "T"],  # type: ignore
-    non_state: PyTree[Float[Array, "*?dims"], "T"],  # type: ignore
-    dt: float,
-    dxs: tuple[float, ...],
+    # lap_op: Float[Array, "h w"],
+    # state: PyTree[Float[Array, "h w *?dims"], "T"],  # type: ignore
+    # non_state: PyTree[Float[Array, "*?dims"], "T"],  # type: ignore
+    # dt: float,
+    # dxs: tuple[float, ...],
+    lap_op,
+    conc_vals,
+    diffuson_constant_vals,
+    dt
 ):
 
-    return jax_tree.tree_map(
-        lambda c, kd: _spectral_species_diffuse(c, kd, lap_op, dt), concs, diff_data
+    return jax_tree.map(
+        lambda c, kd: _spectral_species_diffuse(c, kd, lap_op, dt), conc_vals, diffuson_constant_vals
     )
 
 

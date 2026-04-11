@@ -4,10 +4,44 @@ from .._numerics._reaction_numerics import RK4
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
+def solve_well_mixed(
+    rxns: Iterable[AbstractReaction], 
+    conc_vals: dict[Species, jnp.ndarray],
+    rate_constant_vals: dict[TensorSymbol, jnp.ndarray],
+    times: Numeric, 
+    dt: Numeric, 
+    key=None,
+    checkpoint_length = None,
+    interpolation_method: str = "hermite",
+    reaction_solver="RK4",
+    mode: str | None = None
+):
+    pass
+
+def solve_reaction_diffusion(
+    rxns: Iterable[AbstractReaction],
+    conc_vals: dict[Species, jnp.ndarray],
+    rate_constant_vals: dict[TensorSymbol, jnp.ndarray],
+    diffusion_constant_vals: dict[TensorSymbol, jnp.ndarray],
+    times: Numeric,
+    dt: Numeric, 
+    key=None,
+    checkpoint_length = None,
+    interpolation_method: str = "linear",
+    reaction_solver="RK4",
+    splitting="LieTrotter",
+    diffusion_solver="spectral",
+    spatial_info: tuple[tuple[int, float], ...],
+    spatial_rate_constants: bool = False,
+    mode: str | None = None
+):
+    pass
+
 def solve(
     rxns: Iterable[AbstractReaction], 
-    state: dict[Species, jnp.ndarray], 
-    non_state: dict[TensorSymbol, jnp.ndarray], 
+    conc_vals: dict[Species, jnp.ndarray],
+    rate_constant_vals: dict[TensorSymbol, jnp.ndarray],
+    diffusion_constant_vals: dict[TensorSymbol, jnp.ndarray] | None = None
     times: Numeric, 
     dt: Numeric, 
     key=None,
@@ -33,8 +67,9 @@ def solve(
         diffusion_solver: A string of the diffusion solver.
 
         The following can be traced through jax.jit:
-        - state
-        - non-state
+        - conc_vals
+        - rate_constant_vals
+        - diffusion_constant_vals
         - key
 
         The following are static:
