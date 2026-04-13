@@ -3,11 +3,17 @@
 # coordinates sending ops to scan
 # responsible for setting up time
 
-from ._scan import (
-    _scan_by_segments_linear_interpolation,
-    _scan_by_segments_with_checkpointing,
-)
-from jax.lax import fori_loop
+from pickle import NONE
+from typing import Any, Callable
+
+
+import opcode
+import jax
+import jax.numpy as jnp
+from jax.experimental import checkify
+import jax.tree_util as jax_tree
+
+from ._loop import _loop_with_checkpointing
 
 # this not jax_jit compatible immediately because problem
 # def solve_with_reactions(
@@ -61,8 +67,83 @@ from jax.lax import fori_loop
 #         ops, state, non_state, dt, key, times, inner_scan_length, outer_scan_length
 #     )
 
+def _check_state_is_non_negative(state):
+    leaves = jax_tree.tree_leaves(
+        jax_tree.tree_map(lambda x: jnp.all(x >= 0), state)
+    )
+    if not leaves:
+        return jnp.array(True)
+    return jnp.all(jnp.stack(leaves))
 
-def _solve_with_ops_f(
+def _to_mod_op(op):
+
+    if op.mode == "strict":
+        def checked_update_f(key, state, non_state, dt):
+            new_dt = dt * op.dt_scale
+            aux = None
+            if op.has_aux:
+                state_out, aux = op.update_state(key, state, non_state, new_dt)
+                checkify.check(
+                    _check_state_is_non_negative(state_out), f"state is negative after {op.__class__.__name__}"
+                )
+                return state_out, aux
+            else:
+                state_out = op.update_state(key, state, non_state, new_dt)
+                checkify.check(
+                    _check_state_is_non_negative(state_out), f"state is negative after {op.__class__.__name__}"
+                )
+                return state_out
+
+        checked_f = checkify.checkify(checked_update_f)
+
+        def new_update_f(key, state, non_state, dt):
+            err, out = checked_f(key, state, non_state, dt)
+            checkify.check_error(err)
+            return out
+
+        return new_update_f
+
+    elif op.mode == "relu":
+        def relu_update_f(key, state, non_state, dt):
+            if op.has_aux:
+                state_out, aux = op.update_state(key, state, non_state, dt)
+                return jax_tree.tree_map(jax.nn.relu, state_out), aux
+            else:
+                state_out = op.update_state(key, state, non_state, dt)
+                return jax_tree.tree_map(jax.nn.relu, state_out)
+
+        return relu_update_f
+
+    elif op.mode is None:
+        def no_mode_update_f(key, state, non_state, dt):
+            new_dt = dt * op.dt_scale
+            return op.update_state(key, state, non_state, new_dt)
+        return no_mode_update_f
+
+def _ops_to_f(ops):
+    mod_ops = list(map(_to_mod_op, ops))
+
+    def f(state, non_state, dt, key):
+        for op in mod_ops:
+            state = op.update_state(state, non_state, dt, key)
+        return state
+    
+    return f
+
+def _solve_with_ops(
+    ops,
+    state,
+    non_state,
+    dt,
+    key,
+    times,
+    checkpoint_length=None,
+    interpolation_method: str = "linear",
+):
+    ops_f = _ops_to_f(ops)
+    return _solve_with_f(ops_f, state, non_state, dt, key, times, checkpoint_length, interpolation_method)
+
+def _solve_with_f(
     ops_f,
     state,
     non_state,

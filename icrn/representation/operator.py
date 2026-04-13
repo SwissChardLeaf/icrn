@@ -10,7 +10,8 @@ from jax.lax import fori_loop
 import jax.tree_util as jax_tree
 from dataclasses import dataclass, field
 
-from ..representation.reactions import AbstractReaction
+from ..representation.reactions import AbstractReaction, FastReaction
+from .._numerics._reaction_numerics import _RK4_step, _euler_step
 
 '''
 An operator is function that takes in a state and a non-state and returns a new state.
@@ -31,69 +32,83 @@ The non-state is a dict mapping rate constants to their values or species to the
 
 #     return solver
 
-def _rxns_to_ops_lst(rxns: list[AbstractReaction], reaction_solver, spatial_info, splitting, diffusion_solver):
-    if not spatial_info:
-        return _rxn_well_mixed_to_ops_lst(rxns, reaction_solver)
+# def _rxns_to_ops_lst(rxns: list[AbstractReaction], reaction_solver, spatial_info, splitting, diffusion_solver):
+#     if not spatial_info:
+#         return _rxn_well_mixed_to_ops_lst(rxns, reaction_solver)
+#     else:
+#         return _rxn_reaction_diffusion_to_ops_lst(rxns, reaction_solver, spatial_info, splitting, diffusion_solver)
+
+# def _ops_to_f(ops: list[AbstractOperator]):
+#     def f(state, non_state, dt, key):
+#         for op in ops:
+#             key, state = op(state, non_state, dt, key)
+#         return state
+#     return f
+
+def to_well_mixed_ops(reactions, reaction_solver="RK4"):
+    non_fast_rxns = [rxn for rxn in reactions if isinstance(rxn, AbstractReaction)]
+    fast_rxns = [rxn for rxn in reactions if isinstance(rxn, FastReaction)]
+    rxn_op = ReactionsOperator(non_fast_rxns, reaction_solver)
+
+    ops = [rxn_op]
+    if fast_rxns:
+        fast_rxn_op = FastReactionsOperator(fast_rxns)
+        ops.insert(0, fast_rxn_op)
+
+    return ops
+
+def to_reaction_diffusion_ops(reactions, spatial_dims, dxs, reaction_solver="RK4", splitting="LieTrotter", diffusion_solver="spectral"):
+    non_fast_rxns = [rxn for rxn in reactions if isinstance(rxn, AbstractReaction)]
+    fast_rxns = [rxn for rxn in reactions if isinstance(rxn, FastReaction)]
+    rxn_op = ReactionsOperator(non_fast_rxns, reaction_solver, spatial_axes=len(spatial_dims), dt_scale=0.5)
+    diffusion_op = SpectralDiffusionOperator(spatial_dims, dxs, dt_scale=0.5)
+        
+    if splitting == "LieTrotter":
+        ops = [rxn_op, diffusion_op]
+    elif splitting == "Strang":
+        ops = [rxn_op, diffusion_op, rxn_op]
     else:
-        return _rxn_reaction_diffusion_to_ops_lst(rxns, reaction_solver, spatial_info, splitting, diffusion_solver)
+        raise ValueError(f"Invalid splitting: {splitting}")
+    
+    if fast_rxns:
+        fast_rxn_op = FastReactionsOperator(fast_rxns, spatial_axes=len(spatial_dims))
+        ops.insert(0, fast_rxn_op)
 
-def _function_from_ops_lst(ops: list[AbstractOperator]):
-    return lambda state, non_state, dt, key: fori_loop(0, len(ops), lambda i, x: ops[i](x, non_state, dt, key), state)
-
-def _check_state_is_non_negative(state):
-    leaves = jax_tree.tree_leaves(
-        jax_tree.tree_map(lambda x: jnp.all(x >= 0), state)
-    )
-    if not leaves:
-        return jnp.array(True)
-    return jnp.all(jnp.stack(leaves))
+    return ops
 
 class AbstractOperator(ABC):
-    def __init__(self, mode: str | None):
-        update_f = self.update_state
+    # def __init__(self, mode: str | None, stochastic=False):
+    #     update_f = self.update_state
 
-        if mode == "strict":
-            def checked_update_f(key, state, non_state, dt):
-                key_out, state_out = update_f(key, state, non_state, dt)
-                checkify.check(
-                    _check_state_is_non_negative(state_out), "state is negative"
-                )
-                return key_out, state_out
+    #     else:
+    #         raise ValueError(f"Invalid mode: {mode}")
 
-            checked_f = checkify.checkify(checked_update_f)
-
-            def new_update_f(key, state, non_state, dt):
-                err, out = checked_f(key, state, non_state, dt)
-                checkify.check_error(err)
-                return out
-
-            self._update_f = new_update_f
-
-        elif mode == "relu":
-            def relu_update_f(key, state, non_state, dt):
-                key_out, state_out = out = update_f(key, state, non_state, dt)
-                # update_state returns (key, state); only clamp concentrations, not the key.
-                return key_out, jax_tree.tree_map(jax.nn.relu, state_out)
-
-            self._update_f = relu_update_f
-
-        elif mode is None:
-            self._update_f = update_f
-        else:
-            raise ValueError(f"Invalid mode: {mode}")
-
-    def update_with_checks(self, key, state, non_state, dt):
-        return self._update_f(key, state, non_state, dt)
+    #     self._stochastic = stochastic
 
     @abstractmethod
-    def update_state(self, key, state, non_state, dt):
+    def update_state(self, state, non_state, dt):
+        pass
+
+    @property
+    @abstractmethod
+    def mode(self):
+        pass
+
+    @property
+    @abstractmethod
+    def has_aux(self):
+        pass
+
+    @property
+    @abstractmethod
+    def dt_scale(self):
         pass
 
     def __repr__(self):
         return f"{self.__class__.__name__}(aux={self.aux}, mode={self.mode})"
 
 class ReactionsOperator(AbstractOperator):
-    def __init__(self, mode: str | None, rxns: Iterator[AbstractReaction], reaction_solver):
+    def __init__(self, mode: str | None, rxns: Iterator[AbstractReaction], reaction_solver, spatial_axes=0, spatial_rate_constants=False):
         for rxn in rxns:
             if not isinstance(rxn, AbstractReaction):
                 raise ValueError(f"rxns must be an iterator of AbstractReactions, got {rxn} of type {type(rxn)}")
@@ -137,13 +152,15 @@ class FastReactionsOperator(AbstractOperator):
         return f"{self.__class__.__name__}(fast_rxns={self.fast_rxns})"
 
 class SpectralDiffusionOperator(AbstractOperator):
-    def __init__(self, spatial_dims, dxs, mode):
+    def __init__(self, spatial_dims, dspaces, mode):
         self.spatial_dims = spatial_dims
-        self.diffusion_solver = diffusion_solver
-        self.mode = mode
+        self.dspaces = dspaces
+        self.lap_op = _compute_lap_op(spatial_dims, dxs)
 
-    def __call__(self, state, non_state, dt, key):
-        return _diffusion_to_op(self.spatial_dims, self.diffusion_solver)(state, non_state, dt, key)
+        super().__init__(mode)
+
+    def update_state(self, key, state, non_state, dt):
+        return _spectral_diffuse(self.lap_op, state, non_state, dt)
 
     def __repr__(self):
         return f"{self.__class__.__name__}(xs={self.xs}, dxs={self.dxs}, diffusion_solver={self.diffusion_solver})"

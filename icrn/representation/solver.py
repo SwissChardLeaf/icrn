@@ -1,11 +1,11 @@
 from collections import Iterable
-from .reactions import AbstractReaction
+from .reactions import AbstractReaction, FastReaction
 from .._numerics._reaction_numerics import RK4
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
 def solve_well_mixed(
-    rxns: Iterable[AbstractReaction], 
+    rxns: Iterable[AbstractReaction | FastReaction], 
     conc_vals: dict[Species, jnp.ndarray],
     rate_constant_vals: dict[TensorSymbol, jnp.ndarray],
     times: Numeric, 
@@ -16,10 +16,16 @@ def solve_well_mixed(
     reaction_solver="RK4",
     mode: str | None = None
 ):
-    pass
+    '''
+    Solve the IVP for well mixed system specified by the reactions.
+    '''
+    ops = to_well_mixed_ops(rxns, reaction_solver, mode)
+    return solve_with_ops(ops, conc_vals, rate_constant_vals, times, dt, key, checkpoint_length, interpolation_method)
 
 def solve_reaction_diffusion(
-    rxns: Iterable[AbstractReaction],
+    spatial_dims: tuple[int],
+    dspaces: tuple[float, ...],
+    rxns: Iterable[AbstractReaction | FastReaction],
     conc_vals: dict[Species, jnp.ndarray],
     rate_constant_vals: dict[TensorSymbol, jnp.ndarray],
     diffusion_constant_vals: dict[TensorSymbol, jnp.ndarray],
@@ -31,11 +37,14 @@ def solve_reaction_diffusion(
     reaction_solver="RK4",
     splitting="LieTrotter",
     diffusion_solver="spectral",
-    spatial_info: tuple[tuple[int, float], ...],
     spatial_rate_constants: bool = False,
     mode: str | None = None
 ):
-    pass
+    ops = to_reaction_diffusion_ops(rxns, dxs, reaction_solver, splitting, diffusion_solver, mode)
+    return solve_with_ops(ops, conc_vals, rate_constant_vals, diffusion_constant_vals, times, dt, key, checkpoint_length, interpolation_method)
+
+def solve_with_ops(ops, *args):
+    return _solve_with_ops(ops, conc_vals, rate_constant_vals, diffusion_constant_vals, times, dt, key, checkpoint_length, interpolation_method)
 
 def solve(
     rxns: Iterable[AbstractReaction], 
