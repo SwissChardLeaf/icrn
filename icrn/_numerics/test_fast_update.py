@@ -1,6 +1,6 @@
 import unittest
-from ._fast_flux import (
-    _fast_flux_f, _standard_reactants_and_indexing, _build_base_einsum_str, _einsum_prep, _get_reactant_unit
+from ._fast_update import (
+    _fast_update_f, _standard_reactants_and_indexing, _build_base_einsum_str, _einsum_prep, _get_reactant_unit
 )
 from collections import Counter
 from ..representation.reactions import FastReaction
@@ -25,6 +25,7 @@ class TestFastFluxF(unittest.TestCase):
             FastReaction(A[j,i], A[i,j]),
             FastReaction(A[i,j] + 3*B[i,j], A[j,i] + 2*B[i,j]),
             FastReaction(A + B + C, D),
+            FastReaction(A[i] + B[i], 0),
         ]
 
     def test_standard_reactants_and_indexing(self):
@@ -50,6 +51,7 @@ class TestFastFluxF(unittest.TestCase):
         _test_standard_reactants_and_indexing_from_rxn(self.rxns[8], (A[j,i],), (j, i))
         _test_standard_reactants_and_indexing_from_rxn(self.rxns[9], (A[i,j], B[i,j]), (i, j))
         _test_standard_reactants_and_indexing_from_rxn(self.rxns[10], (A, B, C), ())
+        _test_standard_reactants_and_indexing_from_rxn(self.rxns[11], (A[i], B[i]), (i,))
 
 
     def test_build_base_einsum_str(self):
@@ -71,6 +73,7 @@ class TestFastFluxF(unittest.TestCase):
         _test_base_einsum_str_from_rxn(self.rxns[8], "ji->")
         _test_base_einsum_str_from_rxn(self.rxns[9], "ij->")
         _test_base_einsum_str_from_rxn(self.rxns[10], "->")
+        _test_base_einsum_str_from_rxn(self.rxns[11], "i->")
 
     def test_einsum_prep(self):
         A, B, C, D, E = many_species("A, B, C, D, E")
@@ -168,6 +171,14 @@ class TestFastFluxF(unittest.TestCase):
             {
                 A: [(-1, "ij->ij"), (1, "ij->ji")],
                 B: [(-1, "ij->ij")]
+            }
+        )
+
+        _test_einsum_prep_from_rxn(
+            self.rxns[11], 
+            {
+                A: [(-1, "i->i")], 
+                B: [(-1, "i->i")]
             }
         )
         
@@ -324,6 +335,15 @@ class TestFastFluxF(unittest.TestCase):
             },
             jnp.array(2)
         )
+
+        _test_get_reactant_unit_from_rxn(
+            self.rxns[11],
+            {
+                A: jnp.array([0, 1, 2, 3, 4]),
+                B: jnp.array([5, 4, 3, 2, 1])
+            },
+            jnp.array([0, 1, 2, 2, 1])
+        )
         
 
     def test_fast_flux_f(self):
@@ -331,7 +351,7 @@ class TestFastFluxF(unittest.TestCase):
 
         def test_fast_flux_f_from_rxn(rxn: FastReaction, state_data, target_flux: dict):
             try:
-                flux_f = rxn.flux()
+                flux_f = _fast_update_f(rxn.reactants, rxn.products)
                 output = flux_f(state_data)
 
                 self.assertEqual(output.keys(), target_flux.keys())
@@ -539,5 +559,17 @@ class TestFastFluxF(unittest.TestCase):
                 B: - jnp.array(2),
                 C: - jnp.array(2),
                 D: jnp.array(2)
+            }
+        )
+
+        test_fast_flux_f_from_rxn(
+            self.rxns[11],
+            {
+                A: jnp.array([0, 1, 2, 3, 4]),
+                B: jnp.array([5, 4, 3, 2, 1])
+            },
+            {
+                A: - jnp.array([0, 1, 2, 2, 1]),
+                B: - jnp.array([0, 1, 2, 2, 1])
             }
         )

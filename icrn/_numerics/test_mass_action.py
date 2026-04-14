@@ -1,7 +1,7 @@
 import unittest
 from collections import Counter
 
-from .mass_action import (
+from .._numerics._mass_action import (
     _get_tensors,
     _get_base_einsum_str,
     _get_diff_dict,
@@ -11,7 +11,7 @@ from .mass_action import (
     _get_all_index_symbols,
     _product_index_symbols,
 )
-from .symbols import (
+from ..representation.symbols import (
     Complex,
     IndexSymbol,
     many_index_symbols,
@@ -21,7 +21,7 @@ from .symbols import (
     TensorLiteral,
 )
 
-from .reactions import MassActionReaction
+from ..representation.reactions import MassActionReaction
 from jax import numpy as jnp
 import jax.random as jax_random
 

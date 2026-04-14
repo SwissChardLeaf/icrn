@@ -7,11 +7,13 @@
 """
 This module contains the building blocks of ICRNs.
 """
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Callable
 from collections import defaultdict
+from ..utils.dict_utils import dict_add, arr_mul
 
 from .symbols import (
     Complex,
@@ -22,8 +24,9 @@ from .symbols import (
     TensorLiteral,
     TensorSymbol,
 )
+
 from .._numerics._mass_action import mass_action_flux_f
-from .._numerics._fast_flux import _fast_flux_f
+from .._numerics._fast_update import _fast_update_f
 
 
 type TensorSymbolDict = dict[TensorSymbol]
@@ -46,25 +49,20 @@ class AbstractReaction(ABC):
         pass
 
 
-def _rxns_to_dynamics(rxns: list[AbstractReaction]):
-    flux_dict = defaultdict(list)
+def rxns_to_dynamics_f(rxns: list[AbstractReaction]):
+    flux_fs = list(map(lambda r: r.flux(), rxns))
 
-    for r in rxns:
-        r_dict = r.flux()
+    def dyn_f(state, non_state):
+        dynamics = {k : 0 for k in state.keys()}
+        for flux_f in flux_fs:
+            val_dict = flux_f(state, non_state)
 
-        for k, v in r_dict.items():
-            flux_dict[k].append(v)
-
-    def dyn(state, rate_constant_data):
-        dynamics = defaultdict()
-
-        for r in rxns:
-            r_f = r.flux()(state, rate_constant_data)
-            for k, v in r_f:
+            for k, v in val_dict.items():
                 dynamics[k] += v
+
         return dynamics
 
-    return dyn
+    return dyn_f
 
 
 def _matching_shapes(all_species: set[Species]):
@@ -163,12 +161,14 @@ class MassActionReaction(AbstractReaction):
     def shapes(self):
         pass
 
-def _fast_rxns_to_update_f(fast_rxns: Iterable[FastReaction]):
+def fast_rxns_to_update_f(fast_rxns: list[FastReaction]):
     update_fs = [_fast_update_f(frxn.reactants, frxn.products) for frxn in fast_rxns]
 
     def _fast_updates_f(state):
         for f in update_fs:
-            state = dict_add(state, f(state))
+            fast_update = f(state)
+            for s, v in fast_update.items():
+                state[s] += v
         return state
 
     return _fast_updates_f
@@ -215,6 +215,9 @@ class FastReaction():
                 raise ValueError(
                     f"The index symbols of the products must be a subset of the index symbols of the reactants, got {set(s.index_symbols)} and {index_symbols_set}"
                 )
+
+        object.__setattr__(self, "reactants", reactants)
+        object.__setattr__(self, "products", products)
 
 
     # @rate_constant_expr.setter

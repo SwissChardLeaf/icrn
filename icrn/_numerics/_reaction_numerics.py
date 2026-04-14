@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from curses import KEY_A1
 # from ._operator import Operator
 # from jaxtyping import Float, Array, PyTree, jaxtyped .
 # from typeguard import typechecked
@@ -43,7 +42,7 @@ def _RK4_step(
 
     state_change = arr_mul(dict_sum(k1, arr_mul(k2, 2), arr_mul(k3, 2), k4), dt/6)
     next_step = dict_add(state, state_change)
-    
+
     if return_dynamics:
         return next_step, k1
     else:   

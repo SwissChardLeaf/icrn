@@ -6,12 +6,12 @@ from ..representation.symbols import Species, TensorSymbol
 from functools import partial
 
 # general purpuse, quite agnositic scan function
-def _scan(scan_f, key, state, *args, length=None, xs=None):
+def _scan(scan_f, key, state, *args, length=length):
     def _helper(key_state_pair, x):
         key, state = key_state_pair
         return scan_f(key, state, x, *args)
 
-    return lax.scan(_helper, init=(key, state), xs=xs, length=length)
+    return lax.scan(_helper, init=(key, state), length=length)
     
 
 def _times_to_steps(times, dt, length):

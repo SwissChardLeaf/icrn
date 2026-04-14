@@ -10,9 +10,10 @@ from jax.lax import fori_loop
 import jax.tree_util as jax_tree
 from dataclasses import dataclass, field
 
-from ..representation.reactions import AbstractReaction, FastReaction
+from ..representation.reactions import AbstractReaction, FastReaction, rxns_to_dynamics_f, fast_rxns_to_update_f
 from .._numerics._reaction_numerics import _RK4_step, _euler_step
-
+from ..utils.dict_utils import dict_add
+from .._numerics._spectral_diffusion import _spectral_diffuse, _compute_lap_op
 '''
 An operator is function that takes in a state and a non-state and returns a new state.
 
@@ -86,29 +87,38 @@ class AbstractOperator(ABC):
     #     self._stochastic = stochastic
 
     @abstractmethod
-    def update_state(self, state, non_state, dt):
+    def update_state(self, solver_state, non_state, dt):
         pass
 
-    @property
     @abstractmethod
-    def mode(self):
+    def get_mode(self):
         pass
 
-    @property
     @abstractmethod
-    def has_aux(self):
+    def get_is_stochastic(self): # if stochastic, update_state returns a tuple of (state, key)
         pass
 
-    @property
-    @abstractmethod
-    def dt_scale(self):
-        pass
+    # @property
+    # @abstractmethod
+    # def dt_scale(self):
+    #     pass
 
     def __repr__(self):
         return f"{self.__class__.__name__}(aux={self.aux}, mode={self.mode})"
 
 class ReactionsOperator(AbstractOperator):
-    def __init__(self, mode: str | None, rxns: Iterator[AbstractReaction], reaction_solver, spatial_axes=0, spatial_rate_constants=False):
+    def __init__(
+        self, 
+        mode: str | None, 
+        rxns: Iterator[AbstractReaction],
+        reaction_solver,
+        spatial_axes=0,
+        spatial_rate_constants=False,
+        return_dynamics=False,
+        dt_scale=1.0
+    ):
+        self._mode = mode
+        
         for rxn in rxns:
             if not isinstance(rxn, AbstractReaction):
                 raise ValueError(f"rxns must be an iterator of AbstractReactions, got {rxn} of type {type(rxn)}")
@@ -120,47 +130,64 @@ class ReactionsOperator(AbstractOperator):
         else:
             raise ValueError(f"Invalid reaction solver: {reaction_solver}")
             
-        _rxns_to_dynamics_f = _rxns_to_dynamics(rxns)
+        _rxns_dynamics_f = rxns_to_dynamics_f(rxns)
 
-        def rxn_update_f(key, state, non_state, dt):
-            new_state = reaction_solver_f(state, non_state, _rxns_to_dynamics_f, dt)
-            return key, new_state
+        def rxn_update_f(state, non_state, dt):
+            return reaction_solver_f(state, non_state, _rxns_dynamics_f, dt)
 
-        self._rxn_update_f= _rxns_to_update_f(rxns, reaction_solver)
-        super().__init__(mode)
-        # self.update_state_f = _rxns_to_update_f(rxns, reaction_solver)
+        self._rxn_update_f= rxn_update_f
+        self.dt_scale = dt_scale
 
-    def update_state(self, key, state, non_state, dt):
-        return self._rxn_update_f(key, state, non_state, dt)
+    def update_state(self, solver_state, non_state, dt):
+        return self._rxn_update_f(solver_state, non_state, self.dt_scale * dt)
+
+    def get_mode(self):
+        return self._mode
+
+    def get_is_stochastic(self):
+        return False
 
     def __repr__(self):
         return f"{self.__class__.__name__}(rxns={self.rxns}, reaction_solver={self.reaction_solver})"
 
 class FastReactionsOperator(AbstractOperator):
-    def __init__(self, fast_rxns: Iterable[FastReaction]):
+    def __init__(self, fast_rxns: Iterator[FastReaction]):
+        
         for rxn in fast_rxns:
             if not isinstance(rxn, FastReaction):
                 raise ValueError(f"fast_rxns must be an iterator of FastReactions, got {rxn} of type {type(rxn)}")
 
-        self._fast_rxns_update_f = _fast_rxns_to_update_f(fast_rxns)
-        super().__init__(None)
+        self._fast_rxns_update_f = fast_rxns_to_update_f(fast_rxns)
 
-    def update_state(self, key, state, non_state, dt):
-        return self._fast_rxns_update_f(key, state, non_state, dt)
+    def get_mode(self):
+        return None
+
+    def get_is_stochastic(self):
+        return False
+
+
+    def update_state(self, state, non_state, dt):
+        return self._fast_rxns_update_f(state)
 
     def __repr__(self):
         return f"{self.__class__.__name__}(fast_rxns={self.fast_rxns})"
 
 class SpectralDiffusionOperator(AbstractOperator):
-    def __init__(self, spatial_dims, dspaces, mode):
+    def __init__(self, mode: str | None, spatial_dims, dspaces, dt_scale=1.0):
+        self.mode = mode
         self.spatial_dims = spatial_dims
-        self.dspaces = dspaces
-        self.lap_op = _compute_lap_op(spatial_dims, dxs)
+        self.lap_op = _compute_lap_op(spatial_dims, dspaces)
+        self.dt_scale = dt_scale
 
-        super().__init__(mode)
+    def update_state(self, state, non_state, dt):
+        diff_constant_vals = non_state[1]
+        return _spectral_diffuse(self.lap_op, state, diff_constant_vals, self.dt_scale * dt)
 
-    def update_state(self, key, state, non_state, dt):
-        return _spectral_diffuse(self.lap_op, state, non_state, dt)
+    def get_mode(self):
+        return self.mode
+
+    def get_is_stochastic(self):
+        return False
 
     def __repr__(self):
         return f"{self.__class__.__name__}(xs={self.xs}, dxs={self.dxs}, diffusion_solver={self.diffusion_solver})"

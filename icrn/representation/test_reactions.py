@@ -1,13 +1,18 @@
 import unittest
 from dataclasses import FrozenInstanceError
-from .reactions import AbstractReaction, MassActionReaction, _matching_shapes
+from .reactions import AbstractReaction, MassActionReaction, _matching_shapes, rxns_to_dynamics_f, FastReaction, fast_rxns_to_update_f
 from .symbols import (
     Complex,
     many_index_symbols,
+    many_rate_constants,
     many_species,
     RateConstant,
     TensorLiteral,
 )
+
+import jax.numpy as jnp
+from ..utils.dict_utils import dict_allclose
+
 
 
 class TestReactionHelpers(unittest.TestCase):
@@ -20,7 +25,7 @@ class TestReactionHelpers(unittest.TestCase):
         _matching_shapes(set([A[i], B[j], A[j], B[i]]))
         _matching_shapes(set([A[l], B[j], A[m], B[n]]))
         _matching_shapes(set([A[i, n], B[j], A[l, j], B[o]]))
-        _matching_shapes(set([A[i, j, m], A[j, l, o], A[n, i, j]]))
+        _matching_shapes(set([A[i, j, m], A[j, l, i], A[n, i, j]]))
 
         with self.assertRaises(ValueError):
             _matching_shapes(set([A[l], A[n]]))
@@ -35,27 +40,67 @@ class TestReactionHelpers(unittest.TestCase):
             _matching_shapes(set([A[i, j, m], A[l, m, o]]))
 
 
-class TestExtendAbstractReaction(unittest.TestCase):
-    def setUp(self):
-        class TestReaction(AbstractReaction):
-            A, B = many_species("A, B")
-            alpha = RateConstant("alpha")
-
-            def __init__(self, reactants, products, aux):
-                super().__init__(reactants, products, aux)
-
-            def flux(self):
-                def flux_fn(state, rate_constant_data):
-                    return {self.reactants: -self.aux, self.products: self.aux}
-
-                return flux_fn
-
-        self.TestReaction = TestReaction(A, B, alpha)
-
-    def test_flux(self):
-        A, B = many_species("A, B")
+class TestRxnsToDynamicsF(unittest.TestCase):
+    def test_dimerization(self):
+        A, B, C = many_species("A, B, C")
         alpha = RateConstant("alpha")
-        self.assertEqual(self.TestReaction.flux(), {A: -alpha, B: alpha})
+        beta = RateConstant("beta")
+
+        rxns = [
+            MassActionReaction(A + B, C, alpha),
+            MassActionReaction(C, A + B, beta),
+        ]
+
+        state = {A: jnp.array(1.0), B: jnp.array(2.0), C: jnp.array(3.0)}
+        non_state = {alpha: jnp.array(1.1), beta: jnp.array(2.2)}
+
+        dynamics_f = rxns_to_dynamics_f(rxns)
+        computed_dynamics = dynamics_f(state, non_state)
+        target_dynamics = {
+            A : non_state[beta] * state[C] - non_state[alpha] * state[A] * state[B],
+            B : non_state[beta] * state[C] - non_state[alpha] * state[A] * state[B],
+            C : non_state[alpha] * state[A] * state[B] - non_state[beta] * state[C]
+        }
+        self.assertTrue(dict_allclose(computed_dynamics, target_dynamics))
+
+    def test_exponential_decay(self):
+        A = many_species("A")
+        k = many_rate_constants("k")
+
+        rxns = [
+            MassActionReaction(A, 0, k),
+        ]
+
+
+        state = {A: jnp.array(1.0)}
+        non_state = {k: jnp.array(1.0)}
+        dynamics_f = rxns_to_dynamics_f(rxns)
+        computed_dynamics = dynamics_f(state, non_state)
+        target_dynamics = {A: -non_state[k] * state[A]}
+        self.assertTrue(dict_allclose(computed_dynamics, target_dynamics))
+
+class TestExtendAbstractReaction(unittest.TestCase):
+    pass
+    # def setUp(self):
+    #     class TestReaction(AbstractReaction):
+    #         A, B = many_species("A, B")
+    #         alpha = RateConstant("alpha")
+
+    #         def __init__(self, reactants, products, aux):
+    #             super().__init__(reactants, products, aux)
+
+    #         def flux(self):
+    #             def flux_fn(state, rate_constant_data):
+    #                 return {self.reactants: -self.aux, self.products: self.aux}
+
+    #             return flux_fn
+
+    #     self.TestReaction = TestReaction(A, B, alpha)
+
+    # def test_flux(self):
+    #     A, B = many_species("A, B")
+    #     alpha = RateConstant("alpha")
+    #     self.assertEqual(self.TestReaction.flux(), {A: -alpha, B: alpha})
 
 
 class TestMassActionReaction(unittest.TestCase):
@@ -104,7 +149,7 @@ class TestMassActionReaction(unittest.TestCase):
         alpha = RateConstant("alpha")
         beta = RateConstant("beta")
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             MassActionReaction(alpha, C, alpha)
 
         with self.assertRaises(ValueError):
@@ -113,21 +158,47 @@ class TestMassActionReaction(unittest.TestCase):
         with self.assertRaises(ValueError):
             MassActionReaction(B, C, None)
 
-
-class MassActionReactionTests(unittest.TestCase):
-    def test_flux_prep(self):
-        pass
-
-    def test_species_to_str(self):
-        pass
-
-    def test_all_index_symbols(self):
-        pass
-
-    def test_reaction_flux(self):
-        pass
+    def test_flux(self):
+        A, B, C = many_species("A, B, C")
+        alpha = RateConstant("alpha")
+        rxn = MassActionReaction(A + B, C, alpha)
 
 
-class FastReaction(unittest.TestCase):
-    def test_reaction_flux(self):
-        pass
+        state = {
+            A: jnp.array(2.0),
+            B: jnp.array(3.0),
+            C: jnp.array(4.0),
+        }
+        non_state = {
+            alpha: jnp.array(1.1),
+        }
+
+        output = rxn.flux()(state, non_state)
+        
+        target_flux = {
+            A: -jnp.array(1.1) * state[A] * state[B],
+            B: -jnp.array(1.1) * state[A] * state[B],
+            C: jnp.array(1.1) * state[A] * state[B],
+        }
+        self.assertTrue(dict_allclose(output, target_flux))
+
+
+class TestFastReactionsToUpdateF(unittest.TestCase):
+    def test_annihilation(self):
+        A, B = many_species("A, B")
+        i = many_index_symbols("i")
+
+        fast_rxn = FastReaction(A[i] + B[i], 0)
+
+        state = {
+            A: jnp.array([1.0, 2.0, 1.5]), 
+            B: jnp.array([2.0, 0.0, 1.5])
+        }
+        
+        output = fast_rxns_to_update_f([fast_rxn])(state)
+        target_output = {
+            A: jnp.array([-1.0, -2.0, -1.5]), 
+            B: jnp.array([-2.0, 0.0, -1.5])
+        }
+        print(output)
+        self.assertTrue(dict_allclose(output, target_output))

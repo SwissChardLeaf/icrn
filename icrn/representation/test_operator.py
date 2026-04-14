@@ -1,80 +1,178 @@
 import unittest
-from ._operator import AbstractOperator
+from .operator import AbstractOperator, ReactionsOperator, FastReactionsOperator, SpectralDiffusionOperator
 import jax.numpy as jnp
 import jax
 from ..utils.dict_utils import dict_allclose
 
+from ..representation.symbols import many_species, many_rate_constants, many_index_symbols
+from ..representation.reactions import MassActionReaction, FastReaction
+rxn = MassActionReaction
+
 class TestExtendingAbstractOperator(unittest.TestCase):
     def test_subtracting(self):
         class TestOperator(AbstractOperator):
-            def update_state(self, key, state, non_state, dt):
-                state["A"] -= non_state["a"] * dt
-                state["B"] -= non_state["b"] * dt
-                return key, state
+            def update_state(self, solver_state, non_state, dt):
+                solver_state["A"] -= non_state["a"] * dt
+                solver_state["B"] -= non_state["b"] * dt
+                return solver_state
 
-        op_no_mode = TestOperator(None)
-        state = {"A": jnp.array(2.0), "B": jnp.array(2.0)}
-        non_state = {"a": jnp.array(1.0), "b": jnp.array(2.0)}
-        key = jax.random.key(0)
-        
-        key, state = op_no_mode.update_with_checks(key, state, non_state, 1)
-        self.assertEqual(key, jax.random.key(0))
-        self.assertTrue(dict_allclose(state, {"A": jnp.array(1.0), "B": jnp.array(0.0)}))
+            def get_mode(self):
+                return None
 
-        key, state = op_no_mode.update_with_checks(key, state, non_state, 1)
-        self.assertEqual(key, jax.random.key(0))
-        self.assertTrue(dict_allclose(state, {"A": jnp.array(0.0), "B": jnp.array(-2.0)}))
+            def get_is_stochastic(self):
+                return False
 
-        key, state = op_no_mode.update_with_checks(key, state, non_state, 1)
-        self.assertEqual(key, jax.random.key(0))
-        self.assertTrue(dict_allclose(state, {"A": jnp.array(-1.0), "B": jnp.array(-4.0)}))
+        test_op = TestOperator()
+        self.assertEqual(test_op.get_mode(), None)
+        self.assertEqual(test_op.get_is_stochastic(), False)
 
-        op_mode_relu = TestOperator("relu")
-        state = {"A": jnp.array(2.0), "B": jnp.array(2.0)}
-        non_state = {"a": jnp.array(1.0), "b": jnp.array(2.0)}
-        key = jax.random.key(0)
-        
-        key, state = op_mode_relu.update_with_checks(key, state, non_state, 1)
-        self.assertEqual(key, jax.random.key(0))
-        self.assertTrue(dict_allclose(state, {"A": jnp.array(1.0), "B": jnp.array(0.0)}))
-
-        key, state = op_mode_relu.update_with_checks(key, state, non_state, 1)
-        self.assertEqual(key, jax.random.key(0))
-        self.assertTrue(dict_allclose(state, {"A": jnp.array(0.0), "B": jnp.array(0.0)}))
-
-        key, state = op_mode_relu.update_with_checks(key, state, non_state, 1)
-        self.assertEqual(key, jax.random.key(0))
-        self.assertTrue(dict_allclose(state, {"A": jnp.array(0.0), "B": jnp.array(0.0)}))
-
-        op_mode_strict = TestOperator("strict")
-        state = {"A": jnp.array(2.0), "B": jnp.array(2.0)}
-        non_state = {"a": jnp.array(1.0), "b": jnp.array(2.0)}
-        key = jax.random.key(0)
-        
-        key, state = op_mode_strict.update_with_checks(key, state, non_state, 1)
-        self.assertEqual(key, jax.random.key(0))
-        self.assertTrue(dict_allclose(state, {"A": jnp.array(1.0), "B": jnp.array(0.0)}))
-
-        with self.assertRaises(ValueError):
-            key, state = op_mode_strict.update_with_checks(key, state, non_state, 1)
+        state = {"A": 1.0, "B": 2.0}
+        non_state = {"a": 0.1, "b": 0.2}
+        dt = 1.0
+        self.assertEqual(test_op.update_state(state, non_state, dt), {"A": 0.9, "B": 1.8})
 
 class TestReactionsOperator(unittest.TestCase):
-    def setup(self):
+    # def setUp(self):
+    #     A, B, C = many_species("A, B, C")
+    #     alpha, beta = many_rate_constants("alpha, beta")
+    #     i, j = many_index_symbols("i, j")
+
+    #     self.rxns1 = [
+    #         rxn(A + B, C, alpha),
+    #         rxn(C, A + B, beta),
+    #     ]
+
+    #     self.rxns2 = [
+    #         rxn(A[i] + B[j], C[i, j], alpha[i, j]),
+    #         rxn(C[i, j], A[i] + B[j], beta[i, j]),
+    #     ]
+
+    #     self.rxns3 = [
+    #         rxn(2*A + 3 * B, 2*A + 2*B, alpha),
+    #         rxn(A + B, A + C, beta),
+    #     ]
+    def test_exponential_decay(self):
+        A = many_species("A")
+        k = many_rate_constants("k")
+
+        rxns = [
+            rxn(A, 0, k),
+        ]
+
+        op1 = ReactionsOperator(None, rxns, reaction_solver="Euler")
+
+        self.assertEqual(op1.get_mode(), None)
+        self.assertEqual(op1.get_is_stochastic(), False)
+
+        state = {A: jnp.array(1.0)}
+        non_state = {k: jnp.array(1.0)}
+        dt = jnp.log(2)
+        new_state = op1.update_state(state, non_state, dt)
+
+        self.assertEqual(new_state, {A: 1 - jnp.log(2)})
+
+        op2 = ReactionsOperator(None, rxns, reaction_solver="RK4")
+        dt = jnp.log(2)
+        new_state = op2.update_state(state, non_state, dt)
+        self.assertTrue(dict_allclose(new_state, {A: jnp.array(0.5011933468419623)}))
+
+    
+    def test_reversible_dimerization(self):
         A, B, C = many_species("A, B, C")
         alpha, beta = many_rate_constants("alpha, beta")
-        i, j = many_index_symbols("i, j")
 
-        self.rxns = [
+        rxns = [
             rxn(A + B, C, alpha),
             rxn(C, A + B, beta),
         ]
-        
+
+        op1 = ReactionsOperator(None, rxns, reaction_solver="Euler")
+
+        state = {
+            A: jnp.array(1.0),
+            B: jnp.array(2.0),
+            C: jnp.array(3.0),
+        }
+
+        non_state = {
+            alpha: jnp.array(1.1),
+            beta: jnp.array(2.2),
+        }
+
+        dt = 1.0
+
+        new_state =op1.update_state(state, non_state, dt)
+
+        self.assertTrue(dict_allclose(new_state, {
+            A: jnp.array(1.0 + dt * (2.2 * 3.0 - 1.1 * 1.0 * 2.0)),
+            B: jnp.array(2.0 + dt * (2.2 * 3.0 - 1.1 * 1.0 * 2.0)),
+            C: jnp.array(3.0 + dt * (1.1 * 1.0 * 2.0 - 2.2 * 3.0)),
+        }))
+
+        op2 = ReactionsOperator(None, rxns, reaction_solver="RK4")
+
 
 class TestFastReactionsOperator(unittest.TestCase):
-    pass
+    def test_annihilation(self):
+        A, B = many_species("A, B")
+        i = many_index_symbols("i")
+
+        fast_rxns = [
+            FastReaction(A[i] + B[i], 0),
+        ]
+
+        # print(fast_rxns[0].products)
+
+        op = FastReactionsOperator(fast_rxns)
+
+        state = {
+            A: jnp.array([1.0, 2.0, 1.5]), 
+            B: jnp.array([2.0, 0.0, 1.5])
+        }
+
+        new_state = op.update_state(state, None, 1.0)
+        target_state = {
+            A: jnp.array([0.0, 2.0, 0.0]), 
+            B: jnp.array([1.0, 0.0, 0.0])
+        }
+
+        # print(new_state)
+        self.assertTrue(dict_allclose(new_state, target_state))
 
 class TestSpectralDiffusionOperator(unittest.TestCase):
-    pass
+    def test_scalar_species_diffusion(self):
+        A = many_species("A")
+
+        op = SpectralDiffusionOperator(None, (5, 5), (1, 1), dt_scale=2.0)
+
+        initial_state = {
+            A: jnp.array(
+                [
+                    [0.0, 0.0, 0.0, 0.0, 0.0],
+                    [0.0, 0.0, 0.0, 0.0, 0.0],
+                    [0.0, 0.0, 1.0, 0.0, 0.0],
+                    [0.0, 0.0, 0.0, 0.0, 0.0],
+                    [0.0, 0.0, 0.0, 0.0, 0.0],
+                ]
+            )
+        }
+
+        target_state = {
+            A: jnp.array(
+                [
+                    [0.03760443, 0.03843227, 0.03896552, 0.03843227, 0.03760443],
+                    [0.03843226, 0.0406484, 0.04309084, 0.0406484, 0.03843226],
+                    [0.03896552, 0.04309085, 0.05130513, 0.04309085, 0.03896552],
+                    [0.03843226, 0.0406484, 0.04309084, 0.0406484, 0.03843226],
+                    [0.03760443, 0.03843226, 0.03896552, 0.03843226, 0.03760443],
+                ]
+            )
+        }
+
+        non_state = (None, {A: jnp.array(10.0)})
+
+        computed_state = op.update_state(initial_state, non_state, 1.0)
+        self.assertTrue(dict_allclose(computed_state, target_state))
 
 class TestConvolutionalDiffusionOperator(unittest.TestCase):
     pass

@@ -89,8 +89,8 @@ def _get_tensors(reactants, rate_expr, product_index_symbols):
             return x
 
         if p == 1:
-            return x.eval_with_check(data)
-        return x.eval_with_check(data) ** p
+            return x.eval_with_check(non_state | state)
+        return x.eval_with_check(non_state | state) ** p
 
     def get_tensor(state, non_state):
         return tuple(map(lambda x: get_pow(x, state, non_state), r_pow_list))
