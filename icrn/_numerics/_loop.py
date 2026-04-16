@@ -2,6 +2,7 @@ from jax import lax, checkpoint, vmap, jit
 import jax.numpy as jnp
 import jax
 import jax.tree as jax_tree
+import numpy as np
 
 from ..representation.symbols import Species, TensorSymbol
 from functools import partial
@@ -27,8 +28,10 @@ def _scan(scan_f, key, state, non_state, dt, length):
 # times has to be positive
 def _times_to_steps(times, dt, length):
     n = len(times)
-    steps = jnp.floor(times / dt).astype(int)
-    segment = jnp.ceil(times / dt / length).astype(int) - 1
+    # steps = jnp.floor(times / dt).astype(int)
+    # segment = jnp.ceil(times / dt / length).astype(int) - 1
+    steps = np.floor(times / dt).astype(int)
+    segment = np.ceil(times / dt / length).astype(int) - 1
     max_segment = segment[-1]
 
     segment_time = dt * length
@@ -54,8 +57,12 @@ def _loop_with_checkpointing(
     step_f, times, key, state, non_state, dt, checkpoint_length=None
 ):
     print(f"times: {times}")
+    # if checkpoint_length is None:
+    #     max_step = jnp.ceil(times[-1] / dt).astype(int)
+    #     checkpoint_length = max_step + 1
+
     if checkpoint_length is None:
-        max_step = jnp.ceil(times[-1] / dt).astype(int)
+        max_step = np.ceil(times[-1] / dt).astype(int)
         checkpoint_length = max_step + 1
 
     interpolated_hist = []
@@ -63,6 +70,12 @@ def _loop_with_checkpointing(
     if times[0] == 0:
         interpolated_hist.append(jax_tree.map(lambda x: x[None, ...], state))
         times = times[1:]
+
+    # interpolated_hist, times =lax.cond(
+    #     times[0] == 0, 
+    #     lambda: ([jax_tree.map(lambda x: x[None, ...], state)], times[1:]), 
+    #     lambda: ([], times)
+    # )
 
     segment_steps, segment_dt_fractions = _times_to_steps(
         times, dt, checkpoint_length

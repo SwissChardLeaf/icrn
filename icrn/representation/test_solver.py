@@ -12,6 +12,7 @@ import os
 from jax import numpy as jnp
 import jax
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 class TestSolveWellMixed(unittest.TestCase):
@@ -306,6 +307,35 @@ class TestSolveWellMixed(unittest.TestCase):
         F_max_rel_error = jnp.max(jnp.abs(sim_concs[F][:, -1] - target_F))
 
         self.assertTrue(F_max_rel_error < 0.01)
+
+    def test_jit(self):
+        A, B = many_species("A, B")
+        k = many_rate_constants("k")
+
+        rxns = (
+            MassActionReaction(A, B, k),
+        )
+
+        conc_vals = {A: jnp.array(1.0), B: jnp.array(0.0)}
+        rate_constant_vals = {k: jnp.array(1.0)}
+
+        times = jnp.array([0, 1, 2, 3])
+        dt = 1.0
+
+        @jax.jit
+        def solve_well_mixed_jit(conc_vals, rate_constant_vals):
+            return solve_well_mixed(
+                rxns,
+                conc_vals,
+                rate_constant_vals,
+                times,
+                dt
+            )
+
+        sim_concs_jit = solve_well_mixed_jit(conc_vals, rate_constant_vals)
+
+        print(sim_concs_jit[A][-1])
+
 
 
 class TestSolveReactionDiffusion(unittest.TestCase):

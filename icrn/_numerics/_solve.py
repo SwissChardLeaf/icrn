@@ -12,6 +12,7 @@ import jax
 import jax.numpy as jnp
 from jax.experimental import checkify
 import jax.tree_util as jax_tree
+import numpy as np
 
 from ._loop import _loop_with_checkpointing
 
@@ -164,8 +165,9 @@ def _solve_with_f(
     times,
     checkpoint_length=None,
 ):
+    times_np = np.array(times)
     return _loop_with_checkpointing(
-        ops_f, times, key, state, non_state, dt, checkpoint_length
+        ops_f, times_np, key, state, non_state, dt, checkpoint_length
     )
     # err, out = _loop_with_checkpointing(ops_f, times, key, state, dt, checkpoint_length, interpolation_f)
     # checkify.check_error(err)
