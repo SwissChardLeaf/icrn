@@ -4,6 +4,7 @@ from jaxlib.mlir.dialects.scf import yield_
 from ._reaction_numerics import _euler_step, _RK4_step
 from ..utils.dict_utils import arr_mul, dict_allclose
 
+
 class TestEulerStep(unittest.TestCase):
     def test_euler_step_exponential_decay(self):
         def dyn_f(state, non_state):
@@ -24,26 +25,31 @@ class TestEulerStep(unittest.TestCase):
     def test_euler_step_exponential_decay_with_dicts(self):
         def dyn_f(state, non_state):
             return {
-                "A": -non_state["k1"] * state["A"], 
-                "B": -non_state["k2"] * state["B"], 
-                "C": -non_state["k3"] * state["C"]}
+                "A": -non_state["k1"] * state["A"],
+                "B": -non_state["k2"] * state["B"],
+                "C": -non_state["k3"] * state["C"],
+            }
 
         state = {
             "A": jnp.array(2.0),
             "B": jnp.array([4.0, 5.0, 6.0]),
-            "C": jnp.array([
-                [7.0, 8.0, 9.0],
-                [10.0, 11.0, 12.0],
-            ])
+            "C": jnp.array(
+                [
+                    [7.0, 8.0, 9.0],
+                    [10.0, 11.0, 12.0],
+                ]
+            ),
         }
 
         non_state = {
             "k1": jnp.array(1.0),
             "k2": jnp.array([5.0, 6.0, 7.0]),
-            "k3": jnp.array([
-                [0.1, 0.2, 0.3],
-                [0.4, 0.5, 0.6],
-            ])
+            "k3": jnp.array(
+                [
+                    [0.1, 0.2, 0.3],
+                    [0.4, 0.5, 0.6],
+                ]
+            ),
         }
 
         dt = 0.75
@@ -52,9 +58,10 @@ class TestEulerStep(unittest.TestCase):
         target_state = {
             "A": jnp.array(0.5),
             "B": state["B"] * (1 - non_state["k2"] * dt),
-            "C": state["C"] * (1 - non_state["k3"] * dt)
+            "C": state["C"] * (1 - non_state["k3"] * dt),
         }
         self.assertTrue(dict_allclose(computed_state, target_state))
+
 
 class TestRK4Step(unittest.TestCase):
     def test_RK4_step_exponential_decay(self):
@@ -79,52 +86,63 @@ class TestRK4Step(unittest.TestCase):
         computed_state = _RK4_step(state, non_state, dyn_f, dt)
 
         k1 = -state
-        k2 = -(state + k1 * dt *0.5)
-        k3 = -(state + k2 * dt *0.5)
+        k2 = -(state + k1 * dt * 0.5)
+        k3 = -(state + k2 * dt * 0.5)
         k4 = -(state + k3 * dt)
 
         next_step = (k1 + k2 * 2 + k3 * 2 + k4) * dt / 6
 
-        target_state = (state + next_step)
+        target_state = state + next_step
         self.assertTrue(jnp.allclose(computed_state, target_state))
 
     def test_RK4_step_exponential_decay_with_dicts(self):
         def dyn_f(state, non_state):
             return {
-                "A": -non_state["k1"] * state["A"], 
-                "B": -non_state["k2"] * state["B"], 
-                "C": -non_state["k3"] * state["C"]}
+                "A": -non_state["k1"] * state["A"],
+                "B": -non_state["k2"] * state["B"],
+                "C": -non_state["k3"] * state["C"],
+            }
 
         state = {
             "A": jnp.array(2.0),
             "B": jnp.array([4.0, 5.0, 6.0]),
-            "C": jnp.array([
-                [7.0, 8.0, 9.0],
-                [10.0, 11.0, 12.0],
-            ])
+            "C": jnp.array(
+                [
+                    [7.0, 8.0, 9.0],
+                    [10.0, 11.0, 12.0],
+                ]
+            ),
         }
 
         non_state = {
             "k1": jnp.array(1.0),
             "k2": jnp.array([5.0, 6.0, 7.0]),
-            "k3": jnp.array([
-                [0.1, 0.2, 0.3],
-                [0.4, 0.5, 0.6],
-            ])
+            "k3": jnp.array(
+                [
+                    [0.1, 0.2, 0.3],
+                    [0.4, 0.5, 0.6],
+                ]
+            ),
         }
 
         dt = 0.75
         computed_state = _RK4_step(state, non_state, dyn_f, dt)
 
-        manual_dyn_f = lambda x, y: -y*x
-        manual_state_A = _RK4_step(state["A"], non_state["k1"], manual_dyn_f, dt)
-        manual_state_B = _RK4_step(state["B"], non_state["k2"], manual_dyn_f, dt)
-        manual_state_C = _RK4_step(state["C"], non_state["k3"], manual_dyn_f, dt)
+        manual_dyn_f = lambda x, y: -y * x
+        manual_state_A = _RK4_step(
+            state["A"], non_state["k1"], manual_dyn_f, dt
+        )
+        manual_state_B = _RK4_step(
+            state["B"], non_state["k2"], manual_dyn_f, dt
+        )
+        manual_state_C = _RK4_step(
+            state["C"], non_state["k3"], manual_dyn_f, dt
+        )
 
         target_state = {
             "A": manual_state_A,
             "B": manual_state_B,
-            "C": manual_state_C
+            "C": manual_state_C,
         }
         self.assertTrue(dict_allclose(computed_state, target_state))
 
@@ -135,14 +153,18 @@ class TestRK4Step(unittest.TestCase):
         state = jnp.array(1.2)
         non_state = jnp.array(1.0)
         dt = 0.61
-        computed_state, computed_dynamics = _RK4_step(state, non_state, dyn_f, dt, return_dynamics=True)
+        computed_state, computed_dynamics = _RK4_step(
+            state, non_state, dyn_f, dt, return_dynamics=True
+        )
         target_state = jnp.array(0.6527867205000001)
         target_dynamics = jnp.array(-1.2)
         self.assertTrue(jnp.allclose(computed_state, target_state))
         self.assertTrue(jnp.allclose(computed_dynamics, target_dynamics))
 
         non_state = jnp.array(2.0)
-        computed_state, computed_dynamics = _RK4_step(state, non_state, dyn_f, dt, return_dynamics=True)
+        computed_state, computed_dynamics = _RK4_step(
+            state, non_state, dyn_f, dt, return_dynamics=True
+        )
         target_state = jnp.array(0.3766371279999998)
         target_dynamics = jnp.array(-2.4)
         self.assertTrue(jnp.allclose(computed_state, target_state))
@@ -151,46 +173,59 @@ class TestRK4Step(unittest.TestCase):
     def test_RK4_step_exponential_decay_with_dicts(self):
         def dyn_f(state, non_state):
             return {
-                "A": -non_state["k1"] * state["A"], 
-                "B": -non_state["k2"] * state["B"], 
-                "C": -non_state["k3"] * state["C"]}
+                "A": -non_state["k1"] * state["A"],
+                "B": -non_state["k2"] * state["B"],
+                "C": -non_state["k3"] * state["C"],
+            }
 
         state = {
             "A": jnp.array(2.0),
             "B": jnp.array([4.0, 5.0, 6.0]),
-            "C": jnp.array([
-                [7.0, 8.0, 9.0],
-                [10.0, 11.0, 12.0],
-            ])
+            "C": jnp.array(
+                [
+                    [7.0, 8.0, 9.0],
+                    [10.0, 11.0, 12.0],
+                ]
+            ),
         }
 
         non_state = {
             "k1": jnp.array(1.0),
             "k2": jnp.array([5.0, 6.0, 7.0]),
-            "k3": jnp.array([
-                [0.1, 0.2, 0.3],
-                [0.4, 0.5, 0.6],
-            ])
+            "k3": jnp.array(
+                [
+                    [0.1, 0.2, 0.3],
+                    [0.4, 0.5, 0.6],
+                ]
+            ),
         }
 
         dt = 0.75
-        computed_state, computed_dynamics = _RK4_step(state, non_state, dyn_f, dt, return_dynamics=True)
+        computed_state, computed_dynamics = _RK4_step(
+            state, non_state, dyn_f, dt, return_dynamics=True
+        )
 
-        manual_dyn_f = lambda y, k: -k*y
-        manual_state_A, manual_dynamics_A = _RK4_step(state["A"], non_state["k1"], manual_dyn_f, dt, return_dynamics=True)
-        manual_state_B, manual_dynamics_B = _RK4_step(state["B"], non_state["k2"], manual_dyn_f, dt, return_dynamics=True)
-        manual_state_C, manual_dynamics_C = _RK4_step(state["C"], non_state["k3"], manual_dyn_f, dt, return_dynamics=True)
+        manual_dyn_f = lambda y, k: -k * y
+        manual_state_A, manual_dynamics_A = _RK4_step(
+            state["A"], non_state["k1"], manual_dyn_f, dt, return_dynamics=True
+        )
+        manual_state_B, manual_dynamics_B = _RK4_step(
+            state["B"], non_state["k2"], manual_dyn_f, dt, return_dynamics=True
+        )
+        manual_state_C, manual_dynamics_C = _RK4_step(
+            state["C"], non_state["k3"], manual_dyn_f, dt, return_dynamics=True
+        )
 
         target_state = {
             "A": manual_state_A,
             "B": manual_state_B,
-            "C": manual_state_C
+            "C": manual_state_C,
         }
 
         target_dynamics = {
             "A": manual_dynamics_A,
             "B": manual_dynamics_B,
-            "C": manual_dynamics_C
+            "C": manual_dynamics_C,
         }
         self.assertTrue(dict_allclose(computed_state, target_state))
         self.assertTrue(dict_allclose(computed_dynamics, target_dynamics))

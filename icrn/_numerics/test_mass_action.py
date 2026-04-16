@@ -41,7 +41,7 @@ class TestMassActionFluxF(unittest.TestCase):
             MassActionReaction(A[i], 0, 1.0),
             MassActionReaction(A[i, l] + B[j], A[j, m] + B[l], 1.0),
             MassActionReaction(A[i], 0, 0),
-            MassActionReaction(A[i] + A[j], B[i,j], 1.0),
+            MassActionReaction(A[i] + A[j], B[i, j], 1.0),
         ]
 
         self.bad_rxns = [
@@ -62,7 +62,8 @@ class TestMassActionFluxF(unittest.TestCase):
             _get_diff_dict_from_rxn(self.good_rxns[0]), {A: -1, B: -1, C: 1}
         )
         self.assertEqual(
-            _get_diff_dict_from_rxn(self.good_rxns[1]), {A[i]: -1, B[j]: -1, C[i, j]: 1}
+            _get_diff_dict_from_rxn(self.good_rxns[1]),
+            {A[i]: -1, B[j]: -1, C[i, j]: 1},
         )
         self.assertEqual(_get_diff_dict_from_rxn(self.good_rxns[2]), {C: 1})
         self.assertEqual(_get_diff_dict_from_rxn(self.good_rxns[3]), {A[i]: -1})
@@ -72,8 +73,12 @@ class TestMassActionFluxF(unittest.TestCase):
         )
         self.assertEqual(_get_diff_dict_from_rxn(self.good_rxns[5]), {A[i]: -1})
 
-        self.assertEqual(_get_diff_dict_from_rxn(self.bad_rxns[0]), {A[i]: -1, A[j]: 1})
-        self.assertEqual(_get_diff_dict_from_rxn(self.bad_rxns[1]), {A[i]: -1, B[j]: 1})
+        self.assertEqual(
+            _get_diff_dict_from_rxn(self.bad_rxns[0]), {A[i]: -1, A[j]: 1}
+        )
+        self.assertEqual(
+            _get_diff_dict_from_rxn(self.bad_rxns[1]), {A[i]: -1, B[j]: 1}
+        )
         self.assertEqual(_get_diff_dict_from_rxn(self.bad_rxns[2]), {A[i]: 1})
 
     def test_get_all_index_symbols(self):
@@ -81,10 +86,14 @@ class TestMassActionFluxF(unittest.TestCase):
         k = many_index_symbols("k", 3)
         l, m = many_index_symbols("l, m", 7)
 
-        def _get_all_index_symbols_from_rxn(rxn: MassActionReaction, target_set):
+        def _get_all_index_symbols_from_rxn(
+            rxn: MassActionReaction, target_set
+        ):
             try:
                 self.assertEqual(
-                    _get_all_index_symbols(rxn.reactants, rxn.products, rxn.rate_expr),
+                    _get_all_index_symbols(
+                        rxn.reactants, rxn.products, rxn.rate_expr
+                    ),
                     target_set,
                 )
             except Exception as e:
@@ -108,9 +117,13 @@ class TestMassActionFluxF(unittest.TestCase):
         k = many_index_symbols("k", 3)
         l, m = many_index_symbols("l, m", 7)
 
-        def _product_index_symbols_from_rxn(rxn: MassActionReaction, target_set):
+        def _product_index_symbols_from_rxn(
+            rxn: MassActionReaction, target_set
+        ):
             self.assertEqual(
-                _product_index_symbols(rxn.reactants, rxn.products, rxn.rate_expr),
+                _product_index_symbols(
+                    rxn.reactants, rxn.products, rxn.rate_expr
+                ),
                 target_set,
             )
 
@@ -138,7 +151,9 @@ class TestMassActionFluxF(unittest.TestCase):
                     target_str,
                 )
             except Exception as e:
-                raise AssertionError(f"Error getting base einsum str for {rxn}") from e
+                raise AssertionError(
+                    f"Error getting base einsum str for {rxn}"
+                ) from e
 
         _get_base_einsum_str_from_rxn(self.good_rxns[0], ",,->")
         _get_base_einsum_str_from_rxn(self.good_rxns[1], "i,i,j->")
@@ -153,10 +168,15 @@ class TestMassActionFluxF(unittest.TestCase):
 
     def test_setup_einsums(self):
         A, B, C, D = many_species("A, B, C, D")
+        i, j = many_index_symbols("i, j")
+        k = many_index_symbols("k", 3)
+        l, m = many_index_symbols("l, m", 7)
 
         def _setup_einsums_from_rxn(rxn: MassActionReaction, target_dict):
             try:
-                output = _setup_einsums(rxn.reactants, rxn.products, rxn.rate_expr)
+                output = _setup_einsums(
+                    rxn.reactants, rxn.products, rxn.rate_expr
+                )
 
                 self.assertEqual(output.keys(), target_dict.keys())
 
@@ -164,63 +184,65 @@ class TestMassActionFluxF(unittest.TestCase):
                     self.assertEqual(Counter(output[s]), Counter(val))
 
             except Exception as e:
-                raise AssertionError(f"Error setting up einsums for {rxn}") from e
+                raise AssertionError(
+                    f"Error setting up einsums for {rxn}"
+                ) from e
 
         _setup_einsums_from_rxn(
             self.good_rxns[0],
             {
-                A: [(-1, ",,->")],
-                B: [(-1, ",,->")],
-                C: [(1, ",,->")],
+                A: [(-1, ",,->", A)],
+                B: [(-1, ",,->", B)],
+                C: [(1, ",,->", C)],
             },
         )
         _setup_einsums_from_rxn(
             self.good_rxns[1],
             {
-                A: [(-1, "i,i,j->i")],
-                B: [(-1, "i,i,j->j")],
-                C: [(1, "i,i,j->ij")],
+                A: [(-1, "i,i,j->i", A[i])],
+                B: [(-1, "i,i,j->j", B[j])],
+                C: [(1, "i,i,j->ij", C[i, j])],
             },
         )
         _setup_einsums_from_rxn(
             self.good_rxns[2],
             {
-                C: [(1, "->")],
+                C: [(1, "->", C)],
             },
         )
         _setup_einsums_from_rxn(
             self.good_rxns[3],
             {
-                A: [(-1, ",i->i")],
+                A: [(-1, ",i->i", A[i])],
             },
         )
         _setup_einsums_from_rxn(
             self.good_rxns[4],
             {
-                A: [(-1, ",il,j,m->il"), (1, ",il,j,m->jm")],
-                B: [(-1, ",il,j,m->j"), (1, ",il,j,m->l")],
+                A: [(-1, ",il,j,m->il", A[i, l]), (1, ",il,j,m->jm", A[j, m])],
+                B: [(-1, ",il,j,m->j", B[j]), (1, ",il,j,m->l", B[l])],
             },
         )
         _setup_einsums_from_rxn(
             self.good_rxns[5],
             {
-                A: [(-1, ",i->i")],
+                A: [(-1, ",i->i", A[i])],
             },
         )
         _setup_einsums_from_rxn(
-            self.bad_rxns[0], {A: [(-1, ",i,j->i"), (1, ",i,j->j")]}
+            self.bad_rxns[0], {A: [(-1, ",i,j->i", A[i]), (1, ",i,j->j", A[j])]}
         )
         _setup_einsums_from_rxn(
             self.bad_rxns[1],
             {
-                A: [(-1, "k,i,j->i")],
-                B: [(1, "k,i,j->j")],
+                A: [(-1, "k,i,j->i", A[i])],
+                B: [(1, "k,i,j->j", B[j])],
             },
         )
         _setup_einsums_from_rxn(
             self.bad_rxns[2],
             {
-                A: [(1, "k,i->i")],
+                A: [(1, "k,i->i", A[i])],
             },
         )
 
@@ -270,7 +292,11 @@ class TestMassActionFluxF(unittest.TestCase):
             {
                 alpha: 7.0 * jnp.ones((10,)),
             },
-            (7.0 * jnp.ones((10,)), 1.0 * jnp.ones((10,)), 2.0 * jnp.ones((10,))),
+            (
+                7.0 * jnp.ones((10,)),
+                1.0 * jnp.ones((10,)),
+                2.0 * jnp.ones((10,)),
+            ),
         )
 
         _get_tensors_from_rxn(
@@ -356,7 +382,9 @@ class TestMassActionFluxF(unittest.TestCase):
             rxn: MassActionReaction, state, non_state, target_flux
         ):
             try:
-                output = mass_action_flux_f(rxn.reactants, rxn.products, rxn.rate_expr)
+                output = mass_action_flux_f(
+                    rxn.reactants, rxn.products, rxn.rate_expr
+                )
                 output_flux = output(state, non_state)
 
                 self.assertEqual(output_flux.keys(), target_flux.keys())
@@ -375,7 +403,11 @@ class TestMassActionFluxF(unittest.TestCase):
             self.good_rxns[0],
             state={A: jnp.array(2.0), B: jnp.array(3.0)},
             non_state={alpha: jnp.array(7.0)},
-            target_flux={A: -jnp.array(42.0), B: -jnp.array(42.0), C: jnp.array(42.0)},
+            target_flux={
+                A: -jnp.array(42.0),
+                B: -jnp.array(42.0),
+                C: jnp.array(42.0),
+            },
         )
 
         A_data = jax_random.uniform(jax_random.key(0), (5,))
@@ -432,10 +464,18 @@ class TestMassActionFluxF(unittest.TestCase):
             non_state={},
             target_flux={
                 A: -jnp.einsum(
-                    ",il,j,m->il", jnp.array(1.0), A_data, B_data, jnp.ones((7,))
+                    ",il,j,m->il",
+                    jnp.array(1.0),
+                    A_data,
+                    B_data,
+                    jnp.ones((7,)),
                 )
                 + jnp.einsum(
-                    ",il,j,m->jm", jnp.array(1.0), A_data, B_data, jnp.ones((7,))
+                    ",il,j,m->jm",
+                    jnp.array(1.0),
+                    A_data,
+                    B_data,
+                    jnp.ones((7,)),
                 ),
                 B: -jnp.einsum(
                     ",il,j,m->j", jnp.array(1.0), A_data, B_data, jnp.ones((7,))

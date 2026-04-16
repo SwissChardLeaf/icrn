@@ -2,7 +2,12 @@ import unittest
 import icrn._numerics.numerics as numerics
 import jax
 from jax import numpy as jnp
-from icrn._utils.dict_utils import load_sjdict, SJDict, sjdict_allclose, load_dict_yaml
+from icrn._utils.dict_utils import (
+    load_sjdict,
+    SJDict,
+    sjdict_allclose,
+    load_dict_yaml,
+)
 from icrn.archive.representation import (
     relu,
     many_species,
@@ -23,7 +28,9 @@ class NumericsFunctions(unittest.TestCase):
         i, j, k = many_index_symbols("i, j, k", 10)
 
         self.rxns1 = [
-            MassActionReaction(A[i, j] + 2 * B[j, k], A[i, j] + C[i, k], alpha[i]),
+            MassActionReaction(
+                A[i, j] + 2 * B[j, k], A[i, j] + C[i, k], alpha[i]
+            ),
             MassActionReaction(D + E, F, relu(gamma[i, j])),
             MassActionReaction(0, B[i, j], beta),
             MassActionReaction(A[1, 2], 2 * B[2, 3], 2.0),
@@ -53,7 +60,9 @@ class NumericsFunctions(unittest.TestCase):
         )
 
         self.rxns2 = [
-            MassActionReaction(A[i, j] + 2 * B[j, k], A[i, j] + C[i, k], alpha[i]),
+            MassActionReaction(
+                A[i, j] + 2 * B[j, k], A[i, j] + C[i, k], alpha[i]
+            ),
             MassActionReaction(D + E, F, relu(gamma[i, j])),
             FastReaction(D + 2 * F, 3 * G),
         ]
@@ -76,7 +85,10 @@ class NumericsFunctions(unittest.TestCase):
         computed_lap_op2 = numerics.compute_lap_op((2, 3), 0.5, 2.0)
 
         target_lap_op2 = jnp.array(
-            [[-0.0, -1.0966228, -1.0966228], [-39.47842, -40.575043, -40.575043]]
+            [
+                [-0.0, -1.0966228, -1.0966228],
+                [-39.47842, -40.575043, -40.575043],
+            ]
         )
 
         self.assertTrue(jnp.allclose(computed_lap_op2, target_lap_op2))
@@ -166,7 +178,9 @@ class NumericsFunctions(unittest.TestCase):
             {
                 A: initial_state,
                 B: jnp.tile(initial_state[..., jnp.newaxis], (1, 1, 3)),
-                C: jnp.tile(initial_state[..., jnp.newaxis, jnp.newaxis], (1, 1, 2, 3)),
+                C: jnp.tile(
+                    initial_state[..., jnp.newaxis, jnp.newaxis], (1, 1, 2, 3)
+                ),
             }
         )
 
@@ -176,18 +190,29 @@ class NumericsFunctions(unittest.TestCase):
                 B: jnp.stack(
                     [
                         numerics._spectral_species_diffuse(
-                            initial_state, kd=jnp.array(1), lap_op=lap_op, dt=2.0
+                            initial_state,
+                            kd=jnp.array(1),
+                            lap_op=lap_op,
+                            dt=2.0,
                         ),
                         numerics._spectral_species_diffuse(
-                            initial_state, kd=jnp.array(2), lap_op=lap_op, dt=2.0
+                            initial_state,
+                            kd=jnp.array(2),
+                            lap_op=lap_op,
+                            dt=2.0,
                         ),
                         numerics._spectral_species_diffuse(
-                            initial_state, kd=jnp.array(10), lap_op=lap_op, dt=2.0
+                            initial_state,
+                            kd=jnp.array(10),
+                            lap_op=lap_op,
+                            dt=2.0,
                         ),
                     ],
                     axis=-1,
                 ),
-                C: jnp.tile(target_state[..., jnp.newaxis, jnp.newaxis], (1, 1, 2, 3)),
+                C: jnp.tile(
+                    target_state[..., jnp.newaxis, jnp.newaxis], (1, 1, 2, 3)
+                ),
             }
         )
 
@@ -270,7 +295,8 @@ class NumericsFunctions(unittest.TestCase):
         )
 
         target_state = jnp.stack(
-            [target_state_index0, target_state_index1, target_state_index2], axis=-1
+            [target_state_index0, target_state_index1, target_state_index2],
+            axis=-1,
         )
 
         computed_state = numerics._conv_species_diffuse(
@@ -322,7 +348,8 @@ class NumericsFunctions(unittest.TestCase):
         )
 
         target_state = jnp.stack(
-            [target_state_index0, target_state_index1, target_state_index2], axis=-1
+            [target_state_index0, target_state_index1, target_state_index2],
+            axis=-1,
         )
 
         computed_state = numerics._conv_species_diffuse(
@@ -382,17 +409,23 @@ class NumericsFunctions(unittest.TestCase):
                 - 1.5
                 * 10.1
                 * 11.2
-                * jnp.sum(jax.nn.relu(0.01 * jnp.arange(-50, 50, 1).reshape((10, 10)))),
+                * jnp.sum(
+                    jax.nn.relu(0.01 * jnp.arange(-50, 50, 1).reshape((10, 10)))
+                ),
                 E: jnp.array(11.2)
                 - 1.5
                 * 10.1
                 * 11.2
-                * jnp.sum(jax.nn.relu(0.01 * jnp.arange(-50, 50, 1).reshape((10, 10)))),
+                * jnp.sum(
+                    jax.nn.relu(0.01 * jnp.arange(-50, 50, 1).reshape((10, 10)))
+                ),
                 F: jnp.array(12.3)
                 + 1.5
                 * 10.1
                 * 11.2
-                * jnp.sum(jax.nn.relu(0.01 * jnp.arange(-50, 50, 1).reshape((10, 10)))),
+                * jnp.sum(
+                    jax.nn.relu(0.01 * jnp.arange(-50, 50, 1).reshape((10, 10)))
+                ),
                 G: jnp.array(12.3),
             }
         )
@@ -438,7 +471,9 @@ class NumericsFunctions(unittest.TestCase):
             )
 
         def net_dynamics(conc):
-            return SJDict({A: A_dynamics(conc[A]), B: B_dynamics(conc[A], conc[B])})
+            return SJDict(
+                {A: A_dynamics(conc[A]), B: B_dynamics(conc[A], conc[B])}
+            )
 
         k1 = net_dynamics(conc_data)
         k2 = net_dynamics(conc_data + k1 * 1.5 * 0.5)

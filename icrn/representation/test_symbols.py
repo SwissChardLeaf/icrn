@@ -252,11 +252,15 @@ class TestSpecies(unittest.TestCase):
         }
 
         self.assertTrue(
-            jnp.all(jnp.equal(A.eval(tensor_data), jnp.arange(25).reshape((5, 5))))
+            jnp.all(
+                jnp.equal(A.eval(tensor_data), jnp.arange(25).reshape((5, 5)))
+            )
         )
 
         self.assertTrue(
-            jnp.all(jnp.equal(B.eval(tensor_data), jnp.arange(25).reshape((5, 5))))
+            jnp.all(
+                jnp.equal(B.eval(tensor_data), jnp.arange(25).reshape((5, 5)))
+            )
         )
 
     def test_getitem(self):
@@ -294,7 +298,9 @@ class TestComplex(unittest.TestCase):
         A, B, C = many_species("A, B, C")
         i, j, k = many_index_symbols("i, j, k", 5)
 
-        self.complex1 = Complex({A[i]: 1, A[j]: 2, B: 3, C[i, j]: 2, C[j, j]: 1})
+        self.complex1 = Complex(
+            {A[i]: 1, A[j]: 2, B: 3, C[i, j]: 2, C[j, j]: 1}
+        )
         self.complex2 = Complex({A[k]: 1, B: 2, C[j, i]: 2, C[k, j]: 3})
 
     def test_frozen(self):
@@ -342,7 +348,9 @@ class TestComplex(unittest.TestCase):
         self.assertEqual(add_b_complex, Complex({A[i]: 1, A[j]: 2, B: 3}))
 
         add_cij_complex = add_b_complex.add_species(C[i, j], 2)
-        self.assertEqual(add_cij_complex, Complex({A[i]: 1, A[j]: 2, B: 3, C[i, j]: 2}))
+        self.assertEqual(
+            add_cij_complex, Complex({A[i]: 1, A[j]: 2, B: 3, C[i, j]: 2})
+        )
 
         add_cjj_complex = add_cij_complex.add_species(C[j, j], 1)
         self.assertEqual(add_cjj_complex, self.complex1)
@@ -430,7 +438,9 @@ class TestComplex(unittest.TestCase):
         self.assertEqual(add_complex, target_complex)
 
     def test_str(self):
-        self.assertEqual(str(self.complex1), "A[i] + 2*A[j] + 3*B + 2*C[i,j] + C[j,j]")
+        self.assertEqual(
+            str(self.complex1), "A[i] + 2*A[j] + 3*B + 2*C[i,j] + C[j,j]"
+        )
         self.assertEqual(str(self.complex2), "A[k] + 2*B + 2*C[j,i] + 3*C[k,j]")
 
 
@@ -535,13 +545,21 @@ class TestRateConstant(unittest.TestCase):
         )
 
         A_plus_2 = A + 2
-        self.assertEqual(A_plus_2, TensorFunction(jnp.add, (A, TensorLiteral(2))))
+        self.assertEqual(
+            A_plus_2, TensorFunction(jnp.add, (A, TensorLiteral(2)))
+        )
         A_plus_half = A + 0.5
-        self.assertEqual(A_plus_half, TensorFunction(jnp.add, (A, TensorLiteral(0.5))))
+        self.assertEqual(
+            A_plus_half, TensorFunction(jnp.add, (A, TensorLiteral(0.5)))
+        )
         two_plus_A = 2 + A
-        self.assertEqual(two_plus_A, TensorFunction(jnp.add, (TensorLiteral(2), A)))
+        self.assertEqual(
+            two_plus_A, TensorFunction(jnp.add, (TensorLiteral(2), A))
+        )
         half_plus_A = 0.5 + A
-        self.assertEqual(half_plus_A, TensorFunction(jnp.add, (TensorLiteral(0.5), A)))
+        self.assertEqual(
+            half_plus_A, TensorFunction(jnp.add, (TensorLiteral(0.5), A))
+        )
 
         data = {A: jnp.array(3.0)}
         self.assertTrue(jnp.equal(A_plus_2.eval(data), 5.0))
@@ -571,8 +589,12 @@ class TestRateConstant(unittest.TestCase):
         self.assertIsInstance(ABC, TensorFunction)
         self.assertIsInstance(ABf, TensorFunction)
 
-        self.assertEqual(double_A, TensorFunction(jnp.multiply, (TensorLiteral(2), A)))
-        self.assertEqual(triple_A, TensorFunction(jnp.multiply, (A, TensorLiteral(3))))
+        self.assertEqual(
+            double_A, TensorFunction(jnp.multiply, (TensorLiteral(2), A))
+        )
+        self.assertEqual(
+            triple_A, TensorFunction(jnp.multiply, (A, TensorLiteral(3)))
+        )
         self.assertEqual(
             scaled_A, TensorFunction(jnp.multiply, (TensorLiteral(2.5), A))
         )
@@ -582,17 +604,21 @@ class TestRateConstant(unittest.TestCase):
         self.assertEqual(
             AB,
             TensorFunction(
-                jnp.multiply, (TensorFunction(jnp.multiply, (TensorLiteral(2), A)), B)
+                jnp.multiply,
+                (TensorFunction(jnp.multiply, (TensorLiteral(2), A)), B),
             ),
         )
         self.assertEqual(
             ABC,
-            TensorFunction(jnp.multiply, (TensorFunction(jnp.multiply, (A, B)), C)),
+            TensorFunction(
+                jnp.multiply, (TensorFunction(jnp.multiply, (A, B)), C)
+            ),
         )
         self.assertEqual(
             ABf,
             TensorFunction(
-                jnp.multiply, (TensorFunction(jnp.multiply, (TensorLiteral(2.5), A)), B)
+                jnp.multiply,
+                (TensorFunction(jnp.multiply, (TensorLiteral(2.5), A)), B),
             ),
         )
 
@@ -611,7 +637,9 @@ class TestRateConstant(unittest.TestCase):
         self.assertEqual(AB_sub, TensorFunction(jnp.subtract, (A, B)))
 
         A_minus_2 = A - 2
-        self.assertEqual(A_minus_2, TensorFunction(jnp.subtract, (A, TensorLiteral(2))))
+        self.assertEqual(
+            A_minus_2, TensorFunction(jnp.subtract, (A, TensorLiteral(2)))
+        )
         A_minus_two = A - 2.0
         self.assertEqual(
             A_minus_two, TensorFunction(jnp.subtract, (A, TensorLiteral(2.0)))
@@ -681,11 +709,15 @@ class TestRateConstant(unittest.TestCase):
         }
 
         self.assertTrue(
-            jnp.all(jnp.equal(A.eval(tensor_data), jnp.arange(25).reshape((5, 5))))
+            jnp.all(
+                jnp.equal(A.eval(tensor_data), jnp.arange(25).reshape((5, 5)))
+            )
         )
 
         self.assertTrue(
-            jnp.all(jnp.equal(B.eval(tensor_data), jnp.arange(25).reshape((5, 5))))
+            jnp.all(
+                jnp.equal(B.eval(tensor_data), jnp.arange(25).reshape((5, 5)))
+            )
         )
 
     def test_getitem(self):
@@ -738,7 +770,9 @@ class TestTensorLiteral(unittest.TestCase):
 
         self.assertEqual(lit.eval(data), 7)
         self.assertEqual(lit.eval({}), 7)
-        self.assertTrue(jnp.all(jnp.equal(arr_lit.eval(data), jnp.array([1.0, 2.0]))))
+        self.assertTrue(
+            jnp.all(jnp.equal(arr_lit.eval(data), jnp.array([1.0, 2.0])))
+        )
 
     def test_str(self):
         self.assertEqual(str(TensorLiteral(3)), "3")
@@ -931,4 +965,6 @@ class TestTensorFunction(unittest.TestCase):
 
         custom_f = lambda x, y, z: x + (y / z)
         tensor_function = TensorFunction(custom_f, (A, B, C))
-        self.assertTrue(jnp.allclose(tensor_function.eval(data), 1.0 + 2.0 / 3.0))
+        self.assertTrue(
+            jnp.allclose(tensor_function.eval(data), 1.0 + 2.0 / 3.0)
+        )

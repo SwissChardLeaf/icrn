@@ -7,17 +7,22 @@ import jax
 
 # from icrn import Species, RateConstant
 
+
 def arr_mul(dct, arr):
     return jax_tree.map(lambda x: x * arr, dct)
+
 
 def arr_add(dct, arr):
     return jax_tree.map(lambda x: x + arr, dct)
 
+
 def dict_add(dct1, dct2):
     return jax_tree.map(lambda x, y: x + y, dct1, dct2)
 
+
 def dict_sub(dct1, dct2):
     return dict_add(dct1, arr_mul(dct2, -1))
+
 
 def dict_sum(*dcts):
     acc = dcts[0]
@@ -25,11 +30,15 @@ def dict_sum(*dcts):
         acc = dict_add(dct, acc)
     return acc
 
+
 def dict_index(dct, index):
     return jax_tree.map(lambda x: x[index], dct)
 
+
 def dict_allclose(dct1, dct2):
-    return jax_tree.all(jax_tree.map(lambda x, y: jnp.allclose(x, y), dct1, dct2))
+    return jax_tree.all(
+        jax_tree.map(lambda x, y: jnp.allclose(x, y), dct1, dct2)
+    )
 
 
 # def load_dict_from_file(file_path):

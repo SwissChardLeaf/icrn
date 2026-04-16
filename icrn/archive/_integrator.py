@@ -13,7 +13,9 @@ def relu_euler(concs_data, rate_data, dt, dynamics_func):
 
 
 def RK4(concs_data, rate_constant_data, dt, dynamics_func):
-    k1 = concs_data.init_with_dict(dynamics_func(concs_data | rate_constant_data))
+    k1 = concs_data.init_with_dict(
+        dynamics_func(concs_data | rate_constant_data)
+    )
     k2 = concs_data.init_with_dict(
         dynamics_func(concs_data + k1 * dt * 0.5 | rate_constant_data)
     )
@@ -28,7 +30,9 @@ def RK4(concs_data, rate_constant_data, dt, dynamics_func):
 
 def relu_RK4(concs_data, rate_constant_data, dt, dynamics_func):
     k1 = concs_data.init_with_dict(
-        dynamics_func(jax_tree.tree_map(jax.nn.relu, concs_data) | rate_constant_data)
+        dynamics_func(
+            jax_tree.tree_map(jax.nn.relu, concs_data) | rate_constant_data
+        )
     )
     k2 = concs_data.init_with_dict(
         dynamics_func(
@@ -44,7 +48,8 @@ def relu_RK4(concs_data, rate_constant_data, dt, dynamics_func):
     )
     k4 = concs_data.init_with_dict(
         dynamics_func(
-            jax_tree.tree_map(jax.nn.relu, concs_data) + k3 * dt | rate_constant_data
+            jax_tree.tree_map(jax.nn.relu, concs_data) + k3 * dt
+            | rate_constant_data
         )
     )
     return jax_tree.tree_map(

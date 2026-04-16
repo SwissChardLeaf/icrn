@@ -21,3 +21,6 @@ license-files = ["LICEN[CS]E*"]
 [project.urls]
 Homepage = "https://github.com/SwissChardLeaf/icrn"
 Issues = "https://github.com/SwissChardLeaf/icrn/issues"
+
+[tool.ruff]
+line-length = 80

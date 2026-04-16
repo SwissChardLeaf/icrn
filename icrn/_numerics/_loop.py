@@ -11,15 +11,18 @@ from ._interpolation import _linear_interpolation
 # scan function returns key, state pair even if no operators are
 # stochastic
 
+
 def _scan(scan_f, key, state, non_state, dt, length):
     def _helper(key_state_pair, _):
         new_key, new_state = scan_f(key_state_pair, non_state, dt)
         return (new_key, new_state), new_state
 
     last_state, hist = lax.scan(_helper, init=(key, state), length=length)
-    hist_with_init = jax_tree.map(lambda x, y: jnp.concatenate([x[None, ...], y], axis=0), state, hist)
+    hist_with_init = jax_tree.map(
+        lambda x, y: jnp.concatenate([x[None, ...], y], axis=0), state, hist
+    )
     return last_state, hist_with_init
-    
+
 
 # times has to be positive
 def _times_to_steps(times, dt, length):
@@ -32,7 +35,7 @@ def _times_to_steps(times, dt, length):
 
     segment_steps = [[] for _ in range(int(max_segment + 1))]
     segment_dt_fractions = [[] for _ in range(int(max_segment + 1))]
-    
+
     for i in range(n):
         segment_index = segment[i]
         mod_time = times[i] - segment_index * segment_time
@@ -46,7 +49,11 @@ def _times_to_steps(times, dt, length):
     segment_dt_fractions = list(map(jnp.array, segment_dt_fractions))
     return segment_steps, segment_dt_fractions
 
-def _loop_with_checkpointing(step_f, times, key, state, non_state, dt, checkpoint_length=None):
+
+def _loop_with_checkpointing(
+    step_f, times, key, state, non_state, dt, checkpoint_length=None
+):
+    print(f"times: {times}")
     if checkpoint_length is None:
         max_step = jnp.ceil(times[-1] / dt).astype(int)
         checkpoint_length = max_step + 1
@@ -57,12 +64,20 @@ def _loop_with_checkpointing(step_f, times, key, state, non_state, dt, checkpoin
         interpolated_hist.append(jax_tree.map(lambda x: x[None, ...], state))
         times = times[1:]
 
-    segment_steps, segment_dt_fractions = _times_to_steps(times, dt, checkpoint_length)
+    segment_steps, segment_dt_fractions = _times_to_steps(
+        times, dt, checkpoint_length
+    )
 
     for i in range(len(segment_steps)):
         steps = segment_steps[i]
         dt_fractions = segment_dt_fractions[i]
-        (key, state), hist = _scan(step_f, key, state, non_state, dt, length=checkpoint_length)
-        interpolated_hist.append(_linear_interpolation(steps, dt_fractions, hist))
+        (key, state), hist = _scan(
+            step_f, key, state, non_state, dt, length=checkpoint_length
+        )
+        interpolated_hist.append(
+            _linear_interpolation(steps, dt_fractions, hist)
+        )
 
-    return jax_tree.map(lambda *int_hists: jnp.concatenate([*int_hists]), *interpolated_hist)
+    return jax_tree.map(
+        lambda *int_hists: jnp.concatenate([*int_hists]), *interpolated_hist
+    )

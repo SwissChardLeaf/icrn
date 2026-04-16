@@ -155,7 +155,9 @@ class AbstractChemicalSymbol(Expr):
 
         object.__setattr__(self, "indexing", indexing)
 
-        object.__setattr__(self, "indexing_type", _find_indexing_type(self.indexing))
+        object.__setattr__(
+            self, "indexing_type", _find_indexing_type(self.indexing)
+        )
 
     def __lt__(self, other):
         return self.label < other.label
@@ -179,7 +181,10 @@ class AbstractChemicalSymbol(Expr):
             return arr_dict[self]
 
     def __eq__(self, other):
-        return self.label == other.label and self.indexing_type == other.indexing_type
+        return (
+            self.label == other.label
+            and self.indexing_type == other.indexing_type
+        )
 
     def __hash__(self):
         return hash((self.label, self.indexing, self.indexing_type))
@@ -370,7 +375,9 @@ def _parse_names(names: str) -> list[str]:
     return list(map(lambda x: x.strip(), names_list))
 
 
-def many_index_symbols(names: str, index_set: int) -> IndexSymbol | list[IndexSymbol]:
+def many_index_symbols(
+    names: str, index_set: int
+) -> IndexSymbol | list[IndexSymbol]:
     """
     Instanitate multiple index symbols with the same index sets at once.
 

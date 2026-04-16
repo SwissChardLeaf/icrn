@@ -1,7 +1,10 @@
 # TODO
 # use nested vmaps for reactions
 from abc import ABC, abstractmethod
-from ..representation.reactions import AbstractNormalReaction, AbstractFastReaction
+from ..representation.reactions import (
+    AbstractNormalReaction,
+    AbstractFastReaction,
+)
 from ._integrator import Integrator
 
 
@@ -13,7 +16,9 @@ class _BaseAction(ABC):
 
 class _NormalReactionAction(_BaseAction):
     def __init__(
-        self, normal_reactions: list[AbstractNormalReaction], integrator: Integrator
+        self,
+        normal_reactions: list[AbstractNormalReaction],
+        integrator: Integrator,
     ) -> None:
         self._normal_reactions = normal_reactions
         self._integrator = integrator

@@ -38,7 +38,10 @@ class EndToEnd(unittest.TestCase):
         i, j = many_index_symbols("i, j", n)
 
         dn_crn = ICRN(
-            [rxn(M[i] + M[j], D[i, j], K_1[i, j]), rxn(D[i, j], M[i] + M[j], K_2[i, j])]
+            [
+                rxn(M[i] + M[j], D[i, j], K_1[i, j]),
+                rxn(D[i, j], M[i] + M[j], K_2[i, j]),
+            ]
         )
 
         dn_exp_params = {
@@ -152,7 +155,12 @@ class EndToEnd(unittest.TestCase):
         F, k = many_rate_constants("F, k")
 
         gs_crn = ICRN(
-            [rxn(U + 2 * V, 3 * V, 1), rxn(V, 0, F + k), rxn(0, U, F), rxn(U, 0, F)]
+            [
+                rxn(U + 2 * V, 3 * V, 1),
+                rxn(V, 0, F + k),
+                rxn(0, U, F),
+                rxn(U, 0, F),
+            ]
         )
 
         gs_exp_params = {
@@ -170,14 +178,18 @@ class EndToEnd(unittest.TestCase):
         init_U_path = os.path.join(test_dir, "init_U.npy")
         init_V_path = os.path.join(test_dir, "init_V.npy")
 
-        init_concs = SJDict({U: jnp.load(init_U_path), V: jnp.load(init_V_path)})
+        init_concs = SJDict(
+            {U: jnp.load(init_U_path), V: jnp.load(init_V_path)}
+        )
 
         rate_data = SJDict({F: 0.037, k: 0.06})
 
         diff_data_spec = {U: 0.2, V: 0.1}
 
         _, _, diff_data = gs_exp.dict_builder({}, {}, diff_data_spec)
-        sim_concs, _ = gs_exp.simulate_time(init_concs, rate_data, diff_data, time=5000)
+        sim_concs, _ = gs_exp.simulate_time(
+            init_concs, rate_data, diff_data, time=5000
+        )
 
         target_U_path = os.path.join(test_dir, "target_U.npy")
         target_V_path = os.path.join(test_dir, "target_V.npy")
@@ -204,7 +216,12 @@ class EndToEnd(unittest.TestCase):
         F, k = many_rate_constants("F, k")
 
         gs_crn = ICRN(
-            [rxn(U + 2 * V, 3 * V, 1), rxn(V, 0, F + k), rxn(0, U, F), rxn(U, 0, F)]
+            [
+                rxn(U + 2 * V, 3 * V, 1),
+                rxn(V, 0, F + k),
+                rxn(0, U, F),
+                rxn(U, 0, F),
+            ]
         )
 
         gs_exp_params = {
@@ -232,10 +249,12 @@ class EndToEnd(unittest.TestCase):
         rate_data = SJDict(
             {
                 F: jnp.broadcast_to(
-                    jnp.linspace(0.08, 0.01, num=1000)[..., jnp.newaxis], (1000, 1000)
+                    jnp.linspace(0.08, 0.01, num=1000)[..., jnp.newaxis],
+                    (1000, 1000),
                 ),
                 k: jnp.broadcast_to(
-                    jnp.linspace(0.03, 0.07, num=1000)[jnp.newaxis, ...], (1000, 1000)
+                    jnp.linspace(0.03, 0.07, num=1000)[jnp.newaxis, ...],
+                    (1000, 1000),
                 ),
             }
         )
@@ -243,7 +262,9 @@ class EndToEnd(unittest.TestCase):
         diff_data_spec = {U: 0.2, V: 0.1}
 
         _, _, diff_data = gs_exp.dict_builder({}, {}, diff_data_spec)
-        sim_concs, _ = gs_exp.simulate_time(init_concs, rate_data, diff_data, time=5000)
+        sim_concs, _ = gs_exp.simulate_time(
+            init_concs, rate_data, diff_data, time=5000
+        )
 
         def normalise(channel):
             return (channel - channel.min()) / (channel.max() - channel.min())
@@ -313,7 +334,9 @@ class EndToEnd(unittest.TestCase):
             concs_spec, rate_data_spec, diff_data_spec
         )
 
-        sim_concs, _ = hf_exp.simulate_time(init_concs, rate_data, diff_data, 12.5)
+        sim_concs, _ = hf_exp.simulate_time(
+            init_concs, rate_data, diff_data, 12.5
+        )
 
         target_Up_path = os.path.join(test_dir, "target_Up.npy")
         target_Un_path = os.path.join(test_dir, "target_Un.npy")

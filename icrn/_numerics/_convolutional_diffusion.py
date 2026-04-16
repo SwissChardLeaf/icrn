@@ -8,7 +8,8 @@ STENCIL_H = jnp.array(
 )[..., jnp.newaxis, jnp.newaxis]
 
 STENCIL_W = jnp.array(
-    [[-1 / 3, 0, 1 / 3], [-2 / 3, 0, 2 / 3], [-1 / 3, 0, 1 / 3]], dtype="float32"
+    [[-1 / 3, 0, 1 / 3], [-2 / 3, 0, 2 / 3], [-1 / 3, 0, 1 / 3]],
+    dtype="float32",
 )[..., jnp.newaxis, jnp.newaxis]
 
 DIM_NUM = lax.conv_dimension_numbers(
@@ -72,7 +73,9 @@ def _reshaped_conc_diff_constant(
     if spatially_varying_diffusion_constant:
         diff_constant_reshape = jnp.reshape(diff_constant, conc_reshape.shape)
     else:
-        diff_constant_broadcasted = jnp.broadcast_to(diff_constant, original_conc_shape)
+        diff_constant_broadcasted = jnp.broadcast_to(
+            diff_constant, original_conc_shape
+        )
         diff_constant_reshape = jnp.reshape(
             diff_constant_broadcasted, conc_reshape.shape
         )
@@ -81,7 +84,12 @@ def _reshaped_conc_diff_constant(
 
 
 def _conv_species_diffuse(
-    conc, diff_constant, dt, dh=1, dw=1, spatially_varying_diffusion_constant=False
+    conc,
+    diff_constant,
+    dt,
+    dh=1,
+    dw=1,
+    spatially_varying_diffusion_constant=False,
 ):
     # currently assumes dh == dw
     diff = None

@@ -7,61 +7,89 @@ from .._numerics._solve import _solve_with_ops
 from ..representation.symbols import Species, TensorSymbol, Numeric
 from jax import numpy as jnp
 
+
 def solve_well_mixed(
-    rxns: Iterable[AbstractReaction | FastReaction], 
+    rxns: Iterable[AbstractReaction | FastReaction],
     conc_vals: dict[Species, jnp.ndarray],
     rate_constant_vals: dict[TensorSymbol, jnp.ndarray],
     times: Numeric,
-    dt: Numeric, 
+    dt: Numeric,
     key=None,
-    checkpoint_length = None,
+    checkpoint_length=None,
     reaction_solver="RK4",
-    mode: str | None = None
+    mode: str | None = None,
 ):
-    '''
+    """
     Solve the IVP for well mixed system specified by the reactions.
-    '''
+    """
     ops = to_well_mixed_ops(rxns, reaction_solver, mode)
-    return solve_with_ops(ops, conc_vals, rate_constant_vals, dt, times, key, checkpoint_length)
+    return solve_with_ops(
+        ops=ops,
+        state=conc_vals,
+        non_state=rate_constant_vals,
+        dt=dt,
+        times=times,
+        key=key,
+        checkpoint_length=checkpoint_length,
+    )
+
 
 def solve_reaction_diffusion(
-    spatial_dims: tuple[int],
-    dspaces: tuple[float, ...],
     rxns: Iterable[AbstractReaction | FastReaction],
     conc_vals: dict[Species, jnp.ndarray],
     rate_constant_vals: dict[TensorSymbol, jnp.ndarray],
     diffusion_constant_vals: dict[TensorSymbol, jnp.ndarray],
     times: Numeric,
-    dt: Numeric, 
+    dt: Numeric,
+    spatial_dims: tuple[int],
+    dspaces: tuple[float, ...],
     key=None,
-    checkpoint_length = None,
-    interpolation_method: str = "linear",
+    checkpoint_length=None,
     reaction_solver="RK4",
     splitting="LieTrotter",
-    diffusion_solver="spectral",
     spatial_rate_constants: bool = False,
-    mode: str | None = None
+    mode: str | None = None,
 ):
-    ops = to_reaction_diffusion_ops(rxns, dxs, reaction_solver, splitting, diffusion_solver, mode)
-    combined_vals = rate_constant_vals | diffusion_constant_vals
-    return solve_with_ops(ops, conc_vals, combined_vals, times, dt, key, checkpoint_length)
+    ops = to_reaction_diffusion_ops(
+        rxns,
+        spatial_dims,
+        dspaces,
+        reaction_solver,
+        splitting,
+        mode=mode,
+        spatial_rate_constants=spatial_rate_constants,
+    )
+    combined_vals = (rate_constant_vals, diffusion_constant_vals)
+    return solve_with_ops(
+        ops=ops,
+        state=conc_vals,
+        non_state=combined_vals,
+        dt=dt,
+        times=times,
+        key=key,
+        checkpoint_length=checkpoint_length,
+    )
 
-def solve_with_ops(ops, state, non_state, dt, times, key, checkpoint_length):
-    return _solve_with_ops(ops, state, non_state, dt, key, times, checkpoint_length)
+
+def solve_with_ops(*, ops, state, non_state, dt, times, key, checkpoint_length):
+    return _solve_with_ops(
+        ops, state, non_state, dt, key, times, checkpoint_length
+    )
+
 
 # def solve(
-#     rxns: Iterable[AbstractReaction], 
+#     rxns: Iterable[AbstractReaction],
 #     conc_vals: dict[Species, jnp.ndarray],
 #     rate_constant_vals: dict[TensorSymbol, jnp.ndarray],
 #     diffusion_constant_vals: dict[TensorSymbol, jnp.ndarray] | None = None,
-#     times: Numeric, 
-#     dt: Numeric, 
+#     times: Numeric,
+#     dt: Numeric,
 #     key=None,
 #     checkpoint_length = None,
 #     interpolation_method: str = "linear",
-#     reaction_solver="RK4", 
-#     spatial_info: tuple[int, ...] | None = None, 
-#     splitting="LieTrotter", 
+#     reaction_solver="RK4",
+#     spatial_info: tuple[int, ...] | None = None,
+#     splitting="LieTrotter",
 #     diffusion_solver="spectral",
 #     mode: str | None = None
 # ):

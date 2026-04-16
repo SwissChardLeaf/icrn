@@ -1,6 +1,13 @@
 import unittest
 from dataclasses import FrozenInstanceError
-from .reactions import AbstractReaction, MassActionReaction, _matching_shapes, rxns_to_dynamics_f, FastReaction, fast_rxns_to_update_f
+from .reactions import (
+    AbstractReaction,
+    MassActionReaction,
+    _matching_shapes,
+    rxns_to_dynamics_f,
+    FastReaction,
+    fast_rxns_to_update_f,
+)
 from .symbols import (
     Complex,
     many_index_symbols,
@@ -12,7 +19,6 @@ from .symbols import (
 
 import jax.numpy as jnp
 from ..utils.dict_utils import dict_allclose
-
 
 
 class TestReactionHelpers(unittest.TestCase):
@@ -57,9 +63,12 @@ class TestRxnsToDynamicsF(unittest.TestCase):
         dynamics_f = rxns_to_dynamics_f(rxns)
         computed_dynamics = dynamics_f(state, non_state)
         target_dynamics = {
-            A : non_state[beta] * state[C] - non_state[alpha] * state[A] * state[B],
-            B : non_state[beta] * state[C] - non_state[alpha] * state[A] * state[B],
-            C : non_state[alpha] * state[A] * state[B] - non_state[beta] * state[C]
+            A: non_state[beta] * state[C]
+            - non_state[alpha] * state[A] * state[B],
+            B: non_state[beta] * state[C]
+            - non_state[alpha] * state[A] * state[B],
+            C: non_state[alpha] * state[A] * state[B]
+            - non_state[beta] * state[C],
         }
         self.assertTrue(dict_allclose(computed_dynamics, target_dynamics))
 
@@ -71,13 +80,13 @@ class TestRxnsToDynamicsF(unittest.TestCase):
             MassActionReaction(A, 0, k),
         ]
 
-
         state = {A: jnp.array(1.0)}
         non_state = {k: jnp.array(1.0)}
         dynamics_f = rxns_to_dynamics_f(rxns)
         computed_dynamics = dynamics_f(state, non_state)
         target_dynamics = {A: -non_state[k] * state[A]}
         self.assertTrue(dict_allclose(computed_dynamics, target_dynamics))
+
 
 class TestExtendAbstractReaction(unittest.TestCase):
     pass
@@ -163,7 +172,6 @@ class TestMassActionReaction(unittest.TestCase):
         alpha = RateConstant("alpha")
         rxn = MassActionReaction(A + B, C, alpha)
 
-
         state = {
             A: jnp.array(2.0),
             B: jnp.array(3.0),
@@ -174,7 +182,7 @@ class TestMassActionReaction(unittest.TestCase):
         }
 
         output = rxn.flux()(state, non_state)
-        
+
         target_flux = {
             A: -jnp.array(1.1) * state[A] * state[B],
             B: -jnp.array(1.1) * state[A] * state[B],
@@ -190,15 +198,12 @@ class TestFastReactionsToUpdateF(unittest.TestCase):
 
         fast_rxn = FastReaction(A[i] + B[i], 0)
 
-        state = {
-            A: jnp.array([1.0, 2.0, 1.5]), 
-            B: jnp.array([2.0, 0.0, 1.5])
-        }
-        
+        state = {A: jnp.array([1.0, 2.0, 1.5]), B: jnp.array([2.0, 0.0, 1.5])}
+
         output = fast_rxns_to_update_f([fast_rxn])(state)
         target_output = {
-            A: jnp.array([-1.0, -2.0, -1.5]), 
-            B: jnp.array([-2.0, 0.0, -1.5])
+            A: jnp.array([-1.0, -2.0, -1.5]),
+            B: jnp.array([-2.0, 0.0, -1.5]),
         }
         print(output)
         self.assertTrue(dict_allclose(output, target_output))

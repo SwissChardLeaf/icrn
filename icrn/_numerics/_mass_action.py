@@ -1,4 +1,10 @@
-from ..representation.symbols import Complex, Species, TensorExpression, TensorLiteral, Numeric
+from ..representation.symbols import (
+    Complex,
+    Species,
+    TensorExpression,
+    TensorLiteral,
+    Numeric,
+)
 import jax
 import jax.numpy as jnp
 from collections import defaultdict
@@ -37,7 +43,11 @@ def _get_base_einsum_str(
     reactants: Complex, rate_exp: TensorExpression, product_index_symbols: set
 ):
     parts = [_tensor_expression_to_index_str(rate_exp)]
-    for s in reactants.count_dict.keys():
+
+    r_list = list(reactants.count_dict.keys())
+    r_list.sort()
+
+    for s in r_list:
         parts.append(_tensor_expression_to_index_str(s))
 
     product_index_symbols_lst = list(product_index_symbols)
@@ -49,7 +59,9 @@ def _get_base_einsum_str(
 
 def _product_index_symbols(reactants, products, rate_exp):
     all_index_symbols = _get_all_index_symbols(reactants, products, rate_exp)
-    reactants_rate_exp_index_symbols = _get_all_index_symbols(reactants, rate_exp)
+    reactants_rate_exp_index_symbols = _get_all_index_symbols(
+        reactants, rate_exp
+    )
     return all_index_symbols - reactants_rate_exp_index_symbols
 
 
@@ -60,7 +72,7 @@ def _get_diff_and_einsum_strs(
 
     for s, diff in diff_dict.items():
         einsum_str = base_einsum_str + _tensor_expression_to_index_str(s)
-        einsum_strs[s[()]].append((diff, einsum_str))
+        einsum_strs[s[()]].append((diff, einsum_str, s))
 
     return einsum_strs
 
@@ -99,8 +111,12 @@ def _get_tensors(reactants, rate_expr, product_index_symbols):
 
 
 def _setup_einsums(reactants, products, rate_exp):
-    product_index_symbols = _product_index_symbols(reactants, products, rate_exp)
-    base_einsum_str = _get_base_einsum_str(reactants, rate_exp, product_index_symbols)
+    product_index_symbols = _product_index_symbols(
+        reactants, products, rate_exp
+    )
+    base_einsum_str = _get_base_einsum_str(
+        reactants, rate_exp, product_index_symbols
+    )
 
     diff_dict = _get_diff_dict(reactants, products)
     einsum_prep = defaultdict(list)
@@ -131,13 +147,21 @@ def mass_action_flux_f(
         )
 
     einsum_prep = _setup_einsums(reactants, products, rate_exp)
-    product_index_symbols = _product_index_symbols(reactants, products, rate_exp)
+    product_index_symbols = _product_index_symbols(
+        reactants, products, rate_exp
+    )
     get_tensors = _get_tensors(reactants, rate_exp, product_index_symbols)
 
     def _sum_of_list(lst, tensors):
         acc = 0
-        for diff, einsum_str in lst:
-            acc += diff * jnp.einsum(einsum_str, *tensors)
+        for diff, einsum_str, spec in lst:
+            try:
+                acc += diff * jnp.einsum(einsum_str, *tensors)
+            except Exception as e:
+                # print(f"Error einsumming {einsum_str} with tensors {tensors}")
+                raise Exception(
+                    f"Error einsumming {einsum_str} with tensors {tensors} for species {spec} with reactants {reactants} and products {products} and rate expression {rate_exp}"
+                )
         return acc
 
     def f(state, non_state):

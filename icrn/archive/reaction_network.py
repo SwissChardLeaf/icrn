@@ -73,4 +73,6 @@ class ICRN:
         # return jittable_fast_dynamics, jittable_normal_dynamics
 
     def enumerate(self):
-        return ICRN([enum_r for r in self.reactions for enum_r in r.enumerate()])
+        return ICRN(
+            [enum_r for r in self.reactions for enum_r in r.enumerate()]
+        )

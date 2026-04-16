@@ -20,7 +20,10 @@ class ExperimentTests(unittest.TestCase):
         i, j = many_index_symbols("i, j", 10)
 
         icrn = ICRN(
-            [rxn(A[i] + B[j], C[i, j], alpha[i, j]), rxn(C[i, j], A[j], beta[j])]
+            [
+                rxn(A[i] + B[j], C[i, j], alpha[i, j]),
+                rxn(C[i, j], A[j], beta[j]),
+            ]
         )
 
         exp_params1 = {
@@ -58,9 +61,9 @@ class ExperimentTests(unittest.TestCase):
 
         rate_constant_data = SJDict(
             {
-                alpha: jnp.tile(jnp.arange(10)[jnp.newaxis, ...], reps=(10, 1)).astype(
-                    "float32"
-                ),
+                alpha: jnp.tile(
+                    jnp.arange(10)[jnp.newaxis, ...], reps=(10, 1)
+                ).astype("float32"),
                 beta: 2.0 * jnp.ones(10),
             }
         )
@@ -162,9 +165,9 @@ class ExperimentTests(unittest.TestCase):
 
         rate_constant_data = SJDict(
             {
-                alpha: jnp.tile(jnp.arange(10)[jnp.newaxis, ...], reps=(10, 1)).astype(
-                    "float32"
-                ),
+                alpha: jnp.tile(
+                    jnp.arange(10)[jnp.newaxis, ...], reps=(10, 1)
+                ).astype("float32"),
                 beta: 2.0 * jnp.ones(10),
             }
         )
@@ -261,7 +264,9 @@ class ExperimentTests(unittest.TestCase):
         rate_constant_spec = {alpha: jnp.arange(10), beta: 2.0}
 
         concs_data, rate_constant_data, _ = self.exp1.dict_builder(
-            concs_spec=concs_spec, rate_constant_spec=rate_constant_spec, diff_spec={}
+            concs_spec=concs_spec,
+            rate_constant_spec=rate_constant_spec,
+            diff_spec={},
         )
 
         self.assertIsInstance(concs_data, SJDict)
@@ -269,14 +274,18 @@ class ExperimentTests(unittest.TestCase):
 
         self.assertEqual(
             concs_data,
-            SJDict({A: jnp.ones(10), B: jnp.arange(10), C: jnp.zeros((10, 10))}),
+            SJDict(
+                {A: jnp.ones(10), B: jnp.arange(10), C: jnp.zeros((10, 10))}
+            ),
         )
 
         self.assertEqual(
             rate_constant_data,
             SJDict(
                 {
-                    alpha: jnp.tile(jnp.arange(10)[jnp.newaxis, ...], reps=(10, 1)),
+                    alpha: jnp.tile(
+                        jnp.arange(10)[jnp.newaxis, ...], reps=(10, 1)
+                    ),
                     beta: 2.0 * jnp.ones(10),
                 }
             ),
@@ -305,7 +314,9 @@ class ExperimentTests(unittest.TestCase):
                 {
                     A: jnp.ones((3, 100, 100, 10)),
                     B: jnp.tile(
-                        jnp.arange(10)[jnp.newaxis, jnp.newaxis, jnp.newaxis, ...],
+                        jnp.arange(10)[
+                            jnp.newaxis, jnp.newaxis, jnp.newaxis, ...
+                        ],
                         reps=(3, 100, 100, 1),
                     ),
                     C: jnp.zeros((3, 100, 100, 10, 10)),
@@ -319,7 +330,11 @@ class ExperimentTests(unittest.TestCase):
                 {
                     alpha: jnp.tile(
                         jnp.arange(10)[
-                            jnp.newaxis, jnp.newaxis, jnp.newaxis, jnp.newaxis, ...
+                            jnp.newaxis,
+                            jnp.newaxis,
+                            jnp.newaxis,
+                            jnp.newaxis,
+                            ...,
                         ],
                         reps=(3, 100, 100, 10, 1),
                     ),

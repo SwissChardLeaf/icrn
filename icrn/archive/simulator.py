@@ -104,10 +104,16 @@ class WellMixed(AbstractExperiment):
         )
 
     def dict_builder(
-        self, concs_spec={}, rate_constant_spec={}, diff_spec={}, batch_size=None
+        self,
+        concs_spec={},
+        rate_constant_spec={},
+        diff_spec={},
+        batch_size=None,
     ):
         spatial_dim = self._exp_params["spatial_dim"]
-        spatial_rate_constant = self._exp_params.get("spatial_rate_constant", False)
+        spatial_rate_constant = self._exp_params.get(
+            "spatial_rate_constant", False
+        )
         shapes_dict = self._icrn.shapes()
         return sjdict_builder(
             shapes_dict,

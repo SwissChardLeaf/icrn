@@ -7,6 +7,7 @@
 """
 This module contains the building blocks of ICRNs.
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -39,7 +40,13 @@ class AbstractReaction(ABC):
     aux: TensorExpression | None = None
 
     def __str__(self):
-        return str(self.reactants) + " -> " + str(self.products) + " " + str(self.aux)
+        return (
+            str(self.reactants)
+            + " -> "
+            + str(self.products)
+            + " "
+            + str(self.aux)
+        )
 
     def __repr__(self):
         return repr((self.reactants, self.products, self.aux))
@@ -53,7 +60,7 @@ def rxns_to_dynamics_f(rxns: list[AbstractReaction]):
     flux_fs = list(map(lambda r: r.flux(), rxns))
 
     def dyn_f(state, non_state):
-        dynamics = {k : 0 for k in state.keys()}
+        dynamics = {k: 0 for k in state.keys()}
         for flux_f in flux_fs:
             val_dict = flux_f(state, non_state)
 
@@ -71,7 +78,10 @@ def _matching_shapes(all_species: set[Species]):
     for s in all_species:
         base_s = s[()]
         shape_s = tuple(
-            map(lambda x: x.index_set if x.index_set > 0 else None, s.index_symbols)
+            map(
+                lambda x: x.index_set if x.index_set > 0 else None,
+                s.index_symbols,
+            )
         )
 
         if base_s in shapes:
@@ -161,8 +171,11 @@ class MassActionReaction(AbstractReaction):
     def shapes(self):
         pass
 
+
 def fast_rxns_to_update_f(fast_rxns: list[FastReaction]):
-    update_fs = [_fast_update_f(frxn.reactants, frxn.products) for frxn in fast_rxns]
+    update_fs = [
+        _fast_update_f(frxn.reactants, frxn.products) for frxn in fast_rxns
+    ]
 
     def _fast_updates_f(state):
         for f in update_fs:
@@ -173,11 +186,11 @@ def fast_rxns_to_update_f(fast_rxns: list[FastReaction]):
 
     return _fast_updates_f
 
+
 @dataclass(frozen=True)
-class FastReaction():
+class FastReaction:
     reactants: Complex | Species
     products: Complex | Species | int
-    
 
     def __post_init__(self):
         reactants = self.reactants
@@ -218,7 +231,6 @@ class FastReaction():
 
         object.__setattr__(self, "reactants", reactants)
         object.__setattr__(self, "products", products)
-
 
     # @rate_constant_expr.setter
     # def index_set(self, index_set):

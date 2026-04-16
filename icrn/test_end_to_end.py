@@ -1,8 +1,16 @@
 import unittest
 
-from icrn import many_species, many_rate_constants, many_index_symbols, MassActionReaction, FastReaction
+from icrn import (
+    many_species,
+    many_rate_constants,
+    many_index_symbols,
+    MassActionReaction,
+    FastReaction,
+)
+
 rxn = MassActionReaction
 frxn = FastReaction
+
 
 class GrayScott(unittest.TestCase):
     def setUp(self):
@@ -15,6 +23,7 @@ class GrayScott(unittest.TestCase):
             rxn(0, U, F),
             rxn(U, 0, F),
         ]
+
 
 class WinnerTakeAll(unittest.TestCase):
     def setUp(self):
@@ -31,6 +40,8 @@ class WinnerTakeAll(unittest.TestCase):
             rxn(S[j] + RG[j] + YF[k], S[j] + Y[j], 1.8e-4),
             rxn(Y[j] + Rep[j], F[j], 3.6),
         ]
+
+
 class Dimerization(unittest.TestCase):
     def setUp(self):
         M, D = many_species("M, D")
@@ -42,18 +53,21 @@ class Dimerization(unittest.TestCase):
             rxn(D[i, j], M[i] + M[j], K_2[i, j]),
         ]
 
+
 class Hopfield(unittest.TestCase):
     def setUp(self):
         Up, Un = many_species("Up, Un")
         Wp, Wn, Up_deg, Un_deg = many_rate_constants("Wp, Wn, Up_deg, Un_deg")
         i, j = many_index_symbols("i, j", n)
 
-        self.rxns =[
+        self.rxns = [
             rxn(Up[i], Up[i] + Up[j], relu(Wp[i, j])),
             rxn(Up[i], Up[i] + Un[j], relu(-Wp[i, j])),
             rxn(Un[i], Un[i] + Up[j], relu(Wn[i, j])),
             rxn(Un[i], Un[i] + Un[j], relu(-Wn[i, j])),
             rxn(3 * Up[i], 2 * Up[i], Up_deg[i]),
             rxn(3 * Un[i], 2 * Un[i], Un_deg[i]),
-            frxn(Up[i] + Un[i], 0),  # fast reactions use up the limiting reagent
+            frxn(
+                Up[i] + Un[i], 0
+            ),  # fast reactions use up the limiting reagent
         ]

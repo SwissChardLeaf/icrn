@@ -189,13 +189,25 @@ class IndexedSpeciesTests(unittest.TestCase):
         self.assertTrue(jnp.all(self.A_ij.eval(tensor_data) == jnp.arange(5)))
 
     def test_einsum_index_symbol_string(self):
-        self.assertEqual(self.A_ij.einsum_index_symbol_string(False, False), "ij")
-        self.assertEqual(self.A_ij.einsum_index_symbol_string(True, False), "HWij")
-        self.assertEqual(self.A_ij.einsum_index_symbol_string(True, True), "HWij")
+        self.assertEqual(
+            self.A_ij.einsum_index_symbol_string(False, False), "ij"
+        )
+        self.assertEqual(
+            self.A_ij.einsum_index_symbol_string(True, False), "HWij"
+        )
+        self.assertEqual(
+            self.A_ij.einsum_index_symbol_string(True, True), "HWij"
+        )
 
-        self.assertEqual(self.A_ii.einsum_index_symbol_string(False, False), "ii")
-        self.assertEqual(self.A_ii.einsum_index_symbol_string(True, False), "HWii")
-        self.assertEqual(self.A_ii.einsum_index_symbol_string(True, True), "HWii")
+        self.assertEqual(
+            self.A_ii.einsum_index_symbol_string(False, False), "ii"
+        )
+        self.assertEqual(
+            self.A_ii.einsum_index_symbol_string(True, False), "HWii"
+        )
+        self.assertEqual(
+            self.A_ii.einsum_index_symbol_string(True, True), "HWii"
+        )
 
 
 class ConcreteSpeciesTests(unittest.TestCase):
@@ -227,7 +239,9 @@ class ComplexTests(unittest.TestCase):
         A, B, C = many_species("A, B, C")
         i, j, k = many_index_symbols("i, j, k", 5)
 
-        self.complex1 = Complex({A[i]: 1, A[j]: 2, B: 3, C[i, j]: 2, C[j, j]: 1})
+        self.complex1 = Complex(
+            {A[i]: 1, A[j]: 2, B: 3, C[i, j]: 2, C[j, j]: 1}
+        )
         self.complex2 = Complex({A[k]: 1, B: 2, C[j, i]: 2, C[k, j]: 3})
 
     def test_add_reactant(self):
@@ -246,7 +260,9 @@ class ComplexTests(unittest.TestCase):
         self.assertEqual(new_complex, Complex({A[i]: 1, A[j]: 2, B: 3}))
 
         new_complex.add_reactant(C[i, j], 2)
-        self.assertEqual(new_complex, Complex({A[i]: 1, A[j]: 2, B: 3, C[i, j]: 2}))
+        self.assertEqual(
+            new_complex, Complex({A[i]: 1, A[j]: 2, B: 3, C[i, j]: 2})
+        )
 
         new_complex.add_reactant(C[j, j], 1)
         self.assertEqual(new_complex, self.complex1)
@@ -290,7 +306,9 @@ class ComplexTests(unittest.TestCase):
         i, j, k = many_index_symbols("i, j, k", 5)
 
         target1 = Complex({A[1]: 1, A[2]: 2, B: 3, C[1, 2]: 2, C[2, 2]: 1})
-        self.assertEqual(self.complex1.index_symbols_replace({i: 1, j: 2}), target1)
+        self.assertEqual(
+            self.complex1.index_symbols_replace({i: 1, j: 2}), target1
+        )
 
         target2 = Complex({A[3]: 1, B: 2, C[2, 1]: 2, C[3, 2]: 3})
         self.assertEqual(
@@ -391,7 +409,9 @@ class IndexedRateConstantTests(unittest.TestCase):
         alpha_12 = alpha[1, 2]
 
         self.assertIsInstance(alpha_12, ConcreteRateConstant)
-        self.assertEqual(self.alpha_ij.index_symbols_replace({i: 1, j: 2}), alpha_12)
+        self.assertEqual(
+            self.alpha_ij.index_symbols_replace({i: 1, j: 2}), alpha_12
+        )
 
     def test_index_symbols_replace_2(self):
         alpha = self.alpha_ij.base
@@ -415,16 +435,30 @@ class IndexedRateConstantTests(unittest.TestCase):
 
         tensor_data = {alpha: jnp.arange(5)}
 
-        self.assertTrue(jnp.all(self.alpha_ij.eval(tensor_data) == jnp.arange(5)))
+        self.assertTrue(
+            jnp.all(self.alpha_ij.eval(tensor_data) == jnp.arange(5))
+        )
 
     def test_einsum_index_symbol_string(self):
-        self.assertEqual(self.alpha_ij.einsum_index_symbol_string(False, False), "ij")
-        self.assertEqual(self.alpha_ij.einsum_index_symbol_string(True, False), "ij")
-        self.assertEqual(self.alpha_ij.einsum_index_symbol_string(True, True), "HWij")
+        self.assertEqual(
+            self.alpha_ij.einsum_index_symbol_string(False, False), "ij"
+        )
+        self.assertEqual(
+            self.alpha_ij.einsum_index_symbol_string(True, False), "ij"
+        )
+        self.assertEqual(
+            self.alpha_ij.einsum_index_symbol_string(True, True), "HWij"
+        )
 
-        self.assertEqual(self.alpha_ii.einsum_index_symbol_string(False, False), "ii")
-        self.assertEqual(self.alpha_ii.einsum_index_symbol_string(True, False), "ii")
-        self.assertEqual(self.alpha_ii.einsum_index_symbol_string(True, True), "HWii")
+        self.assertEqual(
+            self.alpha_ii.einsum_index_symbol_string(False, False), "ii"
+        )
+        self.assertEqual(
+            self.alpha_ii.einsum_index_symbol_string(True, False), "ii"
+        )
+        self.assertEqual(
+            self.alpha_ii.einsum_index_symbol_string(True, True), "HWii"
+        )
 
 
 class ConcreteRateConstantTests(unittest.TestCase):
@@ -447,9 +481,15 @@ class ConcreteRateConstantTests(unittest.TestCase):
         self.assertTrue(self.alpha_12.eval(tensor_data) == 7)
 
     def test_einsum_index_symbol_string(self):
-        self.assertEqual(self.alpha_12.einsum_index_symbol_string(False, False), "")
-        self.assertEqual(self.alpha_12.einsum_index_symbol_string(True, False), "")
-        self.assertEqual(self.alpha_12.einsum_index_symbol_string(True, True), "")
+        self.assertEqual(
+            self.alpha_12.einsum_index_symbol_string(False, False), ""
+        )
+        self.assertEqual(
+            self.alpha_12.einsum_index_symbol_string(True, False), ""
+        )
+        self.assertEqual(
+            self.alpha_12.einsum_index_symbol_string(True, True), ""
+        )
 
 
 class NumericRateConstantTests(unittest.TestCase):
@@ -625,7 +665,8 @@ class RateConstantFunctionTests(unittest.TestCase):
 
         self.assertTrue(
             jnp.all(
-                self.relu_alpha.eval(tensor_data) == jnp.array([[1, 0, 5], [3, 0, 0]])
+                self.relu_alpha.eval(tensor_data)
+                == jnp.array([[1, 0, 5], [3, 0, 0]])
             )
         )
 
@@ -643,7 +684,9 @@ class RateConstantFunctionTests(unittest.TestCase):
             )
         )
 
-        self.assertTrue(jnp.all(self.relu_alpha_12.eval(tensor_data) == jnp.array(0)))
+        self.assertTrue(
+            jnp.all(self.relu_alpha_12.eval(tensor_data) == jnp.array(0))
+        )
 
         self.assertTrue(
             jnp.all(
@@ -674,7 +717,9 @@ class RateConstantFunctionTests(unittest.TestCase):
         self.assertEqual(
             self.add_one_alpha.einsum_index_symbol_string(False, False), ""
         )
-        self.assertEqual(self.add_one_alpha.einsum_index_symbol_string(True, False), "")
+        self.assertEqual(
+            self.add_one_alpha.einsum_index_symbol_string(True, False), ""
+        )
         self.assertEqual(
             self.add_one_alpha.einsum_index_symbol_string(True, True), "HW"
         )
@@ -709,9 +754,15 @@ class RateConstantFunctionTests(unittest.TestCase):
             self.add_one_alpha_12.einsum_index_symbol_string(True, True), ""
         )
 
-        self.assertEqual(self.relu_alpha.einsum_index_symbol_string(False, False), "")
-        self.assertEqual(self.relu_alpha.einsum_index_symbol_string(True, False), "")
-        self.assertEqual(self.relu_alpha.einsum_index_symbol_string(True, True), "HW")
+        self.assertEqual(
+            self.relu_alpha.einsum_index_symbol_string(False, False), ""
+        )
+        self.assertEqual(
+            self.relu_alpha.einsum_index_symbol_string(True, False), ""
+        )
+        self.assertEqual(
+            self.relu_alpha.einsum_index_symbol_string(True, True), "HW"
+        )
 
         self.assertEqual(
             self.relu_alpha_ii.einsum_index_symbol_string(False, False), "ii"
@@ -736,8 +787,12 @@ class RateConstantFunctionTests(unittest.TestCase):
         self.assertEqual(
             self.relu_alpha_12.einsum_index_symbol_string(False, False), ""
         )
-        self.assertEqual(self.relu_alpha_12.einsum_index_symbol_string(True, False), "")
-        self.assertEqual(self.relu_alpha_12.einsum_index_symbol_string(True, True), "")
+        self.assertEqual(
+            self.relu_alpha_12.einsum_index_symbol_string(True, False), ""
+        )
+        self.assertEqual(
+            self.relu_alpha_12.einsum_index_symbol_string(True, True), ""
+        )
 
     def test_str(self):
         self.assertEqual(str(self.add_one_alpha), "add_one(alpha)")
@@ -830,9 +885,12 @@ class MassActionReactionTests(unittest.TestCase):
         alpha, beta, gamma = many_rate_constants("alpha, beta, gamma")
 
         self.assertEqual(
-            self.rxn1.shapes(), {A: (10, 10), B: (10, 10), C: (10, 10), alpha: (10,)}
+            self.rxn1.shapes(),
+            {A: (10, 10), B: (10, 10), C: (10, 10), alpha: (10,)},
         )
-        self.assertEqual(self.rxn2.shapes(), {D: (), E: (), F: (), gamma: (10, 10)})
+        self.assertEqual(
+            self.rxn2.shapes(), {D: (), E: (), F: (), gamma: (10, 10)}
+        )
         self.assertEqual(self.rxn3.shapes(), {D: (), B: (10, 10), G: (10,)})
         self.assertEqual(self.rxn4.shapes(), {D: (), E: (), F: (), beta: ()})
         self.assertEqual(self.rxn5.shapes(), dict())
@@ -890,7 +948,9 @@ class MassActionReactionTests(unittest.TestCase):
         self.assertEqual(rxn4_replaced.rule, rxn4_target.rule)
 
         rxn5_replaced = self.rxn5.index_symbols_replace(values_dict)
-        rxn5_target = MassActionReaction(A[1, 1] + B[2, 3], 2 * C[1, 2], alpha[4])
+        rxn5_target = MassActionReaction(
+            A[1, 1] + B[2, 3], 2 * C[1, 2], alpha[4]
+        )
         self.assertEqual(rxn5_replaced.reactants, rxn5_target.reactants)
         self.assertEqual(rxn5_replaced.products, rxn5_target.products)
         self.assertEqual(rxn5_replaced.aux, rxn5_target.aux)
@@ -1064,19 +1124,26 @@ class MassActionReactionTests(unittest.TestCase):
         self.assertTrue(
             jnp.allclose(
                 dynamics_dict4[D],
-                -2 * jnp.einsum(",->", tensor_data[beta], jnp.power(tensor_data[D], 2)),
+                -2
+                * jnp.einsum(
+                    ",->", tensor_data[beta], jnp.power(tensor_data[D], 2)
+                ),
             )
         )
         self.assertTrue(
             jnp.allclose(
                 dynamics_dict4[E],
-                jnp.einsum(",->", tensor_data[beta], jnp.power(tensor_data[D], 2)),
+                jnp.einsum(
+                    ",->", tensor_data[beta], jnp.power(tensor_data[D], 2)
+                ),
             )
         )
         self.assertTrue(
             jnp.allclose(
                 dynamics_dict4[F],
-                jnp.einsum(",->", tensor_data[beta], jnp.power(tensor_data[D], 2)),
+                jnp.einsum(
+                    ",->", tensor_data[beta], jnp.power(tensor_data[D], 2)
+                ),
             )
         )
 
@@ -1126,7 +1193,9 @@ class MassActionReactionTests(unittest.TestCase):
             for j_v in range(10):
                 for k_v in range(10):
                     self.assertIn(
-                        self.rxn1.index_symbols_replace({i: i_v, j: j_v, k: k_v}),
+                        self.rxn1.index_symbols_replace(
+                            {i: i_v, j: j_v, k: k_v}
+                        ),
                         enum_list1,
                     )
 
@@ -1135,7 +1204,8 @@ class MassActionReactionTests(unittest.TestCase):
         for i_v in range(10):
             for j_v in range(10):
                 self.assertIn(
-                    self.rxn2.index_symbols_replace({i: i_v, j: j_v}), enum_list2
+                    self.rxn2.index_symbols_replace({i: i_v, j: j_v}),
+                    enum_list2,
                 )
 
         enum_list3 = self.rxn3.enumerate()
@@ -1144,7 +1214,9 @@ class MassActionReactionTests(unittest.TestCase):
             for j_v in range(10):
                 for k_v in range(10):
                     self.assertIn(
-                        self.rxn3.index_symbols_replace({i: i_v, j: j_v, k: k_v}),
+                        self.rxn3.index_symbols_replace(
+                            {i: i_v, j: j_v, k: k_v}
+                        ),
                         enum_list3,
                     )
 
@@ -1181,8 +1253,12 @@ class MichaelisMentenReactionTests(unittest.TestCase):
 
         dynamics_dict1 = self.rxn1.build_flux(None, False)(tensor_data1)
         self.assertEqual(dynamics_dict1.keys(), {S, P})
-        self.assertTrue(jnp.allclose(dynamics_dict1[S], -0.5 * 2.0 * 3.0 / (2.0 + 1.0)))
-        self.assertTrue(jnp.allclose(dynamics_dict1[P], 0.5 * 2.0 * 3.0 / (2.0 + 1.0)))
+        self.assertTrue(
+            jnp.allclose(dynamics_dict1[S], -0.5 * 2.0 * 3.0 / (2.0 + 1.0))
+        )
+        self.assertTrue(
+            jnp.allclose(dynamics_dict1[P], 0.5 * 2.0 * 3.0 / (2.0 + 1.0))
+        )
 
         tensor_data2 = {
             S: jnp.arange(5),
@@ -1211,7 +1287,9 @@ class MichaelisMentenReactionTests(unittest.TestCase):
 
         range_5 = jnp.arange(5)
         range_25 = jnp.arange(25).reshape((5, 5))
-        change = jnp.einsum("ji,i,j->i", range_25, range_5 / (range_5 + 1.0), range_5)
+        change = jnp.einsum(
+            "ji,i,j->i", range_25, range_5 / (range_5 + 1.0), range_5
+        )
         self.assertTrue(jnp.allclose(dynamics_dict3[S], -change))
         self.assertTrue(jnp.allclose(dynamics_dict3[P], change))
 
@@ -1261,7 +1339,8 @@ class FastReactionTests(unittest.TestCase):
             FastReaction(D[1, 2] + E[1, 2], 0),
         )
         self.assertEqual(
-            self.rxn3.index_symbols_replace(values_dict), FastReaction(2 * F, 3 * G)
+            self.rxn3.index_symbols_replace(values_dict),
+            FastReaction(2 * F, 3 * G),
         )
         self.assertEqual(
             self.rxn4.index_symbols_replace(values_dict),
@@ -1282,8 +1361,12 @@ class FastReactionTests(unittest.TestCase):
 
         flux1 = self.rxn1.flux(tensor_data)
         self.assertEqual(flux1.keys(), {B, C})
-        self.assertTrue(jnp.all(jnp.allclose(flux1[B], jnp.array([-0.55, -0.3, -0.4]))))
-        self.assertTrue(jnp.all(jnp.allclose(flux1[C], jnp.array([1.1, 0.6, 0.8]))))
+        self.assertTrue(
+            jnp.all(jnp.allclose(flux1[B], jnp.array([-0.55, -0.3, -0.4])))
+        )
+        self.assertTrue(
+            jnp.all(jnp.allclose(flux1[C], jnp.array([1.1, 0.6, 0.8])))
+        )
 
         flux2 = self.rxn2.flux(tensor_data)
         self.assertEqual(flux2.keys(), {D, E})
@@ -1291,7 +1374,9 @@ class FastReactionTests(unittest.TestCase):
             jnp.all(
                 jnp.allclose(
                     flux2[D],
-                    -jnp.array([[2.2, 0.1, 1.1], [1.4, 1.2, 2.4], [9.3, 3.1, 2.6]]),
+                    -jnp.array(
+                        [[2.2, 0.1, 1.1], [1.4, 1.2, 2.4], [9.3, 3.1, 2.6]]
+                    ),
                 )
             )
         )
@@ -1299,7 +1384,9 @@ class FastReactionTests(unittest.TestCase):
             jnp.all(
                 jnp.allclose(
                     flux2[E],
-                    -jnp.array([[2.2, 0.1, 1.1], [1.4, 1.2, 2.4], [9.3, 3.1, 2.6]]),
+                    -jnp.array(
+                        [[2.2, 0.1, 1.1], [1.4, 1.2, 2.4], [9.3, 3.1, 2.6]]
+                    ),
                 )
             )
         )
@@ -1313,7 +1400,9 @@ class FastReactionTests(unittest.TestCase):
         self.assertEqual(flux4.keys(), {A[1], B[2], C[0]})
         self.assertTrue(jnp.all(jnp.allclose(flux4[A[1]], -jnp.array(1.5))))
         self.assertTrue(jnp.all(jnp.allclose(flux4[B[2]], -jnp.array(1.5 / 3))))
-        self.assertTrue(jnp.all(jnp.allclose(flux4[C[0]], jnp.array(2 * 1.5 / 3))))
+        self.assertTrue(
+            jnp.all(jnp.allclose(flux4[C[0]], jnp.array(2 * 1.5 / 3)))
+        )
 
     def test_enumerate(self):
         i, j = many_index_symbols("i, j", 3)
@@ -1328,7 +1417,8 @@ class FastReactionTests(unittest.TestCase):
         for i_v in range(3):
             for j_v in range(3):
                 self.assertIn(
-                    self.rxn2.index_symbols_replace({i: i_v, j: j_v}), enum_list2
+                    self.rxn2.index_symbols_replace({i: i_v, j: j_v}),
+                    enum_list2,
                 )
 
         enum_list4 = self.rxn4.enumerate()
@@ -1345,7 +1435,9 @@ class ICRNTests(unittest.TestCase):
         i, j, k = many_index_symbols("i, j, k", 10)
 
         self.rxns = [
-            MassActionReaction(A[i, j] + 2 * B[j, k], A[i, j] + C[i, k], alpha[i]),
+            MassActionReaction(
+                A[i, j] + 2 * B[j, k], A[i, j] + C[i, k], alpha[i]
+            ),
             MassActionReaction(D + E, F, relu(gamma[i, j])),
             MassActionReaction(0, B[i, j], beta),
             MassActionReaction(A[1, 2], 2 * B[2, 3], 2.0),
@@ -1398,28 +1490,37 @@ class ICRNTests(unittest.TestCase):
 
         self.assertEqual(fast_dynamics.keys(), {A, C, D, F, G})
         self.assertTrue(
-            jnp.allclose(fast_dynamics[A], -jnp.minimum(tensor_data[A], tensor_data[C]))
-        )
-        self.assertTrue(
-            jnp.allclose(fast_dynamics[C], -jnp.minimum(tensor_data[A], tensor_data[C]))
-        )
-        self.assertTrue(
             jnp.allclose(
-                fast_dynamics[D], -jnp.minimum(tensor_data[D], tensor_data[F] / 2)
+                fast_dynamics[A], -jnp.minimum(tensor_data[A], tensor_data[C])
             )
         )
         self.assertTrue(
             jnp.allclose(
-                fast_dynamics[F], -2 * jnp.minimum(tensor_data[D], tensor_data[F] / 2)
+                fast_dynamics[C], -jnp.minimum(tensor_data[A], tensor_data[C])
             )
         )
         self.assertTrue(
             jnp.allclose(
-                fast_dynamics[G], 3 * jnp.minimum(tensor_data[D], tensor_data[F] / 2)
+                fast_dynamics[D],
+                -jnp.minimum(tensor_data[D], tensor_data[F] / 2),
+            )
+        )
+        self.assertTrue(
+            jnp.allclose(
+                fast_dynamics[F],
+                -2 * jnp.minimum(tensor_data[D], tensor_data[F] / 2),
+            )
+        )
+        self.assertTrue(
+            jnp.allclose(
+                fast_dynamics[G],
+                3 * jnp.minimum(tensor_data[D], tensor_data[F] / 2),
             )
         )
 
-        self.assertEqual(normal_dynamics.keys(), {A[1, 2], B, B[2, 3], C, D, E, F})
+        self.assertEqual(
+            normal_dynamics.keys(), {A[1, 2], B, B[2, 3], C, D, E, F}
+        )
         self.assertTrue(
             jnp.allclose(normal_dynamics[A[1, 2]], -2 * tensor_data[A][1, 2])
         )
@@ -1434,7 +1535,10 @@ class ICRNTests(unittest.TestCase):
                     tensor_data[alpha],
                 )
                 + jnp.einsum(
-                    ",i,j->ij", tensor_data[beta], jnp.ones((10,)), jnp.ones((10,))
+                    ",i,j->ij",
+                    tensor_data[beta],
+                    jnp.ones((10,)),
+                    jnp.ones((10,)),
                 ),
             )
         )
@@ -1490,7 +1594,9 @@ class ICRNTests(unittest.TestCase):
         enum_icrn = self.icrn.enumerate()
 
         self.assertIsInstance(enum_icrn, ICRN)
-        self.assertEqual(len(enum_icrn.reactions), 1000 + 100 + 100 + 1 + 1 + 100)
+        self.assertEqual(
+            len(enum_icrn.reactions), 1000 + 100 + 100 + 1 + 1 + 100
+        )
 
         for i_rxn in self.rxns:
             for rxn in i_rxn.enumerate():

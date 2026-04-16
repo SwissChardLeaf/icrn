@@ -187,7 +187,10 @@ class IndexedBase(IndexedObject):
         return idx_set
 
     def __eq__(self, other):
-        return self.base == other.base and self.index_symbols == other.index_symbols
+        return (
+            self.base == other.base
+            and self.index_symbols == other.index_symbols
+        )
 
     def __hash__(self):
         return hash((self.base, self.index_symbols))
@@ -196,7 +199,9 @@ class IndexedBase(IndexedObject):
         return repr(self)
 
     def __repr__(self):
-        return str(self.base) + "[" + ",".join(map(str, self.index_symbols)) + "]"
+        return (
+            str(self.base) + "[" + ",".join(map(str, self.index_symbols)) + "]"
+        )
 
 
 class ConcreteObject(ABC):
@@ -216,7 +221,10 @@ class ConcreteObject(ABC):
         return set(self.index_symbols)
 
     def __eq__(self, other):
-        return self.base == other.base and self.index_symbols == other.index_symbols
+        return (
+            self.base == other.base
+            and self.index_symbols == other.index_symbols
+        )
 
     def __hash__(self):
         return hash((self.base, self.index_symbols))
@@ -225,7 +233,9 @@ class ConcreteObject(ABC):
         return repr(self)
 
     def __repr__(self):
-        return str(self.base) + "[" + ",".join(map(str, self.index_symbols)) + "]"
+        return (
+            str(self.base) + "[" + ",".join(map(str, self.index_symbols)) + "]"
+        )
 
 
 class Reactant(ABC):
@@ -333,7 +343,9 @@ class Species(BaseObject, Reactant):
 
 class IndexedSpecies(IndexedBase, Reactant):
     def index_symbols_replace(self, values_dict):
-        new_index_symbols = tuple(map(lambda x: values_dict[x], self.index_symbols))
+        new_index_symbols = tuple(
+            map(lambda x: values_dict[x], self.index_symbols)
+        )
         return ConcreteSpecies(self.base, new_index_symbols)
 
     def eval(self, tensor_data):
@@ -379,7 +391,9 @@ class RateConstant(BaseObject, RateConstantExpr):
 
 class IndexedRateConstant(IndexedBase, RateConstantExpr):
     def index_symbols_replace(self, values_dict):
-        new_index_symbols = tuple(map(lambda x: values_dict[x], self.index_symbols))
+        new_index_symbols = tuple(
+            map(lambda x: values_dict[x], self.index_symbols)
+        )
         return ConcreteRateConstant(self.base, new_index_symbols)
 
     def eval(self, tensor_data):
@@ -518,7 +532,9 @@ class Complex(IndexedObject):
         new_complex = Complex({})
         for sym, count in self.count_dict.items():
             if isinstance(sym, IndexedSpecies):
-                new_complex.add_reactant(sym.index_symbols_replace(values_dict), count)
+                new_complex.add_reactant(
+                    sym.index_symbols_replace(values_dict), count
+                )
             else:
                 new_complex.add_reactant(sym, count)
         return new_complex
@@ -607,7 +623,9 @@ class RateConstantFunction(IndexedObject, RateConstantExpr):
                 else:
                     return x
 
-            return RateConstantFunction(self.fn, tuple(map(replace_helper, self.args)))
+            return RateConstantFunction(
+                self.fn, tuple(map(replace_helper, self.args))
+            )
         elif isinstance(self.args, IndexedRateConstant):
             return RateConstantFunction(
                 self.fn, self.args.index_symbols_replace(values_dict)
@@ -729,7 +747,9 @@ def mass_action(reactants, products, aux, spatial_dim, spatial_rate_constant):
                 key,
                 base_str
                 + "->"
-                + s.einsum_index_symbol_string(spatial_dim_bool, spatial_rate_constant),
+                + s.einsum_index_symbol_string(
+                    spatial_dim_bool, spatial_rate_constant
+                ),
             )
 
     def get_tensor_vals(tensor_data):
@@ -771,7 +791,9 @@ def michaelis_menten(substrate, enzyme, product, rate_constant, aux):
     einsum_str += enzyme.einsum_index_symbol_string(False, False)
     einsum_str += "->"
 
-    s_einsum_str = einsum_str + substrate.einsum_index_symbol_string(False, False)
+    s_einsum_str = einsum_str + substrate.einsum_index_symbol_string(
+        False, False
+    )
     p_einsum_str = einsum_str + product.einsum_index_symbol_string(False, False)
 
     def get_tensor_vals(tensor_data):
@@ -937,13 +959,19 @@ class MassActionReaction(IndexedObject):
 
     def build_flux(self, spatial_dim, spatial_rate_constant):
         return self.rule(
-            self.reactants, self.products, self.aux, spatial_dim, spatial_rate_constant
+            self.reactants,
+            self.products,
+            self.aux,
+            spatial_dim,
+            spatial_rate_constant,
         )
 
     def enumerate(self):
         idx_syms_list = list(self.get_index_symbols_set())
         idx_syms_list.sort()
-        combos = product(*list(map(lambda x: range(x.index_set), idx_syms_list)))
+        combos = product(
+            *list(map(lambda x: range(x.index_set), idx_syms_list))
+        )
 
         return [
             self.index_symbols_replace(dict(zip(idx_syms_list, combo)))
@@ -953,7 +981,9 @@ class MassActionReaction(IndexedObject):
 
 # class MichaelisMentenReaction(IndexedObject):
 class MichaelisMentenReaction:
-    def __init__(self, substrate, enzyme, product, rate_constant, aux, name=None):
+    def __init__(
+        self, substrate, enzyme, product, rate_constant, aux, name=None
+    ):
         # if isinstance(reactants, int) and reactants == 0:
         #     self._reactants = Complex({})
         # elif not isinstance(reactants, Complex):
@@ -1017,7 +1047,12 @@ class MichaelisMentenReaction:
     #            self.rule == other.rule
 
     def shapes(self):
-        species_set = {self.substrate, self.product, self.enzyme, self.rate_constant}
+        species_set = {
+            self.substrate,
+            self.product,
+            self.enzyme,
+            self.rate_constant,
+        }
 
         shapes_dict = dict()
 
@@ -1067,7 +1102,11 @@ class MichaelisMentenReaction:
 
     def build_flux(self, spatial_dim, spatial_rate_constant):
         return self.rule(
-            self.substrate, self.enzyme, self.product, self.rate_constant, self.aux
+            self.substrate,
+            self.enzyme,
+            self.product,
+            self.rate_constant,
+            self.aux,
         )
 
     # def enumerate(self):
@@ -1117,7 +1156,9 @@ class FastReaction(IndexedObject):
                     if isinstance(s, IndexedSpecies):
                         key = s.base
 
-                    return_dict[key] = return_dict.get(key, 0) + diff * delta_unit
+                    return_dict[key] = (
+                        return_dict.get(key, 0) + diff * delta_unit
+                    )
             return return_dict
 
         self.dynamics_func = f
@@ -1187,7 +1228,9 @@ class FastReaction(IndexedObject):
         idx_syms_list = list(self.get_index_symbols_set())
         idx_syms_list.sort()
 
-        combos = product(*list(map(lambda x: range(x.index_set), idx_syms_list)))
+        combos = product(
+            *list(map(lambda x: range(x.index_set), idx_syms_list))
+        )
 
         return [
             self.index_symbols_replace(dict(zip(idx_syms_list, combo)))
@@ -1264,4 +1307,6 @@ class ICRN:
         return jittable_fast_dynamics, jittable_normal_dynamics
 
     def enumerate(self):
-        return ICRN([enum_r for r in self.reactions for enum_r in r.enumerate()])
+        return ICRN(
+            [enum_r for r in self.reactions for enum_r in r.enumerate()]
+        )

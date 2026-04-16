@@ -18,7 +18,8 @@ STENCIL_H = jnp.array(
 )[..., jnp.newaxis, jnp.newaxis]
 
 STENCIL_W = jnp.array(
-    [[-1 / 3, 0, 1 / 3], [-2 / 3, 0, 2 / 3], [-1 / 3, 0, 1 / 3]], dtype="float32"
+    [[-1 / 3, 0, 1 / 3], [-2 / 3, 0, 2 / 3], [-1 / 3, 0, 1 / 3]],
+    dtype="float32",
 )[..., jnp.newaxis, jnp.newaxis]
 
 DIM_NUM = lax.conv_dimension_numbers(
@@ -54,7 +55,9 @@ def _spectral_species_diffuse(conc, kd, lap_op, dt):
 
 def spectral_diffuse(concs, diff_data, lap_op, dt):
     return jax_tree.tree_map(
-        lambda c, kd: _spectral_species_diffuse(c, kd, lap_op, dt), concs, diff_data
+        lambda c, kd: _spectral_species_diffuse(c, kd, lap_op, dt),
+        concs,
+        diff_data,
     )
 
 
@@ -114,7 +117,9 @@ def _reshaped_conc_diff_constant(
     if spatially_varying_diffusion_constant:
         diff_constant_reshape = jnp.reshape(diff_constant, conc_reshape.shape)
     else:
-        diff_constant_broadcasted = jnp.broadcast_to(diff_constant, original_conc_shape)
+        diff_constant_broadcasted = jnp.broadcast_to(
+            diff_constant, original_conc_shape
+        )
         diff_constant_reshape = jnp.reshape(
             diff_constant_broadcasted, conc_reshape.shape
         )
@@ -123,7 +128,12 @@ def _reshaped_conc_diff_constant(
 
 
 def _conv_species_diffuse(
-    conc, diff_constant, dt, dh=1, dw=1, spatially_varying_diffusion_constant=False
+    conc,
+    diff_constant,
+    dt,
+    dh=1,
+    dw=1,
+    spatially_varying_diffusion_constant=False,
 ):
     # currently assumes dh == dw
     diff = None
@@ -172,7 +182,9 @@ def relu_euler(concs_data, rate_data, dt, dynamics_func):
 
 
 def RK4(concs_data, rate_constant_data, dt, dynamics_func):
-    k1 = concs_data.init_with_dict(dynamics_func(concs_data | rate_constant_data))
+    k1 = concs_data.init_with_dict(
+        dynamics_func(concs_data | rate_constant_data)
+    )
     k2 = concs_data.init_with_dict(
         dynamics_func(concs_data + k1 * dt * 0.5 | rate_constant_data)
     )
@@ -187,7 +199,9 @@ def RK4(concs_data, rate_constant_data, dt, dynamics_func):
 
 def relu_RK4(concs_data, rate_constant_data, dt, dynamics_func):
     k1 = concs_data.init_with_dict(
-        dynamics_func(jax_tree.tree_map(jax.nn.relu, concs_data) | rate_constant_data)
+        dynamics_func(
+            jax_tree.tree_map(jax.nn.relu, concs_data) | rate_constant_data
+        )
     )
     k2 = concs_data.init_with_dict(
         dynamics_func(
@@ -203,7 +217,8 @@ def relu_RK4(concs_data, rate_constant_data, dt, dynamics_func):
     )
     k4 = concs_data.init_with_dict(
         dynamics_func(
-            jax_tree.tree_map(jax.nn.relu, concs_data) + k3 * dt | rate_constant_data
+            jax_tree.tree_map(jax.nn.relu, concs_data) + k3 * dt
+            | rate_constant_data
         )
     )
     return jax_tree.tree_map(
@@ -232,7 +247,9 @@ def build_forward_step(
     spatial_rate_constant=False,
     **kwargs,
 ):
-    fast_dynamics, normal_dynamics = icrn.dynamics(spatial_dim, spatial_rate_constant)
+    fast_dynamics, normal_dynamics = icrn.dynamics(
+        spatial_dim, spatial_rate_constant
+    )
 
     rxn_integrator = INT_METHOD_DICT[integration_method]
     diffuse = DIFFUSE_METHOD_DICT[diffusion_method]
@@ -246,7 +263,9 @@ def build_forward_step(
 
     if spatial_dim is not None:
         if diffusion_method == "spectral":
-            lap_op = compute_lap_op(spatial_dim, dh=kwargs["dh"], dw=kwargs["dh"])
+            lap_op = compute_lap_op(
+                spatial_dim, dh=kwargs["dh"], dw=kwargs["dh"]
+            )
 
             def spectral_rd_f(conc_data, rate_data, diff_data, dt):
                 conc_data = wm_f(conc_data, rate_data, diff_data, dt)

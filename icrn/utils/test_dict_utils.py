@@ -3,213 +3,286 @@ import os
 import jax.numpy as jnp
 import jax.tree as jax_tree
 
-from .dict_utils import arr_mul, arr_add, dict_sub, dict_add, dict_sum, dict_index
+from .dict_utils import (
+    arr_mul,
+    arr_add,
+    dict_sub,
+    dict_add,
+    dict_sum,
+    dict_index,
+)
+
 
 class TestDictOperations(unittest.TestCase):
     def test_arr_mul(self):
         ex_dict = {
-            "A" : jnp.array([1, 2, 3]),
-            "B" : jnp.array([
-                [1, 2, 3],
-                [4, 5, 6],
-            ]),
-            "C" : jnp.array(1)
+            "A": jnp.array([1, 2, 3]),
+            "B": jnp.array(
+                [
+                    [1, 2, 3],
+                    [4, 5, 6],
+                ]
+            ),
+            "C": jnp.array(1),
         }
-        
+
         output = arr_mul(ex_dict, 2)
         target_dict = {
-            "A" : jnp.array([2, 4, 6]),
-            "B" : jnp.array([
-                [2, 4, 6],
-                [8, 10, 12],
-            ]),
-            "C" : jnp.array(2)
+            "A": jnp.array([2, 4, 6]),
+            "B": jnp.array(
+                [
+                    [2, 4, 6],
+                    [8, 10, 12],
+                ]
+            ),
+            "C": jnp.array(2),
         }
-        self.assertTrue(jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict)))
+        self.assertTrue(
+            jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict))
+        )
 
         with self.assertRaises(TypeError):
             arr_mul(ex_dict, jnp.array([1, 2, 3, 4]))
 
     def test_arr_add(self):
         ex_dict = {
-            "A" : jnp.array([1, 2, 3]),
-            "B" : jnp.array([
-                [1, 2, 3],
-                [4, 5, 6],
-            ]),
-            "C" : jnp.array(1)
+            "A": jnp.array([1, 2, 3]),
+            "B": jnp.array(
+                [
+                    [1, 2, 3],
+                    [4, 5, 6],
+                ]
+            ),
+            "C": jnp.array(1),
         }
         output = arr_add(ex_dict, 2)
         target_dict = {
-            "A" : jnp.array([3, 4, 5]),
-            "B" : jnp.array([
-                [3, 4, 5],
-                [6, 7, 8],
-            ]),
-            "C" : jnp.array(3)
+            "A": jnp.array([3, 4, 5]),
+            "B": jnp.array(
+                [
+                    [3, 4, 5],
+                    [6, 7, 8],
+                ]
+            ),
+            "C": jnp.array(3),
         }
 
-        self.assertTrue(jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict)))
+        self.assertTrue(
+            jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict))
+        )
 
         with self.assertRaises(TypeError):
             arr_add(ex_dict, jnp.array([1, 2, 3, 4]))
 
     def test_dict_add(self):
         ex_dict1 = {
-            "A" : jnp.array([1, 2, 3]),
-            "B" : jnp.array([
-                [1, 2, 3],
-                [4, 5, 6],
-            ]),
+            "A": jnp.array([1, 2, 3]),
+            "B": jnp.array(
+                [
+                    [1, 2, 3],
+                    [4, 5, 6],
+                ]
+            ),
         }
         ex_dict2 = {
-            "A" : jnp.array([4, 5, 6]),
-            "B" : jnp.array([
-                [7, 8, 9],
-                [10, 11, 12],
-            ]),
+            "A": jnp.array([4, 5, 6]),
+            "B": jnp.array(
+                [
+                    [7, 8, 9],
+                    [10, 11, 12],
+                ]
+            ),
         }
         output = dict_add(ex_dict1, ex_dict2)
         target_dict = {
-            "A" : jnp.array([5, 7, 9]),
-            "B" : jnp.array([
-                [8, 10, 12],
-                [14, 16, 18],
-            ]),
+            "A": jnp.array([5, 7, 9]),
+            "B": jnp.array(
+                [
+                    [8, 10, 12],
+                    [14, 16, 18],
+                ]
+            ),
         }
-        self.assertTrue(jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict)))
+        self.assertTrue(
+            jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict))
+        )
 
         with self.assertRaises(ValueError):
-            dict_add(ex_dict1, {"A" : jnp.array([1, 2, 3])})
+            dict_add(ex_dict1, {"A": jnp.array([1, 2, 3])})
 
         with self.assertRaises(ValueError):
-            dict_add(ex_dict1, {
-                "A" : jnp.array([1, 2, 3]),
-                "B" : jnp.array([
-                    [1, 2, 3],
-                    [4, 5, 6],
-                ]),
-                "C" : jnp.array([1, 2, 3])
-            })
+            dict_add(
+                ex_dict1,
+                {
+                    "A": jnp.array([1, 2, 3]),
+                    "B": jnp.array(
+                        [
+                            [1, 2, 3],
+                            [4, 5, 6],
+                        ]
+                    ),
+                    "C": jnp.array([1, 2, 3]),
+                },
+            )
 
         with self.assertRaises(TypeError):
-            dict_add(ex_dict1, {
-                "A" : jnp.array([1, 2, 3]),
-                "B" : jnp.array([
-                    [1, 2, 3],
-                    [4, 5, 6],
-                    [7, 8, 9],
-                ])
-            })
-
+            dict_add(
+                ex_dict1,
+                {
+                    "A": jnp.array([1, 2, 3]),
+                    "B": jnp.array(
+                        [
+                            [1, 2, 3],
+                            [4, 5, 6],
+                            [7, 8, 9],
+                        ]
+                    ),
+                },
+            )
 
     def test_dict_sub(self):
         ex_dict1 = {
-            "A" : jnp.array([5, 6, 7]),
-            "B" : jnp.array([
-                [6, 7, 8],
-                [9, 10, 11],
-            ]),
+            "A": jnp.array([5, 6, 7]),
+            "B": jnp.array(
+                [
+                    [6, 7, 8],
+                    [9, 10, 11],
+                ]
+            ),
         }
         ex_dict2 = {
-            "A" : jnp.array([4, 5, 6]),
-            "B" : jnp.array([
-                [7, 8, 9],
-                [10, 11, 12],
-            ]),
+            "A": jnp.array([4, 5, 6]),
+            "B": jnp.array(
+                [
+                    [7, 8, 9],
+                    [10, 11, 12],
+                ]
+            ),
         }
         output = dict_sub(ex_dict1, ex_dict2)
         target_dict = {
-            "A" : jnp.array([1, 1, 1]),
-            "B" : jnp.array([
-                [-1, -1, -1],
-                [-1, -1, -1],
-            ]),
+            "A": jnp.array([1, 1, 1]),
+            "B": jnp.array(
+                [
+                    [-1, -1, -1],
+                    [-1, -1, -1],
+                ]
+            ),
         }
-        self.assertTrue(jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict)))
+        self.assertTrue(
+            jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict))
+        )
 
         with self.assertRaises(ValueError):
-            dict_sub(ex_dict1, {"A" : jnp.array([1, 2, 3])})
+            dict_sub(ex_dict1, {"A": jnp.array([1, 2, 3])})
 
         with self.assertRaises(ValueError):
-            dict_sub(ex_dict1, {
-                "A" : jnp.array([1, 2, 3]),
-                "B" : jnp.array([
-                    [1, 2, 3],
-                    [4, 5, 6],
-                    [7, 8, 9],
-                ]),
-                "C" : jnp.array([1, 2, 3])
-            })
+            dict_sub(
+                ex_dict1,
+                {
+                    "A": jnp.array([1, 2, 3]),
+                    "B": jnp.array(
+                        [
+                            [1, 2, 3],
+                            [4, 5, 6],
+                            [7, 8, 9],
+                        ]
+                    ),
+                    "C": jnp.array([1, 2, 3]),
+                },
+            )
 
     def test_dict_sum(self):
         ex_dict1 = {
-            "A" : jnp.array([1, 2, 3]),
-            "B" : jnp.array([
-                [1, 2, 3],
-                [4, 5, 6],
-            ]),
+            "A": jnp.array([1, 2, 3]),
+            "B": jnp.array(
+                [
+                    [1, 2, 3],
+                    [4, 5, 6],
+                ]
+            ),
         }
         ex_dict2 = {
-            "A" : jnp.array([4, 5, 6]),
-            "B" : jnp.array([
-                [7, 8, 9],
-                [10, 11, 12],
-            ]),
+            "A": jnp.array([4, 5, 6]),
+            "B": jnp.array(
+                [
+                    [7, 8, 9],
+                    [10, 11, 12],
+                ]
+            ),
         }
 
         ex_dict3 = {
-            "A" : jnp.array([7, 8, 9]),
-            "B" : jnp.array([
-                [11, 12, 13],
-                [14, 15, 16],
-            ]),
+            "A": jnp.array([7, 8, 9]),
+            "B": jnp.array(
+                [
+                    [11, 12, 13],
+                    [14, 15, 16],
+                ]
+            ),
         }
 
         output = dict_sum(ex_dict1, ex_dict2, ex_dict3)
         target_dict = {
-            "A" : jnp.array([12, 15, 18]),
-            "B" : jnp.array([
-                [19, 22, 25],
-                [28, 31, 34],
-            ]),
+            "A": jnp.array([12, 15, 18]),
+            "B": jnp.array(
+                [
+                    [19, 22, 25],
+                    [28, 31, 34],
+                ]
+            ),
         }
 
-        self.assertTrue(jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict)))
+        self.assertTrue(
+            jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict))
+        )
 
     def test_dict_index(self):
         ex_dict = {
-            "A" : jnp.array([1, 2, 3]),
-            "B" : jnp.array([
-                [1, 2, 3],
-                [4, 5, 6],
-            ]),
+            "A": jnp.array([1, 2, 3]),
+            "B": jnp.array(
+                [
+                    [1, 2, 3],
+                    [4, 5, 6],
+                ]
+            ),
         }
         output = dict_index(ex_dict, 1)
         target_dict = {
-            "A" : jnp.array(2),
-            "B" : jnp.array([4, 5, 6]),
+            "A": jnp.array(2),
+            "B": jnp.array([4, 5, 6]),
         }
-        self.assertTrue(jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict)))
+        self.assertTrue(
+            jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict))
+        )
 
-        output = dict_index(ex_dict, slice(0,1))
+        output = dict_index(ex_dict, slice(0, 1))
         target_dict = {
-            "A" : jnp.array([1]),
-            "B" : jnp.array([
-                [1, 2, 3],
-            ]),
+            "A": jnp.array([1]),
+            "B": jnp.array(
+                [
+                    [1, 2, 3],
+                ]
+            ),
         }
-        self.assertTrue(jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict)))
+        self.assertTrue(
+            jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict))
+        )
 
-        output = dict_index(ex_dict, jnp.array([1,0]))
+        output = dict_index(ex_dict, jnp.array([1, 0]))
         target_dict = {
-            "A" : jnp.array([2, 1]),
-            "B" : jnp.array([
-                [4, 5, 6],
-                [1, 2, 3],
-            ]),
+            "A": jnp.array([2, 1]),
+            "B": jnp.array(
+                [
+                    [4, 5, 6],
+                    [1, 2, 3],
+                ]
+            ),
         }
-        self.assertTrue(jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict)))
+        self.assertTrue(
+            jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict))
+        )
+
 
 # # SJDict as pytree
 # class PytreeSJDict(unittest.TestCase):

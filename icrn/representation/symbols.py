@@ -20,10 +20,10 @@ class OrderedHashableSymbol(ABC):
             raise TypeError
 
     def __lt__(self, other):
-        if isinstance(other, type(self)):
+        if isinstance(other, OrderedHashableSymbol):
             return (self.label, self.aux) < (other.label, other.aux)
         else:
-            raise TypeError
+            raise TypeError(f"Cannot compare {type(self)} with {type(other)}")
 
     def __gt__(self, other):
         return not self < other
@@ -94,9 +94,13 @@ def _binary_op_helper(fn, a, b):
 
 def _check_shape(res: ArrayLike, index_symbols):
     if not isinstance(res, ArrayLike):
-        raise ValueError(f"Result must be an array-like object, got {type(res)}")
+        raise ValueError(
+            f"Result must be an array-like object, got {type(res)}"
+        )
     if not isinstance(index_symbols, tuple):
-        raise ValueError(f"Index symbols must be a tuple, got {type(index_symbols)}")
+        raise ValueError(
+            f"Index symbols must be a tuple, got {type(index_symbols)}"
+        )
     if not all(isinstance(i, IndexSymbol) for i in index_symbols):
         raise ValueError(
             f"Index symbols must be a tuple of IndexSymbols, got {type(index_symbols)}"
@@ -206,7 +210,9 @@ class IndexSymbol(OrderedHashableSymbol):
             raise ValueError(f"Label must be a string, got {type(label)}")
         if index_set:
             if not isinstance(index_set, int):
-                raise ValueError(f"Index set must be an integer, got {type(index_set)}")
+                raise ValueError(
+                    f"Index set must be an integer, got {type(index_set)}"
+                )
             if index_set < 0:
                 raise ValueError(
                     f"Index set must be greater than or equal to 0, got {index_set}"
@@ -340,12 +346,18 @@ class Complex:
 
     def __post_init__(self):
         if not isinstance(self.count_dict, dict):
-            raise ValueError(f"count_dict must be a dict, got {type(self.count_dict)}")
+            raise ValueError(
+                f"count_dict must be a dict, got {type(self.count_dict)}"
+            )
         for s, c in self.count_dict.items():
             if not isinstance(s, Species):
-                raise ValueError(f"count_dict keys must be Species, got {type(s)}")
+                raise ValueError(
+                    f"count_dict keys must be Species, got {type(s)}"
+                )
             if type(c) is not int:
-                raise ValueError(f"count_dict values must be int, got {type(c)}")
+                raise ValueError(
+                    f"count_dict values must be int, got {type(c)}"
+                )
             if c <= 0:
                 raise ValueError(f"count_dict values must be positive, got {c}")
 
