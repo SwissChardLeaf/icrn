@@ -72,17 +72,20 @@ class TestTimesToSteps(unittest.TestCase):
 
 class TestScan(unittest.TestCase):
     def setUp(self):
-        def step_add_dt(key, state, non_state, dt):
+        def step_add_dt(key_state, non_state, dt):
+            key, state = key_state
             state["A"] += dt
             return key, state
         self.step_add_dt = step_add_dt
 
-        def step_add_k(key, state, non_state, dt):
+        def step_add_k(key_state, non_state, dt):
+            key, state = key_state
             state["A"] += non_state["k"]
             return key, state
         self.step_add_k = step_add_k
 
-        def step_random_uniform(key, state, non_state, dt):
+        def step_random_uniform(key_state, non_state, dt):
+            key, state = key_state
             new_key, key = jax.random.split(key)
             state["A"] += jax.random.uniform(key, shape=state["A"].shape)
             return new_key, state
@@ -121,7 +124,7 @@ class TestScan(unittest.TestCase):
             "A": jnp.array(0.0),
         }
         key = jax.random.key(0)
-        final_state, hist = _scan(self.step_random_uniform, key, state, None, None, length=5)
+        final_state, hist = _scan(self.step_random_uniform, key, state, None, 1.0, length=5)
 
         target_key = key
         target_state = state
@@ -139,15 +142,25 @@ class TestScan(unittest.TestCase):
 
 class TestLoopWithCheckpointing(unittest.TestCase):
     def setUp(self):
-        def add_one(key, state, non_state, dt):
+        def add_one(key_state, non_state, dt):
+            key, state = key_state
             state["A"] += 1
             return key, state
         self.add_one = add_one
 
-        def multiply_by_k(key, state, non_state, dt):
+        def multiply_by_k(key_state, non_state, dt):
+            key, state = key_state
             state["A"] += dt * non_state["k"] * state["A"]
             return key, state
         self.multiply_by_k = multiply_by_k
+
+        def func(key_state, non_state, dt):
+            key, state = key_state
+            new_key, key = jax.random.split(key)
+            state["A"] -= 1
+            state["A"] -= jax.random.uniform(key, shape=state["A"].shape)
+            return new_key, state
+        self.func = func
 
     def test_add_one(self):
         times = jnp.array([1, 2.2, 3, 4.2])
@@ -177,6 +190,20 @@ class TestLoopWithCheckpointing(unittest.TestCase):
 
         self.assertTrue(dict_allclose(interpolated_hist, target_hist))
 
+        interpolated_hist_no_checkpoint = _loop_with_checkpointing(self.add_one, times, key, state, None, dt, checkpoint_length=None)
+        target_hist_no_checkpoint = {
+            "A": jnp.array([0, 1, 2.2, 3, 4.2]),
+            "B": jnp.array([0, 0, 0, 0, 0]),
+        }
+        self.assertTrue(dict_allclose(interpolated_hist_no_checkpoint, target_hist_no_checkpoint))
+
+        interpolated_hist_change_length = _loop_with_checkpointing(self.add_one, times, key, state, None, dt, checkpoint_length=2)
+        target_hist_change_length = {
+            "A": jnp.array([0, 1, 2.2, 3, 4.2]),
+            "B": jnp.array([0, 0, 0, 0, 0]),
+        }
+        self.assertTrue(dict_allclose(interpolated_hist_change_length, target_hist_change_length))
+
     def test_multiply_by_k(self):
         times = jnp.array([1, 2, 2.2, 3, 4, 4.4, 4.5])
         length = 8
@@ -198,5 +225,28 @@ class TestLoopWithCheckpointing(unittest.TestCase):
         }
 
         print(_times_to_steps(times, dt, length))
+
+        self.assertTrue(dict_allclose(interpolated_hist, target_hist))
+
+    def test_func(self):
+        times = jnp.array([0, 0.5, 1.9, 4, 5.2, 6, 7.1, 8, 9.1])
+        length = 4
+        dt = 1.0
+        key = jax.random.key(0)
+        state = {
+            "A": jnp.array(2.0),
+            "B": jnp.array(2.0)
+        }
+        non_state = None
+        
+        target_hist = {
+            "A": jnp.array([
+                2.0000000e+00, 1.4963531e+00, -1.1551231e-03, -2.2048483e+00, \
+                -3.6442435e+00, -4.7814059e+00, -6.2855392e+00, \
+                -7.3914685e+00, -8.9495916e+00]),
+            "B": jnp.array([2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0])
+        }
+
+        interpolated_hist = _loop_with_checkpointing(self.func, times, key, state, non_state, dt, length)
 
         self.assertTrue(dict_allclose(interpolated_hist, target_hist))

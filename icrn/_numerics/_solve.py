@@ -77,56 +77,64 @@ def _check_state_is_non_negative(state):
 
 def _to_mod_op(op):
 
-    if op.mode == "strict":
-        def checked_update_f(key, state, non_state, dt):
-            new_dt = dt * op.dt_scale
-            aux = None
-            if op.has_aux:
-                state_out, aux = op.update_state(key, state, non_state, new_dt)
+    if op.get_mode() == "strict":
+        def checked_update_f(key_state, non_state, dt):
+            key, state = key_state
+
+            if op.get_is_stochastic():
+                new_key, new_state = op.update_state(key_state, non_state, dt)
                 checkify.check(
-                    _check_state_is_non_negative(state_out), f"state is negative after {op.__class__.__name__}"
+                    _check_state_is_non_negative(new_state), f"state is negative after {op.__class__.__name__}"
                 )
-                return state_out, aux
+                return new_key, new_state
             else:
-                state_out = op.update_state(key, state, non_state, new_dt)
+                new_state = op.update_state(state, non_state, dt)
                 checkify.check(
-                    _check_state_is_non_negative(state_out), f"state is negative after {op.__class__.__name__}"
+                    _check_state_is_non_negative(new_state), f"state is negative after {op.__class__.__name__}"
                 )
-                return state_out
+                return key, new_state
 
         checked_f = checkify.checkify(checked_update_f)
 
-        def new_update_f(key, state, non_state, dt):
-            err, out = checked_f(key, state, non_state, dt)
+        def new_update_f(key_state, non_state, dt):
+            err, out = checked_f(key_state, non_state, dt)
             checkify.check_error(err)
             return out
 
         return new_update_f
 
-    elif op.mode == "relu":
-        def relu_update_f(key, state, non_state, dt):
-            if op.has_aux:
-                state_out, aux = op.update_state(key, state, non_state, dt)
-                return jax_tree.tree_map(jax.nn.relu, state_out), aux
+    elif op.get_mode() == "relu":
+        def relu_update_f(key_state, non_state, dt):
+            key, state = key_state
+
+            if op.get_is_stochastic():
+                new_key, new_state = op.update_state(key_state, non_state, dt)
+                return new_key, jax_tree.tree_map(jax.nn.relu, new_state)
             else:
-                state_out = op.update_state(key, state, non_state, dt)
-                return jax_tree.tree_map(jax.nn.relu, state_out)
+                new_state = op.update_state(state, non_state, dt)
+                return key, jax_tree.tree_map(jax.nn.relu, new_state)
 
         return relu_update_f
 
-    elif op.mode is None:
-        def no_mode_update_f(key, state, non_state, dt):
-            new_dt = dt * op.dt_scale
-            return op.update_state(key, state, non_state, new_dt)
+    elif op.get_mode() is None:
+
+        def no_mode_update_f(key_state, non_state, dt):
+            key, state = key_state
+            if op.get_is_stochastic():
+                return op.update_state(key_state, non_state, dt)
+            else:
+                new_state = op.update_state(state, non_state, dt)
+                return key, new_state
+
         return no_mode_update_f
 
 def _ops_to_f(ops):
     mod_ops = list(map(_to_mod_op, ops))
 
-    def f(state, non_state, dt, key):
-        for op in mod_ops:
-            state = op.update_state(state, non_state, dt, key)
-        return state
+    def f(key_state, non_state, dt):
+        for mod_op_f in mod_ops:
+            key_state = mod_op_f(key_state, non_state, dt)
+        return key_state
     
     return f
 
@@ -137,11 +145,10 @@ def _solve_with_ops(
     dt,
     key,
     times,
-    checkpoint_length=None,
-    interpolation_method: str = "linear",
+    checkpoint_length=None
 ):
     ops_f = _ops_to_f(ops)
-    return _solve_with_f(ops_f, state, non_state, dt, key, times, checkpoint_length, interpolation_method)
+    return _solve_with_f(ops_f, state, non_state, dt, key, times, checkpoint_length)
 
 def _solve_with_f(
     ops_f,
@@ -151,9 +158,8 @@ def _solve_with_f(
     key,
     times,
     checkpoint_length=None,
-    interpolation_method: str = "linear",
 ):
-    return _loop_with_checkpointing(ops_f, times, key, state, dt, checkpoint_length, interpolation_method)
+    return _loop_with_checkpointing(ops_f, times, key, state, non_state, dt, checkpoint_length)
     # err, out = _loop_with_checkpointing(ops_f, times, key, state, dt, checkpoint_length, interpolation_f)
     # checkify.check_error(err)
     # return out

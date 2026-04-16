@@ -46,10 +46,10 @@ The non-state is a dict mapping rate constants to their values or species to the
 #         return state
 #     return f
 
-def to_well_mixed_ops(reactions, reaction_solver="RK4"):
+def to_well_mixed_ops(reactions, reaction_solver="RK4", mode: str | None = None):
     non_fast_rxns = [rxn for rxn in reactions if isinstance(rxn, AbstractReaction)]
     fast_rxns = [rxn for rxn in reactions if isinstance(rxn, FastReaction)]
-    rxn_op = ReactionsOperator(non_fast_rxns, reaction_solver)
+    rxn_op = ReactionsOperator(mode, non_fast_rxns, reaction_solver)
 
     ops = [rxn_op]
     if fast_rxns:
@@ -164,7 +164,6 @@ class FastReactionsOperator(AbstractOperator):
 
     def get_is_stochastic(self):
         return False
-
 
     def update_state(self, state, non_state, dt):
         return self._fast_rxns_update_f(state)

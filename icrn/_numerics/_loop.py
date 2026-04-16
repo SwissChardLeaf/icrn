@@ -13,8 +13,7 @@ from ._interpolation import _linear_interpolation
 
 def _scan(scan_f, key, state, non_state, dt, length):
     def _helper(key_state_pair, _):
-        key, state = key_state_pair
-        new_key, new_state = scan_f(key, state, non_state, dt)
+        new_key, new_state = scan_f(key_state_pair, non_state, dt)
         return (new_key, new_state), new_state
 
     last_state, hist = lax.scan(_helper, init=(key, state), length=length)
@@ -59,8 +58,6 @@ def _loop_with_checkpointing(step_f, times, key, state, non_state, dt, checkpoin
         times = times[1:]
 
     segment_steps, segment_dt_fractions = _times_to_steps(times, dt, checkpoint_length)
-    print("segment_steps", segment_steps)
-    print("segment_dt_fractions", segment_dt_fractions)
 
     for i in range(len(segment_steps)):
         steps = segment_steps[i]
