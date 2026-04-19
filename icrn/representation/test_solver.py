@@ -13,6 +13,7 @@ from jax import numpy as jnp
 import jax
 import matplotlib.pyplot as plt
 import numpy as np
+from jax.experimental import checkify
 
 
 class TestSolveWellMixed(unittest.TestCase):
@@ -312,9 +313,7 @@ class TestSolveWellMixed(unittest.TestCase):
         A, B = many_species("A, B")
         k = many_rate_constants("k")
 
-        rxns = (
-            MassActionReaction(A, B, k),
-        )
+        rxns = (MassActionReaction(A, B, k),)
 
         conc_vals = {A: jnp.array(1.0), B: jnp.array(0.0)}
         rate_constant_vals = {k: jnp.array(1.0)}
@@ -325,17 +324,37 @@ class TestSolveWellMixed(unittest.TestCase):
         @jax.jit
         def solve_well_mixed_jit(conc_vals, rate_constant_vals):
             return solve_well_mixed(
-                rxns,
-                conc_vals,
-                rate_constant_vals,
-                times,
-                dt
+                rxns, conc_vals, rate_constant_vals, times, dt
             )
 
         sim_concs_jit = solve_well_mixed_jit(conc_vals, rate_constant_vals)
 
         print(sim_concs_jit[A][-1])
 
+    def test_check_negative_and_jit(self):
+        A, B = many_species("A, B")
+        k = many_rate_constants("k")
+
+        rxns = [MassActionReaction(A, B, k)]
+
+        conc_vals = {A: jnp.array(1.0), B: jnp.array(0.0)}
+        rate_constant_vals = {k: jnp.array(1.0)}
+
+        times = jnp.array([0, 1, 2, 3])
+        dt = 1.1
+
+        @jax.jit
+        def solve_well_mixed_jit(conc_vals, rate_constant_vals):
+            mode = "strict"
+            return solve_well_mixed(
+                rxns, conc_vals, rate_constant_vals, times, dt, mode=mode, reaction_solver="Euler"
+            )
+
+        checked = checkify.checkify(solve_well_mixed_jit)
+        err, out = checked(conc_vals, rate_constant_vals)
+
+        with self.assertRaises(ValueError):
+            checkify.check_error(err)
 
 
 class TestSolveReactionDiffusion(unittest.TestCase):

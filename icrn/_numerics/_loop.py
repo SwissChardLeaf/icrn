@@ -72,8 +72,8 @@ def _loop_with_checkpointing(
         times = times[1:]
 
     # interpolated_hist, times =lax.cond(
-    #     times[0] == 0, 
-    #     lambda: ([jax_tree.map(lambda x: x[None, ...], state)], times[1:]), 
+    #     times[0] == 0,
+    #     lambda: ([jax_tree.map(lambda x: x[None, ...], state)], times[1:]),
     #     lambda: ([], times)
     # )
 

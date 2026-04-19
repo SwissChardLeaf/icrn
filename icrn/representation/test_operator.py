@@ -92,6 +92,20 @@ class TestReactionsOperator(unittest.TestCase):
             dict_allclose(new_state, {A: jnp.array(0.5011933468419623)})
         )
 
+        # op3 = ReactionsOperator("strict", rxns, reaction_solver="Euler")
+
+        # self.assertEqual(op3.get_mode(), "strict")
+
+        # state = {A: jnp.array(1.0)}
+        # non_state = {k: jnp.array(1.0)}
+        # dt = 1.1
+
+        # new_state = op3.update_state(state, non_state, dt)
+        # print(new_state)
+
+        # with self.assertRaises(ValueError):
+        #     op3.update_state(state, non_state, dt)
+
     def test_reversible_dimerization(self):
         A, B, C = many_species("A, B, C")
         alpha, beta = many_rate_constants("alpha, beta")

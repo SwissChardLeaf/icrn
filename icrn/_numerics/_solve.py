@@ -100,14 +100,17 @@ def _to_mod_op(op):
                 )
                 return key, new_state
 
-        checked_f = checkify.checkify(checked_update_f)
+        return checked_update_f
 
-        def new_update_f(key_state, non_state, dt):
-            err, out = checked_f(key_state, non_state, dt)
-            checkify.check_error(err)
-            return out
+        # checked_f = checkify.checkify(checked_update_f)
+        # return checked_f
 
-        return new_update_f
+        # def new_update_f(key_state, non_state, dt):
+        #     err, out = checked_f(key_state, non_state, dt)
+        #     checkify.check_error(err)
+        #     return out
+
+        # return new_update_f
 
     elif op.get_mode() == "relu":
 

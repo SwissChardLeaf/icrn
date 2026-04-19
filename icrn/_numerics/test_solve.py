@@ -4,6 +4,7 @@ from ..representation.operator import AbstractOperator
 import jax.numpy as jnp
 import jax
 from ..utils.dict_utils import dict_allclose
+from jax.experimental import checkify
 
 
 class TestModOp(unittest.TestCase):
@@ -33,20 +34,22 @@ class TestModOp(unittest.TestCase):
         state = {"A": jnp.array(2.0), "B": jnp.array(2.0)}
         key = jax.random.key(0)
 
-        key, state = strict_mod_op_f((key, state), None, 1)
-        self.assertEqual(key, jax.random.key(0))
-        self.assertTrue(
-            dict_allclose(state, {"A": jnp.array(1.0), "B": jnp.array(2.0)})
-        )
+        checked = checkify.checkify(strict_mod_op_f)
 
-        key, state = strict_mod_op_f((key, state), None, 1)
+        err, (key, state) = checked((key, state), None, 1)
+        checkify.check_error(err)
         self.assertEqual(key, jax.random.key(0))
-        self.assertTrue(
-            dict_allclose(state, {"A": jnp.array(0.0), "B": jnp.array(2.0)})
-        )
+        self.assertTrue(dict_allclose(state, {"A": jnp.array(1.0), "B": jnp.array(2.0)}))
 
+        err, (key, state) = checked((key, state), None, 1.1)
+        checkify.check_error(err)
+        self.assertEqual(key, jax.random.key(0))
+        self.assertTrue(dict_allclose(state, {"A": jnp.array(0.0), "B": jnp.array(2.0)}))
+
+        err, (key, state) = checked((key, state), None, 1.1)
+        checkify.check_error(err)
         with self.assertRaises(ValueError):
-            _ = strict_mod_op_f((key, state), None, 1)
+            checkify.check_error(err)
 
         state = {"A": jnp.array(2.0), "B": jnp.array(2.0)}
         key = jax.random.key(0)

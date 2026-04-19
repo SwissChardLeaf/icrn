@@ -361,7 +361,6 @@ class Complex:
             if c <= 0:
                 raise ValueError(f"count_dict values must be positive, got {c}")
 
-
     def add_species(self, s, count=1):
         if not isinstance(s, Species):
             raise ValueError(f"Species must be a Species, got {type(s)}")
