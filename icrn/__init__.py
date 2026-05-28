@@ -1,32 +1,46 @@
-# from .representation.representation import *
-# from .representation.simulator import *
-# from ._utils.dict_utils import *
-# from ._numerics.numerics import *
+"""indexed chemical reaction networks in a differentiable, tensor-based framework."""
 
-# from .representation.symbols import (
-#     IndexSymbol,
-#     Species,
-#     RateConstant,
-#     many_index_symbols,
-#     many_species,
-#     many_rate_constants
-# )
+from .symbols import (
+    IndexSymbol,
+    Species,
+    RateConstant,
+    TensorExpression,
+    TensorFunction,
+    TensorLiteral,
+    many_index_symbols,
+    many_species,
+    many_rate_constants,
+)
 
-# from .utils.dict_utils import (
-#     save_sjdict,
-#     load_sjdict,
-#     sjdict_allclose,
-#     sjdict_allequal,
-#     SJDict
-# )
+from .reactions import (
+    AbstractReaction,
+    MassActionReaction,
+    FastReaction,
+)
 
+from .solver import (
+    solve_well_mixed,
+    solve_reaction_diffusion,
+    solve_with_ops,
+)
+
+__version__ = "0.1.0"
 
 __all__ = [
-    "solve",
-    "solve_with_ops",
-    "Problem",
+    "IndexSymbol",
+    "Species",
+    "RateConstant",
+    "TensorExpression",
+    "TensorFunction",
+    "TensorLiteral",
+    "many_index_symbols",
+    "many_species",
+    "many_rate_constants",
     "AbstractReaction",
     "MassActionReaction",
     "FastReaction",
-    "ICRN",
+    "solve_well_mixed",
+    "solve_reaction_diffusion",
+    "solve_with_ops",
+    "__version__",
 ]

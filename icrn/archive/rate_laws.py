@@ -1,3 +1,0 @@
-# mass action
-# michaelis menten
-#

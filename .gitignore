@@ -6,10 +6,16 @@ dist/
 # Type checkers / linters
 .mypy_cache/
 .ruff_cache/
-# Sphinx documentation builds
-docs/_build/
+# Documentation builds (MkDocs)
+site/
 # Jupyter
 .ipynb_checkpoints/
 # OS / editors
 .DS_Store
 .vscode/
+# Testing / coverage
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.pytest_cache/

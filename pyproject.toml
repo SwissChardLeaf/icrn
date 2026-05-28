@@ -24,3 +24,18 @@ Issues = "https://github.com/SwissChardLeaf/icrn/issues"
 
 [tool.ruff]
 line-length = 80
+
+[tool.coverage.run]
+source = ["icrn"]
+omit = [
+    "icrn/test_*.py",
+    "icrn/**/test_*.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
