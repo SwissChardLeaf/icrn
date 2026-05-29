@@ -424,6 +424,7 @@ class TestSolveReactionDiffusion(unittest.TestCase):
             key,
             checkpoint_length,
             reaction_solver,
+            boundary_condition="periodic",
             mode=mode,
         )
 
@@ -505,6 +506,7 @@ class TestSolveReactionDiffusion(unittest.TestCase):
             key,
             checkpoint_length,
             reaction_solver,
+            boundary_condition="periodic",
             spatial_rate_constants=spatial_rate_constants,
             mode=mode,
         )
@@ -583,6 +585,7 @@ class TestSolveReactionDiffusion(unittest.TestCase):
             key,
             checkpoint_length,
             reaction_solver,
+            boundary_condition="periodic",
             mode=mode,
         )
 
@@ -603,6 +606,112 @@ class TestSolveReactionDiffusion(unittest.TestCase):
 
         self.assertTrue(Up_max_abs_error < 0.01)
         self.assertTrue(Un_max_abs_error < 0.01)
+
+
+class TestBoundaryCondition(unittest.TestCase):
+    def setUp(self):
+        A = many_species("A")
+        k = many_rate_constants("k")
+        self.A = A
+        self.k = k
+        self.rxns = [MassActionReaction(A, 0, k)]
+        self.spatial_dims = (16, 16)
+        self.dspaces = (1.0, 1.0)
+        self.times = jnp.array([0.0, 1.0])
+        self.dt = 0.01
+
+        self.uniform_conc_vals = {A: jnp.ones(self.spatial_dims)}
+        self.rate_constant_vals = {k: jnp.array(0.5)}
+        self.diffusion_constant_vals = {A: jnp.array(0.1)}
+
+    def _solve(self, bc, **overrides):
+        kwargs = dict(
+            rxns=self.rxns,
+            conc_vals=self.uniform_conc_vals,
+            rate_constant_vals=self.rate_constant_vals,
+            diffusion_constant_vals=self.diffusion_constant_vals,
+            times=self.times,
+            dt=self.dt,
+            spatial_dims=self.spatial_dims,
+            dspaces=self.dspaces,
+            boundary_condition=bc,
+        )
+        kwargs.update(overrides)
+        return solve_reaction_diffusion(**kwargs)
+
+    def test_periodic_runs(self):
+        out = self._solve("periodic")
+        self.assertEqual(
+            out[self.A].shape, (len(self.times), *self.spatial_dims)
+        )
+        self.assertTrue(jnp.all(jnp.isfinite(out[self.A])))
+
+    def test_neumann_runs(self):
+        out = self._solve("neumann")
+        self.assertEqual(
+            out[self.A].shape, (len(self.times), *self.spatial_dims)
+        )
+        self.assertTrue(jnp.all(jnp.isfinite(out[self.A])))
+
+    def test_dirichlet_runs(self):
+        out = self._solve("dirichlet")
+        self.assertEqual(
+            out[self.A].shape, (len(self.times), *self.spatial_dims)
+        )
+        self.assertTrue(jnp.all(jnp.isfinite(out[self.A])))
+
+    def test_invalid_boundary_condition_raises(self):
+        with self.assertRaises(ValueError):
+            self._solve("not-a-real-bc")
+
+    def test_periodic_wraps_but_neumann_and_dirichlet_do_not(self):
+        H, W = self.spatial_dims
+        pulse = {self.A: jnp.zeros(self.spatial_dims).at[0, W // 2].set(10.0)}
+        no_reaction = {self.k: jnp.array(0.0)}
+        strong_diffusion = {self.A: jnp.array(5.0)}
+
+        common = dict(
+            conc_vals=pulse,
+            rate_constant_vals=no_reaction,
+            diffusion_constant_vals=strong_diffusion,
+            times=jnp.array([0.0, 0.1]),
+            dt=0.005,
+        )
+
+        out_periodic = self._solve("periodic", **common)
+        out_neumann = self._solve("neumann", **common)
+        out_dirichlet = self._solve("dirichlet", **common)
+
+        opp_periodic = float(jnp.max(jnp.abs(out_periodic[self.A][-1, -1, :])))
+        opp_neumann = float(jnp.max(jnp.abs(out_neumann[self.A][-1, -1, :])))
+        opp_dirichlet = float(jnp.max(jnp.abs(out_dirichlet[self.A][-1, -1, :])))
+
+        self.assertGreater(opp_periodic, 1e-2)
+        self.assertLess(opp_neumann, 1e-6)
+        self.assertLess(opp_dirichlet, 1e-6)
+
+    def test_dirichlet_leaks_mass_but_neumann_and_periodic_conserve_it(self):
+        no_reaction = {self.k: jnp.array(0.0)}
+        diffusion_only = {self.A: jnp.array(1.0)}
+
+        total_init = float(jnp.sum(self.uniform_conc_vals[self.A]))
+
+        common = dict(
+            rate_constant_vals=no_reaction,
+            diffusion_constant_vals=diffusion_only,
+        )
+
+        out_periodic = self._solve("periodic", **common)
+        out_neumann = self._solve("neumann", **common)
+        out_dirichlet = self._solve("dirichlet", **common)
+
+        total_periodic = float(jnp.sum(out_periodic[self.A][-1]))
+        total_neumann = float(jnp.sum(out_neumann[self.A][-1]))
+        total_dirichlet = float(jnp.sum(out_dirichlet[self.A][-1]))
+
+        self.assertAlmostEqual(total_periodic, total_init, places=2)
+        self.assertAlmostEqual(total_neumann, total_init, places=2)
+        self.assertLess(total_dirichlet, total_init - 1.0)
 
 
 @unittest.skipUnless(GPU_AVAILABLE, "no GPU available")

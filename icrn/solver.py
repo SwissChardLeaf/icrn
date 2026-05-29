@@ -86,6 +86,7 @@ def solve_reaction_diffusion(
     key=None,
     checkpoint_length=None,
     reaction_solver="RK4",
+    boundary_condition="neumann",
     splitting="LieTrotter",
     spatial_rate_constants: bool = False,
     mode: str | None = None,
@@ -153,6 +154,7 @@ def solve_reaction_diffusion(
         dspaces,
         reaction_solver,
         splitting,
+        boundary_condition=boundary_condition,
         mode=mode,
         spatial_rate_constants=spatial_rate_constants,
     )

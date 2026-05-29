@@ -20,6 +20,10 @@ from .reactions import (
 from ._internal._reaction_numerics import _RK4_step, _euler_step
 from .utils.dict_utils import dict_add
 from ._internal._spectral_diffusion import _spectral_diffuse, _compute_lap_op
+from ._internal._convolutional_diffusion import _conv_diffuse
+
+
+_VALID_BOUNDARY_CONDITIONS = ("neumann", "dirichlet", "periodic")
 
 """
 An operator is function that takes in a state and a non-state and returns a new state.
@@ -77,52 +81,57 @@ def to_reaction_diffusion_ops(
     dspaces,
     reaction_solver="RK4",
     splitting="LieTrotter",
-    diffusion_solver="spectral",
+    boundary_condition="neumann",
     spatial_rate_constants=False,
     mode: str | None = None,
 ):
+    if boundary_condition not in _VALID_BOUNDARY_CONDITIONS:
+        raise ValueError(
+            f"Invalid boundary_condition: {boundary_condition!r}; "
+            f"expected one of {_VALID_BOUNDARY_CONDITIONS}"
+        )
+
     non_fast_rxns = [
         rxn for rxn in reactions if isinstance(rxn, AbstractReaction)
     ]
     fast_rxns = [rxn for rxn in reactions if isinstance(rxn, FastReaction)]
 
-    ops = []
+    if boundary_condition == "periodic":
+        def make_diffusion_op(dt_scale=1.0):
+            return SpectralDiffusionOperator(
+                mode, spatial_dims, dspaces, dt_scale=dt_scale
+            )
+    else:
+        def make_diffusion_op(dt_scale=1.0):
+            return ConvolutionalDiffusionOperator(
+                mode,
+                spatial_dims,
+                dspaces,
+                boundary_condition=boundary_condition,
+                dt_scale=dt_scale,
+            )
 
+    def make_reaction_op(dt_scale=1.0):
+        return ReactionsOperator(
+            mode,
+            non_fast_rxns,
+            reaction_solver,
+            spatial_axes=len(spatial_dims),
+            spatial_rate_constants=spatial_rate_constants,
+            dt_scale=dt_scale,
+        )
+
+    ops = []
     if fast_rxns:
         ops.append(FastReactionsOperator(fast_rxns, len(spatial_dims)))
 
     if splitting == "LieTrotter":
-        ops += [
-            ReactionsOperator(
-                mode,
-                non_fast_rxns,
-                reaction_solver,
-                spatial_axes=len(spatial_dims),
-                spatial_rate_constants=spatial_rate_constants,
-            ),
-            SpectralDiffusionOperator(mode, spatial_dims, dspaces),
-        ]
+        ops += [make_reaction_op(), make_diffusion_op()]
     elif splitting == "Strang":
         ops += [
-            ReactionsOperator(
-                mode,
-                non_fast_rxns,
-                reaction_solver,
-                spatial_axes=len(spatial_dims),
-                spatial_rate_constants=spatial_rate_constants,
-                dt_scale=0.5,
-            ),
-            SpectralDiffusionOperator(
-                mode, spatial_dims, dspaces, dt_scale=0.5
-            ),
-            ReactionsOperator(
-                mode,
-                non_fast_rxns,
-                reaction_solver,
-                spatial_axes=len(spatial_dims),
-                spatial_rate_constants=spatial_rate_constants,
-                dt_scale=0.5,
-            ),
+            make_reaction_op(dt_scale=0.5),
+            make_diffusion_op(dt_scale=0.5),
+            make_reaction_op(dt_scale=0.5),
         ]
     else:
         raise ValueError(f"Invalid splitting: {splitting}")
@@ -282,17 +291,47 @@ class SpectralDiffusionOperator(AbstractOperator):
 
 
 class ConvolutionalDiffusionOperator(AbstractOperator):
-    def __init__(self, spatial_dims: int, diffusion_solver="convolutional"):
+    def __init__(
+        self,
+        mode: str | None,
+        spatial_dims,
+        dspaces,
+        boundary_condition="neumann",
+        dt_scale=1.0,
+    ):
+        if boundary_condition not in _VALID_BOUNDARY_CONDITIONS:
+            raise ValueError(
+                f"Invalid boundary_condition: {boundary_condition!r}; "
+                f"expected one of {_VALID_BOUNDARY_CONDITIONS}"
+            )
+        self.mode = mode
         self.spatial_dims = spatial_dims
-        self.diffusion_solver = diffusion_solver
+        self.dspaces = dspaces
+        self.boundary_condition = boundary_condition
+        self.dt_scale = dt_scale
 
-    def __call__(self, state, non_state, dt, key):
-        return _convolutional_diffuse(self.spatial_dims, self.diffusion_solver)(
-            state, non_state, dt, key
+    def update_state(self, state, non_state, dt):
+        diff_constant_vals = non_state[1]
+        return _conv_diffuse(
+            state,
+            diff_constant_vals,
+            self.dt_scale * dt,
+            self.dspaces,
+            self.boundary_condition,
         )
 
+    def get_mode(self):
+        return self.mode
+
+    def get_is_stochastic(self):
+        return False
+
     def __repr__(self):
-        return f"{self.__class__.__name__}(xs={self.xs}, dxs={self.dxs}, diffusion_solver={self.diffusion_solver})"
+        return (
+            f"{self.__class__.__name__}(spatial_dims={self.spatial_dims}, "
+            f"dspaces={self.dspaces}, "
+            f"boundary_condition={self.boundary_condition})"
+        )
 
 
 # def _rxns_to_op(
