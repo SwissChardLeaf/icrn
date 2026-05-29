@@ -41,7 +41,7 @@ pre-commit install
 
 ## Running tests
 
-Tests use the standard library `unittest`. 
+Tests use the standard library `unittest`.
 The following can be run from the top-level:
 
 ```bash
