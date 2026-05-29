@@ -1,27 +1,28 @@
-import unittest
-from .symbols import (
-    many_species,
-    many_rate_constants,
-    many_index_symbols,
-    TensorFunction,
-)
-from .reactions import MassActionReaction, FastReaction
-from .utils.dict_utils import dict_allclose
-from .solver import solve_well_mixed, solve_reaction_diffusion
 import os
-from jax import numpy as jnp
+import unittest
+
 import jax
 import jax.tree_util as jax_tree
 import matplotlib.pyplot as plt
-import numpy as np
+from jax import numpy as jnp
 from jax.experimental import checkify
 
+from .reactions import FastReaction, MassActionReaction
+from .solver import solve_reaction_diffusion, solve_well_mixed
+from .symbols import (
+    TensorFunction,
+    many_index_symbols,
+    many_rate_constants,
+    many_species,
+)
+from .utils.dict_utils import dict_allclose
 
 GPU_AVAILABLE = any(d.platform == "gpu" for d in jax.devices())
 
 
 def _result_platforms(result):
-    """Return the set of device platforms across all leaves of a solve result."""
+    """Return the set of device platforms across all leaves of a solve
+    result."""
     return {leaf.device.platform for leaf in jax_tree.tree_leaves(result)}
 
 
@@ -684,7 +685,9 @@ class TestBoundaryCondition(unittest.TestCase):
 
         opp_periodic = float(jnp.max(jnp.abs(out_periodic[self.A][-1, -1, :])))
         opp_neumann = float(jnp.max(jnp.abs(out_neumann[self.A][-1, -1, :])))
-        opp_dirichlet = float(jnp.max(jnp.abs(out_dirichlet[self.A][-1, -1, :])))
+        opp_dirichlet = float(
+            jnp.max(jnp.abs(out_dirichlet[self.A][-1, -1, :]))
+        )
 
         self.assertGreater(opp_periodic, 1e-2)
         self.assertLess(opp_neumann, 1e-6)

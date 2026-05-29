@@ -5,7 +5,6 @@ from jax import numpy as jnp
 
 from ._convolutional_diffusion import _conv_diffuse, _conv_species_diffuse
 
-
 D_DEFAULT = jnp.array(0.1)
 
 
@@ -15,12 +14,12 @@ def _peaked(spatial_shape, value=10.0):
 
 
 def _gaussian_1d(x, x0, sigma):
-    return jnp.exp(-((x - x0) ** 2) / (2.0 * sigma ** 2))
+    return jnp.exp(-((x - x0) ** 2) / (2.0 * sigma**2))
 
 
 def _gaussian_1d_analytical(x, x0, sigma_0, D, t):
-    sigma_t_sq = sigma_0 ** 2 + 2.0 * D * t
-    return jnp.sqrt(sigma_0 ** 2 / sigma_t_sq) * jnp.exp(
+    sigma_t_sq = sigma_0**2 + 2.0 * D * t
+    return jnp.sqrt(sigma_0**2 / sigma_t_sq) * jnp.exp(
         -((x - x0) ** 2) / (2.0 * sigma_t_sq)
     )
 
@@ -50,13 +49,17 @@ class _ConvSpeciesDiffuseMixin:
         self.assertEqual(out.dtype, conc.dtype)
 
     def test_zero_diffusion_is_identity(self):
-        conc = jax.random.uniform(jax.random.PRNGKey(self.SEED), self.SPATIAL_SHAPE)
+        conc = jax.random.uniform(
+            jax.random.PRNGKey(self.SEED), self.SPATIAL_SHAPE
+        )
         out = _conv_species_diffuse(conc, jnp.array(0.0), self.DT, self.DSPACES)
         self.assertTrue(jnp.allclose(out, conc, atol=1e-7))
 
     def test_uniform_field_unchanged_under_neumann(self):
         conc = jnp.ones(self.SPATIAL_SHAPE)
-        out = _conv_species_diffuse(conc, D_DEFAULT, self.DT, self.DSPACES, "neumann")
+        out = _conv_species_diffuse(
+            conc, D_DEFAULT, self.DT, self.DSPACES, "neumann"
+        )
         self.assertTrue(jnp.allclose(out, conc, atol=1e-6))
 
     def test_diffusion_smooths_peak(self):
@@ -96,36 +99,48 @@ class TestBoundaryConditions(unittest.TestCase):
 
     def test_neumann_conserves_total_mass(self):
         conc = jax.random.uniform(jax.random.PRNGKey(10), self.SPATIAL_SHAPE)
-        out = _conv_species_diffuse(conc, D_DEFAULT, self.DT, self.DSPACES, "neumann")
+        out = _conv_species_diffuse(
+            conc, D_DEFAULT, self.DT, self.DSPACES, "neumann"
+        )
         self.assertTrue(jnp.allclose(jnp.sum(out), jnp.sum(conc), atol=1e-4))
 
     def test_dirichlet_leaks_mass_at_boundary(self):
         conc = jnp.ones(self.SPATIAL_SHAPE)
-        out = _conv_species_diffuse(conc, D_DEFAULT, self.DT, self.DSPACES, "dirichlet")
+        out = _conv_species_diffuse(
+            conc, D_DEFAULT, self.DT, self.DSPACES, "dirichlet"
+        )
         self.assertLess(float(jnp.sum(out)), float(jnp.sum(conc)))
 
     def test_periodic_wraps_around(self):
         H, W = self.SPATIAL_SHAPE
         conc = jnp.zeros(self.SPATIAL_SHAPE).at[0, W // 2].set(1.0)
-        out = _conv_species_diffuse(conc, D_DEFAULT, self.DT, self.DSPACES, "periodic")
+        out = _conv_species_diffuse(
+            conc, D_DEFAULT, self.DT, self.DSPACES, "periodic"
+        )
         self.assertGreater(float(out[-1, W // 2]), 0.0)
 
     def test_neumann_does_not_wrap_around(self):
         H, W = self.SPATIAL_SHAPE
         conc = jnp.zeros(self.SPATIAL_SHAPE).at[0, W // 2].set(1.0)
-        out = _conv_species_diffuse(conc, D_DEFAULT, self.DT, self.DSPACES, "neumann")
+        out = _conv_species_diffuse(
+            conc, D_DEFAULT, self.DT, self.DSPACES, "neumann"
+        )
         self.assertLess(float(jnp.max(jnp.abs(out[-1, :]))), 1e-7)
 
     def test_dirichlet_does_not_wrap_around(self):
         H, W = self.SPATIAL_SHAPE
         conc = jnp.zeros(self.SPATIAL_SHAPE).at[0, W // 2].set(1.0)
-        out = _conv_species_diffuse(conc, D_DEFAULT, self.DT, self.DSPACES, "dirichlet")
+        out = _conv_species_diffuse(
+            conc, D_DEFAULT, self.DT, self.DSPACES, "dirichlet"
+        )
         self.assertLess(float(jnp.max(jnp.abs(out[-1, :]))), 1e-7)
 
     def test_unknown_boundary_condition_raises(self):
         conc = jnp.ones(self.SPATIAL_SHAPE)
         with self.assertRaises(ValueError):
-            _conv_species_diffuse(conc, D_DEFAULT, self.DT, self.DSPACES, "no-such-bc")
+            _conv_species_diffuse(
+                conc, D_DEFAULT, self.DT, self.DSPACES, "no-such-bc"
+            )
 
 
 class TestDspacesScaling(unittest.TestCase):
@@ -222,7 +237,9 @@ class TestJaxCompatibility(unittest.TestCase):
         conc = _peaked(self.SPATIAL_SHAPE, value=1.0)
 
         def loss(D):
-            return jnp.sum(_conv_species_diffuse(conc, D, self.DT, self.DSPACES) ** 2)
+            return jnp.sum(
+                _conv_species_diffuse(conc, D, self.DT, self.DSPACES) ** 2
+            )
 
         g = jax.grad(loss)(D_DEFAULT)
         self.assertTrue(jnp.isfinite(g))

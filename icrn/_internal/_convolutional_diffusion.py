@@ -1,6 +1,5 @@
-from jax import numpy as jnp
 import jax.tree_util as jax_tree
-
+from jax import numpy as jnp
 
 _PAD_MODES = {
     "dirichlet": ("constant", {"constant_values": 0.0}),
@@ -33,13 +32,15 @@ def _second_derivative(a, axis, dspace, boundary_condition):
         a_padded[tuple(sl_plus)]
         - 2.0 * a_padded[tuple(sl_zero)]
         + a_padded[tuple(sl_minus)]
-    ) / (dspace ** 2)
+    ) / (dspace**2)
 
 
 def _laplacian(a, dspaces, boundary_condition):
     result = _second_derivative(a, 0, dspaces[0], boundary_condition)
     for i in range(1, len(dspaces)):
-        result = result + _second_derivative(a, i, dspaces[i], boundary_condition)
+        result = result + _second_derivative(
+            a, i, dspaces[i], boundary_condition
+        )
     return result
 
 
@@ -50,7 +51,10 @@ def _conv_species_diffuse(
     dspaces,
     boundary_condition="neumann",
 ):
-    return conc + diff_constant * _laplacian(conc, dspaces, boundary_condition) * dt
+    return (
+        conc
+        + diff_constant * _laplacian(conc, dspaces, boundary_condition) * dt
+    )
 
 
 def _conv_diffuse(
@@ -61,7 +65,9 @@ def _conv_diffuse(
     boundary_condition="neumann",
 ):
     return jax_tree.tree_map(
-        lambda x, y: _conv_species_diffuse(x, y, dt, dspaces, boundary_condition),
+        lambda x, y: _conv_species_diffuse(
+            x, y, dt, dspaces, boundary_condition
+        ),
         concs,
         diff_data,
     )

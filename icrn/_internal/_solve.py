@@ -3,16 +3,12 @@
 # coordinates sending ops to scan
 # responsible for setting up time
 
-from pickle import NONE
-from typing import Any, Callable
 
-
-import opcode
 import jax
 import jax.numpy as jnp
-from jax.experimental import checkify
 import jax.tree_util as jax_tree
 import numpy as np
+from jax.experimental import checkify
 
 from ._loop import _loop_with_checkpointing
 
@@ -43,7 +39,8 @@ from ._loop import _loop_with_checkpointing
 # ):
 #     ops = to_well_mixed_ops(problem.reactions, problem.reaction_solver)
 #     return _solve_with_ops(
-#         ops, state, non_state, dt, key, times, inner_scan_length, outer_scan_length
+#         ops, state, non_state, dt, key, times,
+#         inner_scan_length, outer_scan_length,
 #     )
 
 
@@ -65,7 +62,8 @@ from ._loop import _loop_with_checkpointing
 #         problem.diffusion_solver,
 #     )
 #     return _solve_with_ops(
-#         ops, state, non_state, dt, key, times, inner_scan_length, outer_scan_length
+#         ops, state, non_state, dt, key, times,
+#         inner_scan_length, outer_scan_length,
 #     )
 
 
@@ -172,7 +170,9 @@ def _solve_with_f(
     return _loop_with_checkpointing(
         ops_f, times_np, key, state, non_state, dt, checkpoint_length
     )
-    # err, out = _loop_with_checkpointing(ops_f, times, key, state, dt, checkpoint_length, interpolation_f)
+    # err, out = _loop_with_checkpointing(
+    #     ops_f, times, key, state, dt, checkpoint_length, interpolation_f
+    # )
     # checkify.check_error(err)
     # return out
     # total_steps = jnp.ceil(times[-1] / dt).astype(int)
@@ -182,16 +182,19 @@ def _solve_with_f(
     # else:
     #     if not inner_scan_length or not outer_scan_length:
     #         raise ValueError(
-    #             f"Inner and outer scan lengths must be provided if times are not provided"
+    #             "Inner and outer scan lengths must be provided if "
+    #             "times are not provided"
     #         )
     #     return _scan_by_segments_with_checkpointing(
-    #         ops_f, state, non_state, dt, key, inner_scan_length, outer_scan_length
+    #         ops_f, state, non_state, dt, key,
+    #         inner_scan_length, outer_scan_length,
     #     )
 
 
 # these are not jax_jit compatible immediately because of the ops
 # def solve_with_ops(
-#     ops: list[Callable], conc_data, rate_constant_data, diff_data, time, dt, debug=False
+#     ops: list[Callable],
+#     conc_data, rate_constant_data, diff_data, time, dt, debug=False,
 # ):
 #     solver = solver_from_ops(ops)
 #     return solver(conc_data, rate_constant_data, diff_data, time, dt)
@@ -212,7 +215,8 @@ def _solve_with_f(
 # def _solver_from_ops(ops):
 
 #     def solver(state, non_state, dt, key):
-#         return _scan_by_segments( _function_from_ops(ops), state, non_state, dt, key)
+# return _scan_by_segments( _function_from_ops(ops), state, non_state, dt,
+# key)
 
 #     return solver
 
@@ -226,7 +230,10 @@ def _solve_with_f(
 #     mode="relu") -> Callable:
 
 #     if dxs:
-#         ops = _to_reaction_diffusion_ops(reactions, dxs, reaction_solver, splitting, diffusion_solver, mode)
+#         ops = _to_reaction_diffusion_ops(
+#             reactions, dxs, reaction_solver, splitting,
+#             diffusion_solver, mode,
+#         )
 #     else:
 #         ops = _to_well_mixed_ops(reactions, reaction_solver, mode)
 

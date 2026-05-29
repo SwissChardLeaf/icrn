@@ -1,15 +1,15 @@
 import unittest
-import os
+
 import jax.numpy as jnp
 import jax.tree as jax_tree
 
 from .dict_utils import (
-    arr_mul,
     arr_add,
-    dict_sub,
+    arr_mul,
     dict_add,
-    dict_sum,
     dict_index,
+    dict_sub,
+    dict_sum,
 )
 
 
@@ -290,7 +290,11 @@ class TestDictOperations(unittest.TestCase):
 #         A, B, C = many_species("A, B, C")
 
 #         self.test_dict = SJDict(
-#             {A: jnp.arange(5), B: jnp.arange(20).reshape((4, 5)), C: jnp.ones(10)}
+#             {
+#                 A: jnp.arange(5),
+#                 B: jnp.arange(20).reshape((4, 5)),
+#                 C: jnp.ones(10),
+#             }
 #         )
 
 #     def test_tree_flatten_unflatten_simple(self):
@@ -320,10 +324,18 @@ class TestDictOperations(unittest.TestCase):
 #         A, B, C = many_species("A, B, C")
 
 #         self.sjdict = SJDict(
-#             {A: jnp.arange(5), B: jnp.arange(20).reshape((4, 5)), C: jnp.ones(10)}
+#             {
+#                 A: jnp.arange(5),
+#                 B: jnp.arange(20).reshape((4, 5)),
+#                 C: jnp.ones(10),
+#             }
 #         )
 
-#         self.d = {A: jnp.ones(5), B[1, 2]: 3, B: jnp.arange(20).reshape((4, 5))}
+#         self.d = {
+#             A: jnp.ones(5),
+#             B[1, 2]: 3,
+#             B: jnp.arange(20).reshape((4, 5)),
+#         }
 
 #     def test_zeros(self):
 #         A, B, C = many_species("A, B, C")
@@ -364,7 +376,9 @@ class TestDictOperations(unittest.TestCase):
 #     def setUp(self):
 #         A, B = many_species("A, B")
 
-#         self.test_dict1 = SJDict({A: jnp.arange(5), B: jnp.arange(20).reshape((4, 5))})
+#         self.test_dict1 = SJDict(
+#             {A: jnp.arange(5), B: jnp.arange(20).reshape((4, 5))}
+#         )
 
 #         self.test_dict2 = SJDict(
 #             {
@@ -407,7 +421,10 @@ class TestDictOperations(unittest.TestCase):
 #         self.assertTrue(self.test_dict2 + self.test_dict1 == target_dict1)
 
 #         target_dict2 = SJDict(
-#             {A: jnp.arange(5) + 1, B: jnp.arange(20).reshape((4, 5)) + 2 * jnp.ones(5)}
+#             {
+#                 A: jnp.arange(5) + 1,
+#                 B: jnp.arange(20).reshape((4, 5)) + 2 * jnp.ones(5),
+#             }
 #         )
 
 #         self.assertTrue(self.test_dict1 + self.test_dict3 == target_dict2)
@@ -433,7 +450,9 @@ class TestDictOperations(unittest.TestCase):
 #     def test_neg(self):
 #         A, B = many_species("A, B")
 
-#         target_dict1 = SJDict({A: -jnp.arange(5), B: -jnp.arange(20).reshape((4, 5))})
+#         target_dict1 = SJDict(
+#             {A: -jnp.arange(5), B: -jnp.arange(20).reshape((4, 5))}
+#         )
 
 #         self.assertTrue(-self.test_dict1 == target_dict1)
 
@@ -479,7 +498,10 @@ class TestDictOperations(unittest.TestCase):
 #         self.assertTrue(-(self.test_dict2 - self.test_dict1) == target_dict1)
 
 #         target_dict2 = SJDict(
-#             {A: 1 - jnp.arange(5), B: 2 * jnp.ones(5) - jnp.arange(20).reshape((4, 5))}
+#             {
+#                 A: 1 - jnp.arange(5),
+#                 B: 2 * jnp.ones(5) - jnp.arange(20).reshape((4, 5)),
+#             }
 #         )
 
 #         self.assertTrue(self.test_dict3 - self.test_dict1 == target_dict2)
@@ -524,7 +546,10 @@ class TestDictOperations(unittest.TestCase):
 #         self.assertTrue(self.test_dict2 * self.test_dict1 == target_dict1)
 
 #         target_dict2 = SJDict(
-#             {A: 1 * jnp.arange(5), B: 2 * jnp.ones(5) * jnp.arange(20).reshape((4, 5))}
+#             {
+#                 A: 1 * jnp.arange(5),
+#                 B: 2 * jnp.ones(5) * jnp.arange(20).reshape((4, 5)),
+#             }
 #         )
 
 #         self.assertTrue(self.test_dict3 * self.test_dict1 == target_dict2)
@@ -567,16 +592,23 @@ class TestDictOperations(unittest.TestCase):
 
 #         self.assertTrue(self.test_dict1 / self.test_dict2 == target_dict1)
 #         self.assertTrue(
-#             sjdict_allclose(1 / (self.test_dict2 / self.test_dict1), target_dict1)
+#             sjdict_allclose(
+#                 1 / (self.test_dict2 / self.test_dict1), target_dict1
+#             )
 #         )
 
 #         target_dict2 = SJDict(
-#             {A: 1 / jnp.arange(5), B: 2 * jnp.ones(5) / jnp.arange(20).reshape((4, 5))}
+#             {
+#                 A: 1 / jnp.arange(5),
+#                 B: 2 * jnp.ones(5) / jnp.arange(20).reshape((4, 5)),
+#             }
 #         )
 
 #         self.assertTrue(self.test_dict3 / self.test_dict1 == target_dict2)
 #         self.assertTrue(
-#             sjdict_allclose(1 / (self.test_dict1 / self.test_dict3), target_dict2)
+#             sjdict_allclose(
+#                 1 / (self.test_dict1 / self.test_dict3), target_dict2
+#             )
 #         )
 
 #         target_dict3 = SJDict(
@@ -584,7 +616,9 @@ class TestDictOperations(unittest.TestCase):
 #         )
 
 #         self.assertTrue(self.test_dict1 / 3 == target_dict3)
-#         self.assertTrue(sjdict_allclose(1 / (3 / self.test_dict1), target_dict3))
+#         self.assertTrue(
+#             sjdict_allclose(1 / (3 / self.test_dict1), target_dict3)
+#         )
 
 #         target_dict4 = SJDict(
 #             {
@@ -647,14 +681,18 @@ class TestDictOperations(unittest.TestCase):
 #     def setUp(self):
 #         A, B = many_species("A, B")
 
-#         self.test_dict1 = SJDict({A: jnp.arange(5), B: jnp.arange(20).reshape((4, 5))})
+#         self.test_dict1 = SJDict(
+#             {A: jnp.arange(5), B: jnp.arange(20).reshape((4, 5))}
+#         )
 
 #     def test_setitem(self):
 #         A, B = many_species("A, B")
 
 #         self.test_dict1[A] = jnp.ones(5)
 
-#         target_dict1 = SJDict({A: jnp.ones(5), B: jnp.arange(20).reshape((4, 5))})
+#         target_dict1 = SJDict(
+#             {A: jnp.ones(5), B: jnp.arange(20).reshape((4, 5))}
+#         )
 
 #         self.assertEqual(self.test_dict1, target_dict1)
 
@@ -708,7 +746,10 @@ class TestDictOperations(unittest.TestCase):
 #         target_dict = SJDict(
 #             {
 #                 A: jnp.stack([jnp.arange(5), jnp.ones(5)]),
-#                 B: jnp.stack([jnp.arange(20).reshape((4, 5)), jnp.ones((4, 5))]),
+#                 B: jnp.stack([
+#                     jnp.arange(20).reshape((4, 5)),
+#                     jnp.ones((4, 5)),
+#                 ]),
 #             }
 #         )
 #         self.assertEqual(self.test_dict1 & extend_dict, target_dict)
@@ -720,7 +761,11 @@ class TestDictOperations(unittest.TestCase):
 #         A, B, C = many_species("A, B, C")
 
 #         test_dict = SJDict(
-#             {A: jnp.arange(5), B: jnp.arange(20).reshape((4, 5)), C: jnp.ones(10)}
+#             {
+#                 A: jnp.arange(5),
+#                 B: jnp.arange(20).reshape((4, 5)),
+#                 C: jnp.ones(10),
+#             }
 #         )
 
 #         save_path = os.path.join("test", "test_load_save_sjdict")

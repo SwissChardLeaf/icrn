@@ -1,5 +1,6 @@
-from ..utils.dict_utils import dict_index, arr_mul, dict_sub, dict_sum
 import jax
+
+from ..utils.dict_utils import arr_mul, dict_index, dict_sub, dict_sum
 
 
 def _linear_interpolation(steps, dt_fractions, ys):

@@ -1,8 +1,9 @@
 import unittest
+
 from jax import numpy as jnp
-from jaxlib.mlir.dialects.scf import yield_
+
+from ..utils.dict_utils import dict_allclose
 from ._reaction_numerics import _euler_step, _RK4_step
-from ..utils.dict_utils import arr_mul, dict_allclose
 
 
 class TestEulerStep(unittest.TestCase):
@@ -128,7 +129,9 @@ class TestRK4Step(unittest.TestCase):
         dt = 0.75
         computed_state = _RK4_step(state, non_state, dyn_f, dt)
 
-        manual_dyn_f = lambda x, y: -y * x
+        def manual_dyn_f(x, y):
+            return -y * x
+
         manual_state_A = _RK4_step(
             state["A"], non_state["k1"], manual_dyn_f, dt
         )
@@ -170,7 +173,7 @@ class TestRK4Step(unittest.TestCase):
         self.assertTrue(jnp.allclose(computed_state, target_state))
         self.assertTrue(jnp.allclose(computed_dynamics, target_dynamics))
 
-    def test_RK4_step_exponential_decay_with_dicts(self):
+    def test_RK4_step_exponential_decay_with_dicts_return_dynamics(self):
         def dyn_f(state, non_state):
             return {
                 "A": -non_state["k1"] * state["A"],
@@ -205,7 +208,9 @@ class TestRK4Step(unittest.TestCase):
             state, non_state, dyn_f, dt, return_dynamics=True
         )
 
-        manual_dyn_f = lambda y, k: -k * y
+        def manual_dyn_f(y, k):
+            return -k * y
+
         manual_state_A, manual_dynamics_A = _RK4_step(
             state["A"], non_state["k1"], manual_dyn_f, dt, return_dynamics=True
         )

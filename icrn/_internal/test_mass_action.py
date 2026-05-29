@@ -1,29 +1,24 @@
 import unittest
 from collections import Counter
 
-from ._mass_action import (
-    _get_tensors,
-    _get_base_einsum_str,
-    _get_diff_dict,
-    _get_diff_and_einsum_strs,
-    _setup_einsums,
-    mass_action_flux_f,
-    _get_all_index_symbols,
-    _product_index_symbols,
-)
-from ..symbols import (
-    Complex,
-    IndexSymbol,
-    many_index_symbols,
-    many_species,
-    many_rate_constants,
-    RateConstant,
-    TensorLiteral,
-)
+import jax.random as jax_random
+from jax import numpy as jnp
 
 from ..reactions import MassActionReaction
-from jax import numpy as jnp
-import jax.random as jax_random
+from ..symbols import (
+    many_index_symbols,
+    many_rate_constants,
+    many_species,
+)
+from ._mass_action import (
+    _get_all_index_symbols,
+    _get_base_einsum_str,
+    _get_diff_dict,
+    _get_tensors,
+    _product_index_symbols,
+    _setup_einsums,
+    mass_action_flux_f,
+)
 
 
 class TestMassActionFluxF(unittest.TestCase):
@@ -32,14 +27,14 @@ class TestMassActionFluxF(unittest.TestCase):
         alpha, beta = many_rate_constants("alpha, beta")
         i, j = many_index_symbols("i, j")
         k = many_index_symbols("k", 3)
-        l, m = many_index_symbols("l, m", 7)
+        idx_l, m = many_index_symbols("l, m", 7)
 
         self.good_rxns = [
             MassActionReaction(A + B, C, alpha),
             MassActionReaction(A[i] + B[j], C[i, j], alpha[i]),
             MassActionReaction(0, C, alpha),
             MassActionReaction(A[i], 0, 1.0),
-            MassActionReaction(A[i, l] + B[j], A[j, m] + B[l], 1.0),
+            MassActionReaction(A[i, idx_l] + B[j], A[j, m] + B[idx_l], 1.0),
             MassActionReaction(A[i], 0, 0),
             MassActionReaction(A[i] + A[j], B[i, j], 1.0),
         ]
@@ -53,7 +48,7 @@ class TestMassActionFluxF(unittest.TestCase):
     def test_get_diff_dict(self):
         A, B, C, D = many_species("A, B, C, D")
         i, j, k = many_index_symbols("i, j, k")
-        l, m = many_index_symbols("l, m", 7)
+        idx_l, m = many_index_symbols("l, m", 7)
 
         def _get_diff_dict_from_rxn(rxn: MassActionReaction):
             return _get_diff_dict(rxn.reactants, rxn.products)
@@ -69,7 +64,7 @@ class TestMassActionFluxF(unittest.TestCase):
         self.assertEqual(_get_diff_dict_from_rxn(self.good_rxns[3]), {A[i]: -1})
         self.assertEqual(
             _get_diff_dict_from_rxn(self.good_rxns[4]),
-            {A[i, l]: -1, B[j]: -1, A[j, m]: 1, B[l]: 1},
+            {A[i, idx_l]: -1, B[j]: -1, A[j, m]: 1, B[idx_l]: 1},
         )
         self.assertEqual(_get_diff_dict_from_rxn(self.good_rxns[5]), {A[i]: -1})
 
@@ -84,7 +79,7 @@ class TestMassActionFluxF(unittest.TestCase):
     def test_get_all_index_symbols(self):
         i, j = many_index_symbols("i, j")
         k = many_index_symbols("k", 3)
-        l, m = many_index_symbols("l, m", 7)
+        idx_l, m = many_index_symbols("l, m", 7)
 
         def _get_all_index_symbols_from_rxn(
             rxn: MassActionReaction, target_set
@@ -105,7 +100,7 @@ class TestMassActionFluxF(unittest.TestCase):
         _get_all_index_symbols_from_rxn(self.good_rxns[1], {i, j})
         _get_all_index_symbols_from_rxn(self.good_rxns[2], set())
         _get_all_index_symbols_from_rxn(self.good_rxns[3], {i})
-        _get_all_index_symbols_from_rxn(self.good_rxns[4], {i, j, m, l})
+        _get_all_index_symbols_from_rxn(self.good_rxns[4], {i, j, m, idx_l})
         _get_all_index_symbols_from_rxn(self.good_rxns[5], {i})
 
         _get_all_index_symbols_from_rxn(self.bad_rxns[0], {i, j})
@@ -114,8 +109,8 @@ class TestMassActionFluxF(unittest.TestCase):
 
     def test_product_index_symbols(self):
         i, j = many_index_symbols("i, j")
-        k = many_index_symbols("k", 3)
-        l, m = many_index_symbols("l, m", 7)
+        many_index_symbols("k", 3)
+        idx_l, m = many_index_symbols("l, m", 7)
 
         def _product_index_symbols_from_rxn(
             rxn: MassActionReaction, target_set
@@ -169,8 +164,8 @@ class TestMassActionFluxF(unittest.TestCase):
     def test_setup_einsums(self):
         A, B, C, D = many_species("A, B, C, D")
         i, j = many_index_symbols("i, j")
-        k = many_index_symbols("k", 3)
-        l, m = many_index_symbols("l, m", 7)
+        many_index_symbols("k", 3)
+        idx_l, m = many_index_symbols("l, m", 7)
 
         def _setup_einsums_from_rxn(rxn: MassActionReaction, target_dict):
             try:
@@ -219,8 +214,11 @@ class TestMassActionFluxF(unittest.TestCase):
         _setup_einsums_from_rxn(
             self.good_rxns[4],
             {
-                A: [(-1, ",il,j,m->il", A[i, l]), (1, ",il,j,m->jm", A[j, m])],
-                B: [(-1, ",il,j,m->j", B[j]), (1, ",il,j,m->l", B[l])],
+                A: [
+                    (-1, ",il,j,m->il", A[i, idx_l]),
+                    (1, ",il,j,m->jm", A[j, m]),
+                ],
+                B: [(-1, ",il,j,m->j", B[j]), (1, ",il,j,m->l", B[idx_l])],
             },
         )
         _setup_einsums_from_rxn(
@@ -265,14 +263,16 @@ class TestMassActionFluxF(unittest.TestCase):
 
                 if len(output_tensor) != len(target_tensors):
                     raise AssertionError(
-                        f"Error getting tensors for {rxn}, output tensor has length {len(output_tensor)}, but target tensors have length {len(target_tensors)}"
+                        f"Error getting tensors for {rxn}, output tensor "
+                        f"has length {len(output_tensor)}, but target "
+                        f"tensors have length {len(target_tensors)}"
                     )
 
                 for i in range(len(output_tensor)):
                     self.assertTrue(
                         jnp.all(jnp.equal(output_tensor[i], target_tensors[i]))
                     )
-            except ValueError as e:
+            except ValueError:
                 raise
             except Exception as e:
                 raise AssertionError(f"Error getting tensors for {rxn}") from e
@@ -392,7 +392,7 @@ class TestMassActionFluxF(unittest.TestCase):
                 for s, val in target_flux.items():
                     self.assertTrue(jnp.all(jnp.allclose(output_flux[s], val)))
 
-            except ValueError as e:
+            except ValueError:
                 raise
             except Exception as e:
                 raise AssertionError(

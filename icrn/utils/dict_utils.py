@@ -2,8 +2,6 @@
 # import os
 import jax.numpy as jnp
 import jax.tree as jax_tree
-import jax
-
 
 # from icrn import Species, RateConstant
 
@@ -93,7 +91,9 @@ def dict_allclose(dct1, dct2):
 
 # def load_sjdict(load_path, cls):
 #     jnp_files = [
-#         item for item in os.listdir(load_path) if os.path.splitext(item)[1] == ".npy"
+#         item
+#         for item in os.listdir(load_path)
+#         if os.path.splitext(item)[1] == ".npy"
 #     ]
 #     sjdict = SJDict()
 #     for jnp_file in jnp_files:
@@ -214,7 +214,9 @@ def dict_allclose(dct1, dct2):
 #     #     if isinstance(key, BaseObject):
 #     #         self.dict[key] = value
 #     #     elif isinstance(key, ConcreteObject):
-#     #         self.dict[key.base] = self.dict[key.base].at[key.index_symbols].set(value)
+#     #         self.dict[key.base] = self.dict[key.base].at[
+#     #             key.index_symbols
+#     #         ].set(value)
 #     #     else:
 #     #         raise KeyError
 
@@ -238,7 +240,9 @@ def dict_allclose(dct1, dct2):
 #     #                 self.dict[k] = self.dict.get(k, 0) + v
 #     #         elif isinstance(k, ConcreteObject):
 #     #             if k.base in self._dict:
-#     #                 self.dict[k.base] = self.dict[k.base].at[k.index_symbols].add(v)
+#     #                 self.dict[k.base] = self.dict[k.base].at[
+#     #                     k.index_symbols
+#     #                 ].add(v)
 #     #         else:
 #     #             raise TypeError
 

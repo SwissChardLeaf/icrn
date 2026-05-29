@@ -4,8 +4,7 @@ import jax.numpy as jnp
 
 
 def _standard_reactants_and_indexing(reactants):
-    reactants_lst = list(reactants.count_dict.keys())
-    reactants_lst.sort()
+    reactants_lst = sorted(reactants.count_dict.keys())
     standard_reactants = tuple(reactants_lst)
     return standard_reactants, reactants_lst[0].index_symbols
 
@@ -58,9 +57,11 @@ def _fast_update_f(reactants, products):
             for ratio, einsum_str in lst:
                 try:
                     acc += ratio * jnp.einsum(einsum_str, reactant_unit)
-                except Exception as e:
+                except Exception:
                     raise Exception(
-                        f"Error einsumming {einsum_str} with reactant unit {reactant_unit} for species {s} with reactants {reactants} and products {products}"
+                        f"Error einsumming {einsum_str} with reactant unit "
+                        f"{reactant_unit} for species {s} with reactants "
+                        f"{reactants} and products {products}"
                     )
             return acc
 

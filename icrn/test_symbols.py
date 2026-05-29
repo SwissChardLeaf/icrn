@@ -1,19 +1,19 @@
 import unittest
 from dataclasses import FrozenInstanceError
+
+import jax.numpy as jnp
+
 from .symbols import (
     Complex,
     IndexSymbol,
     RateConstant,
     Species,
-    TensorExpression,
     TensorFunction,
     TensorLiteral,
     many_index_symbols,
-    many_species,
     many_rate_constants,
+    many_species,
 )
-
-import jax.numpy as jnp
 
 
 class TestIndexSymbol(unittest.TestCase):
@@ -45,8 +45,8 @@ class TestIndexSymbol(unittest.TestCase):
         self.assertEqual(j, IndexSymbol("j", 5))
         self.assertEqual(k, IndexSymbol("k", 5))
 
-        l, m, n = many_index_symbols("l, m, n")
-        self.assertEqual(l, IndexSymbol("l"))
+        idx_l, m, n = many_index_symbols("l, m, n")
+        self.assertEqual(idx_l, IndexSymbol("l"))
         self.assertEqual(m, IndexSymbol("m"))
         self.assertEqual(n, IndexSymbol("n"))
 
@@ -874,7 +874,7 @@ class TestTensorLiteral(unittest.TestCase):
     def test_neg(self):
         A = RateConstant("A")
         two = TensorLiteral(2)
-        i = IndexSymbol("i")
+        IndexSymbol("i")
 
         neg_A = -A
         self.assertIsInstance(neg_A, TensorFunction)
@@ -913,7 +913,7 @@ class TestTensorFunction(unittest.TestCase):
     def test_init_validation(self):
         A = RateConstant("A")
         B = RateConstant("B")
-        C = RateConstant("C")
+        RateConstant("C")
 
         i = IndexSymbol("i")
         j = IndexSymbol("j")
@@ -963,7 +963,9 @@ class TestTensorFunction(unittest.TestCase):
         self.assertEqual(tensor_function.eval(data), 7.0)
         self.assertIsInstance(tensor_function.eval(data), jnp.ndarray)
 
-        custom_f = lambda x, y, z: x + (y / z)
+        def custom_f(x, y, z):
+            return x + (y / z)
+
         tensor_function = TensorFunction(custom_f, (A, B, C))
         self.assertTrue(
             jnp.allclose(tensor_function.eval(data), 1.0 + 2.0 / 3.0)

@@ -1,10 +1,12 @@
 import unittest
-from ._solve import _to_mod_op, _ops_to_f, _solve_with_f, _solve_with_ops
-from ..operator import AbstractOperator
-import jax.numpy as jnp
+
 import jax
-from ..utils.dict_utils import dict_allclose
+import jax.numpy as jnp
 from jax.experimental import checkify
+
+from ..operator import AbstractOperator
+from ..utils.dict_utils import dict_allclose
+from ._solve import _ops_to_f, _solve_with_f, _to_mod_op
 
 
 class TestModOp(unittest.TestCase):
@@ -285,13 +287,11 @@ class TestSolveWithOps(unittest.TestCase):
         ]
 
         none_f = _ops_to_f(none_ops)
-        relu_f = _ops_to_f(relu_ops)
-        strict_f = _ops_to_f(strict_ops)
+        _ops_to_f(relu_ops)
+        _ops_to_f(strict_ops)
 
         state = {"A": jnp.array(2.0), "B": jnp.array(2.0)}
         key = jax.random.key(0)
-
-        _solve_with
 
         out_key, out_state = none_f((key, state), None, 1)
         new_key, use_key = jax.random.split(key)

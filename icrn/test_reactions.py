@@ -1,23 +1,23 @@
 import unittest
 from dataclasses import FrozenInstanceError
+
+import jax.numpy as jnp
+
 from .reactions import (
-    AbstractReaction,
+    FastReaction,
     MassActionReaction,
     _matching_shapes,
-    rxns_to_dynamics_f,
-    FastReaction,
     fast_rxns_to_update_f,
+    rxns_to_dynamics_f,
 )
 from .symbols import (
     Complex,
+    RateConstant,
+    TensorLiteral,
     many_index_symbols,
     many_rate_constants,
     many_species,
-    RateConstant,
-    TensorLiteral,
 )
-
-import jax.numpy as jnp
 from .utils.dict_utils import dict_allclose
 
 
@@ -25,16 +25,16 @@ class TestReactionHelpers(unittest.TestCase):
     def test_matching_shapes(self):
         A, B, C = many_species("A, B, C")
         i, j = many_index_symbols("i, j")
-        l, m = many_index_symbols("l, m", 3)
+        idx_l, m = many_index_symbols("l, m", 3)
         n, o = many_index_symbols("n, o", 7)
 
         _matching_shapes(set([A[i], B[j], A[j], B[i]]))
-        _matching_shapes(set([A[l], B[j], A[m], B[n]]))
-        _matching_shapes(set([A[i, n], B[j], A[l, j], B[o]]))
-        _matching_shapes(set([A[i, j, m], A[j, l, i], A[n, i, j]]))
+        _matching_shapes(set([A[idx_l], B[j], A[m], B[n]]))
+        _matching_shapes(set([A[i, n], B[j], A[idx_l, j], B[o]]))
+        _matching_shapes(set([A[i, j, m], A[j, idx_l, i], A[n, i, j]]))
 
         with self.assertRaises(ValueError):
-            _matching_shapes(set([A[l], A[n]]))
+            _matching_shapes(set([A[idx_l], A[n]]))
 
         with self.assertRaises(ValueError):
             _matching_shapes(set([A[i], A[j, i]]))
@@ -43,7 +43,7 @@ class TestReactionHelpers(unittest.TestCase):
             _matching_shapes(set([A[i], A]))
 
         with self.assertRaises(ValueError):
-            _matching_shapes(set([A[i, j, m], A[l, m, o]]))
+            _matching_shapes(set([A[i, j, m], A[idx_l, m, o]]))
 
 
 class TestRxnsToDynamicsF(unittest.TestCase):
@@ -100,7 +100,7 @@ class TestExtendAbstractReaction(unittest.TestCase):
 
     #         def flux(self):
     #             def flux_fn(state, rate_constant_data):
-    #                 return {self.reactants: -self.aux, self.products: self.aux}
+    # return {self.reactants: -self.aux, self.products: self.aux}
 
     #             return flux_fn
 
@@ -156,7 +156,7 @@ class TestMassActionReaction(unittest.TestCase):
     def test_init_validation(self):
         A, B, C = many_species("A, B, C")
         alpha = RateConstant("alpha")
-        beta = RateConstant("beta")
+        RateConstant("beta")
 
         with self.assertRaises(TypeError):
             MassActionReaction(alpha, C, alpha)

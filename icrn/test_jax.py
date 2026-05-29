@@ -14,9 +14,9 @@ import unittest
 import jax
 from jax import numpy as jnp
 
-from .symbols import many_species, many_rate_constants
 from .reactions import MassActionReaction
-from .solver import solve_well_mixed, solve_reaction_diffusion
+from .solver import solve_reaction_diffusion, solve_well_mixed
+from .symbols import many_rate_constants, many_species
 
 
 def _decay_setup():
@@ -30,7 +30,8 @@ def _decay_setup():
 
 
 def _decay_rd_setup():
-    """Smallest non-trivial reaction-diffusion system: A --k--> 0 + diffusion of A on a small 2D grid."""
+    """Smallest non-trivial reaction-diffusion system: A --k--> 0 + diffusion
+    of A on a small 2D grid."""
     A = many_species("A")
     k = many_rate_constants("k")
     rxns = [MassActionReaction(A, 0, k)]
@@ -43,7 +44,8 @@ def _decay_rd_setup():
 
 class TestJit(unittest.TestCase):
     def test_solve_well_mixed_under_jit(self):
-        """jit-compiled well-mixed solve produces identical results to eager solve."""
+        """jit-compiled well-mixed solve produces identical results to eager
+        solve."""
         A, k, rxns, times, dt = _decay_setup()
 
         def solve_fn(conc, rate):
@@ -58,7 +60,8 @@ class TestJit(unittest.TestCase):
         self.assertTrue(jnp.allclose(eager[A], jitted[A], atol=1e-6))
 
     def test_solve_reaction_diffusion_under_jit(self):
-        """jit-compiled reaction-diffusion solve produces identical results to eager solve."""
+        """jit-compiled reaction-diffusion solve produces identical results
+        to eager solve."""
         A, k, rxns, times, dt, spatial_dims, dspaces = _decay_rd_setup()
 
         def solve_fn(conc, rate, diff):
@@ -78,11 +81,14 @@ class TestJit(unittest.TestCase):
 
 class TestGrad(unittest.TestCase):
     def test_solve_well_mixed_grad_returns_finite(self):
-        """jax.grad through solve_well_mixed yields a finite, nonzero gradient."""
+        """jax.grad through solve_well_mixed yields a finite, nonzero
+        gradient."""
         A, k, rxns, times, dt = _decay_setup()
 
         def loss(rate):
-            out = solve_well_mixed(rxns, {A: jnp.array(1.0)}, {k: rate}, times, dt)
+            out = solve_well_mixed(
+                rxns, {A: jnp.array(1.0)}, {k: rate}, times, dt
+            )
             return jnp.sum(out[A] ** 2)
 
         g = jax.grad(loss)(jnp.array(1.0))
@@ -91,11 +97,14 @@ class TestGrad(unittest.TestCase):
         self.assertGreater(float(jnp.abs(g)), 1e-6)
 
     def test_solve_well_mixed_grad_matches_finite_difference(self):
-        """Auto-diff gradient through solve_well_mixed agrees with central FD."""
+        """Auto-diff gradient through solve_well_mixed agrees with central
+        FD."""
         A, k, rxns, times, dt = _decay_setup()
 
         def loss(rate):
-            out = solve_well_mixed(rxns, {A: jnp.array(1.0)}, {k: rate}, times, dt)
+            out = solve_well_mixed(
+                rxns, {A: jnp.array(1.0)}, {k: rate}, times, dt
+            )
             return jnp.sum(out[A][-1] ** 2)
 
         k0 = jnp.array(1.0)
@@ -107,7 +116,8 @@ class TestGrad(unittest.TestCase):
         self.assertTrue(jnp.allclose(g_auto, g_fd, rtol=1e-2, atol=1e-3))
 
     def test_solve_reaction_diffusion_grad_returns_finite(self):
-        """jax.grad through solve_reaction_diffusion yields a finite, nonzero gradient."""
+        """jax.grad through solve_reaction_diffusion yields a finite, nonzero
+        gradient."""
         A, k, rxns, times, dt, spatial_dims, dspaces = _decay_rd_setup()
         c0 = {A: jnp.full(spatial_dims, 1.0)}
         diffs = {A: jnp.array(0.1)}
@@ -124,7 +134,8 @@ class TestGrad(unittest.TestCase):
         self.assertGreater(float(jnp.abs(g)), 1e-6)
 
     def test_solve_reaction_diffusion_grad_matches_finite_difference(self):
-        """Auto-diff gradient through solve_reaction_diffusion agrees with central FD."""
+        """Auto-diff gradient through solve_reaction_diffusion agrees with
+        central FD."""
         A, k, rxns, times, dt, spatial_dims, dspaces = _decay_rd_setup()
         c0 = {A: jnp.full(spatial_dims, 1.0)}
         diffs = {A: jnp.array(0.1)}
@@ -146,7 +157,8 @@ class TestGrad(unittest.TestCase):
 
 class TestVmap(unittest.TestCase):
     def test_solve_well_mixed_vmap_over_initial_conditions(self):
-        """vmap over a batch of initial conditions matches an explicit Python loop (well-mixed)."""
+        """vmap over a batch of initial conditions matches an explicit Python
+        loop (well-mixed)."""
         A, k, rxns, times, dt = _decay_setup()
         rates = {k: jnp.array(1.0)}
 
@@ -161,7 +173,8 @@ class TestVmap(unittest.TestCase):
         self.assertTrue(jnp.allclose(batched, explicit, atol=1e-6))
 
     def test_solve_well_mixed_vmap_over_rate_constants(self):
-        """vmap over a batch of rate constants matches an explicit Python loop (well-mixed)."""
+        """vmap over a batch of rate constants matches an explicit Python
+        loop (well-mixed)."""
         A, k, rxns, times, dt = _decay_setup()
         c0 = {A: jnp.array(1.0)}
 
@@ -176,22 +189,31 @@ class TestVmap(unittest.TestCase):
         self.assertTrue(jnp.allclose(batched, explicit, atol=1e-6))
 
     def test_solve_reaction_diffusion_vmap_over_initial_fields(self):
-        """vmap over a batch of initial fields matches an explicit Python loop (RD)."""
+        """vmap over a batch of initial fields matches an explicit Python
+        loop (RD)."""
         A, k, rxns, times, dt, spatial_dims, dspaces = _decay_rd_setup()
         rates = {k: jnp.array(1.0)}
         diffs = {A: jnp.array(0.1)}
 
         def per_sample(c0_field):
             return solve_reaction_diffusion(
-                rxns, {A: c0_field}, rates, diffs,
-                times, dt, spatial_dims, dspaces,
+                rxns,
+                {A: c0_field},
+                rates,
+                diffs,
+                times,
+                dt,
+                spatial_dims,
+                dspaces,
             )[A][-1]
 
-        c0_batch = jnp.stack([
-            jnp.full(spatial_dims, 1.0),
-            jnp.full(spatial_dims, 2.0),
-            jnp.full(spatial_dims, 0.5),
-        ])
+        c0_batch = jnp.stack(
+            [
+                jnp.full(spatial_dims, 1.0),
+                jnp.full(spatial_dims, 2.0),
+                jnp.full(spatial_dims, 0.5),
+            ]
+        )
 
         batched = jax.vmap(per_sample)(c0_batch)
         explicit = jnp.stack([per_sample(c) for c in c0_batch])
@@ -199,15 +221,22 @@ class TestVmap(unittest.TestCase):
         self.assertTrue(jnp.allclose(batched, explicit, atol=1e-6))
 
     def test_solve_reaction_diffusion_vmap_over_diffusion_constants(self):
-        """vmap over a batch of diffusion constants matches an explicit Python loop (RD)."""
+        """vmap over a batch of diffusion constants matches an explicit
+        Python loop (RD)."""
         A, k, rxns, times, dt, spatial_dims, dspaces = _decay_rd_setup()
         c0 = {A: jnp.full(spatial_dims, 1.0)}
         rates = {k: jnp.array(1.0)}
 
         def per_sample(D):
             return solve_reaction_diffusion(
-                rxns, c0, rates, {A: D},
-                times, dt, spatial_dims, dspaces,
+                rxns,
+                c0,
+                rates,
+                {A: D},
+                times,
+                dt,
+                spatial_dims,
+                dspaces,
             )[A][-1]
 
         D_batch = jnp.array([0.05, 0.1, 0.2])
@@ -224,7 +253,9 @@ class TestCompositions(unittest.TestCase):
         A, k, rxns, times, dt = _decay_setup()
 
         def loss(rate):
-            out = solve_well_mixed(rxns, {A: jnp.array(1.0)}, {k: rate}, times, dt)
+            out = solve_well_mixed(
+                rxns, {A: jnp.array(1.0)}, {k: rate}, times, dt
+            )
             return jnp.sum(out[A] ** 2)
 
         g_fn = jax.jit(jax.grad(loss))
@@ -234,11 +265,14 @@ class TestCompositions(unittest.TestCase):
         self.assertGreater(float(jnp.abs(g)), 1e-6)
 
     def test_solve_well_mixed_vmap_of_grad(self):
-        """vmap(grad(...)) — per-sample gradients across a batch of rate constants (well-mixed)."""
+        """vmap(grad(...)) — per-sample gradients across a batch of rate
+        constants (well-mixed)."""
         A, k, rxns, times, dt = _decay_setup()
 
         def loss(rate):
-            out = solve_well_mixed(rxns, {A: jnp.array(1.0)}, {k: rate}, times, dt)
+            out = solve_well_mixed(
+                rxns, {A: jnp.array(1.0)}, {k: rate}, times, dt
+            )
             return jnp.sum(out[A] ** 2)
 
         rate_batch = jnp.array([0.5, 1.0, 2.0])
@@ -266,7 +300,8 @@ class TestCompositions(unittest.TestCase):
         self.assertGreater(float(jnp.abs(g)), 1e-6)
 
     def test_solve_reaction_diffusion_vmap_of_grad(self):
-        """vmap(grad(...)) — per-sample gradients across a batch of rate constants (RD)."""
+        """vmap(grad(...)) — per-sample gradients across a batch of rate
+        constants (RD)."""
         A, k, rxns, times, dt, spatial_dims, dspaces = _decay_rd_setup()
         c0 = {A: jnp.full(spatial_dims, 1.0)}
         diffs = {A: jnp.array(0.1)}
@@ -301,7 +336,8 @@ class Test64Bit(unittest.TestCase):
         jax.config.update("jax_enable_x64", self._original_x64)
 
     def test_solve_well_mixed_preserves_float64(self):
-        """solve_well_mixed preserves float64 across every leaf of its output."""
+        """solve_well_mixed preserves float64 across every leaf of its
+        output."""
         A, k, rxns, times, dt = _decay_setup()
 
         out = solve_well_mixed(
@@ -316,7 +352,8 @@ class Test64Bit(unittest.TestCase):
             self.assertEqual(leaf.dtype, jnp.float64)
 
     def test_solve_reaction_diffusion_preserves_float64(self):
-        """solve_reaction_diffusion preserves float64 across every leaf of its output."""
+        """solve_reaction_diffusion preserves float64 across every leaf of
+        its output."""
         A, k, rxns, times, dt, spatial_dims, dspaces = _decay_rd_setup()
 
         out = solve_reaction_diffusion(
@@ -324,7 +361,10 @@ class Test64Bit(unittest.TestCase):
             {A: jnp.full(spatial_dims, 1.0)},
             {k: jnp.array(1.0)},
             {A: jnp.array(0.1)},
-            times, dt, spatial_dims, dspaces,
+            times,
+            dt,
+            spatial_dims,
+            dspaces,
         )
 
         for leaf in jax.tree_util.tree_leaves(out):

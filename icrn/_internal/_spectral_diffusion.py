@@ -1,7 +1,6 @@
-from jax import numpy as jnp
-import jax
-from jax.numpy.fft import fftfreq, fftn, ifftn
 import jax.tree as jax_tree
+from jax import numpy as jnp
+from jax.numpy.fft import fftfreq, fftn, ifftn
 
 
 def _compute_lap_op(spatial_dims, dspace):

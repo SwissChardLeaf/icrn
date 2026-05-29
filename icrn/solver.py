@@ -1,11 +1,11 @@
 from typing import Iterable
-from .reactions import AbstractReaction, FastReaction
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from .operator import to_well_mixed_ops, to_reaction_diffusion_ops
-from ._internal._solve import _solve_with_ops
-from .symbols import Species, TensorSymbol, Numeric
+
 from jax import numpy as jnp
+
+from ._internal._solve import _solve_with_ops
+from .operator import to_reaction_diffusion_ops, to_well_mixed_ops
+from .reactions import AbstractReaction, FastReaction
+from .symbols import Numeric, Species, TensorSymbol
 
 
 def solve_well_mixed(
@@ -93,8 +93,8 @@ def solve_reaction_diffusion(
 ):
     """Integrate a reaction-diffusion PDE on a regular grid.
 
-    Reactions are integrated with the chosen method, diffusion solved with a spectral method,
-    and the two are combined via the chosen splitting scheme.
+    Reactions are integrated with the chosen method, diffusion solved with a
+    spectral method, and the two are combined via the chosen splitting scheme.
 
     Parameters
     ----------

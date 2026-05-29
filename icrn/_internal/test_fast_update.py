@@ -1,21 +1,20 @@
 import unittest
-from ._fast_update import (
-    _fast_update_f,
-    _standard_reactants_and_indexing,
-    _build_base_einsum_str,
-    _einsum_prep,
-    _get_reactant_unit,
-)
 from collections import Counter
-from ..reactions import FastReaction
-from ..symbols import (
-    Species,
-    Complex,
-    many_species,
-    many_index_symbols,
-)
 
 import jax.numpy as jnp
+
+from ..reactions import FastReaction
+from ..symbols import (
+    many_index_symbols,
+    many_species,
+)
+from ._fast_update import (
+    _build_base_einsum_str,
+    _einsum_prep,
+    _fast_update_f,
+    _get_reactant_unit,
+    _standard_reactants_and_indexing,
+)
 
 
 class TestFastFluxF(unittest.TestCase):

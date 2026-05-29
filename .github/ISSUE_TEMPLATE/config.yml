@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://swisschardleaf.github.io/icrn/
+    about: Read the docs before opening an issue.
+  - name: Getting started
+    url: https://swisschardleaf.github.io/icrn/getting_started/
+    about: Installation and quickstart examples.

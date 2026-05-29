@@ -12,25 +12,16 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Callable
-from collections import defaultdict
-from .utils.dict_utils import dict_add, arr_mul
 
+from ._internal._fast_update import _fast_update_f
+from ._internal._mass_action import mass_action_flux_f
 from .symbols import (
     Complex,
     Numeric,
     Species,
     TensorExpression,
-    TensorFunction,
     TensorLiteral,
-    TensorSymbol,
 )
-
-from ._internal._mass_action import mass_action_flux_f
-from ._internal._fast_update import _fast_update_f
-
-
-type TensorSymbolDict = dict[TensorSymbol]
 
 
 @dataclass(frozen=True)
@@ -38,7 +29,8 @@ class AbstractReaction(ABC):
     """Abstract base for reactions.
 
     Subclasses must implement `flux()`, which returns a callable mapping
-    `(state, non_state)` to a per-species flux dictionary. Users looking for non mass action kinetics should extend this class.
+    `(state, non_state)` to a per-species flux dictionary. Users looking for
+    non mass action kinetics should extend this class.
 
     Parameters
     ----------
@@ -120,7 +112,9 @@ def _matching_shapes(all_species: set[Species]):
             existing_shape = shapes[base_s]
             if len(existing_shape) != len(shape_s):
                 raise ValueError(
-                    f"Shapes of {s} must be the same, got {existing_shape} and {shape_s}"
+                    f"Shapes of {s} must be the same, got {existing_shape} and {
+                        shape_s
+                    }"
                 )
 
             update_shape = []
@@ -128,7 +122,8 @@ def _matching_shapes(all_species: set[Species]):
                 if existing_shape[i] and shape_s[i]:
                     if existing_shape[i] != shape_s[i]:
                         raise ValueError(
-                            f"Shapes of {base_s} must be the same, got {existing_shape} and {shape_s}"
+                            f"Shapes of {base_s} must be the same, got "
+                            f"{existing_shape} and {shape_s}"
                         )
                 elif not existing_shape[i] or not shape_s[i]:
                     update_shape.append(None)
@@ -145,8 +140,8 @@ class MassActionReaction(AbstractReaction):
 
     The instantaneous flux of the reaction at species concentrations $x$
     is `rate_expr * prod(x[s] ** count for s, count in reactants)`,
-    contributing $+(c_\text{product} - c_\text{reactant}) \cdot \text{flux}$ to each species (with $c$ the stoichiometric
-    coefficient).
+    contributing $+(c_\text{product} - c_\text{reactant}) \cdot \text{flux}$
+    to each species (with $c$ the stoichiometric coefficient).
 
     Parameters
     ----------
@@ -185,7 +180,9 @@ class MassActionReaction(AbstractReaction):
     ):
         if not (isinstance(reactants, Complex | Species) or reactants == 0):
             raise ValueError(
-                f"Reactants must be a Complex or Species or 0, got {type(reactants)}"
+                f"Reactants must be a Complex or Species or 0, got {
+                    type(reactants)
+                }"
             )
         if isinstance(reactants, Species):
             reactants = Complex({reactants: 1})
@@ -205,7 +202,8 @@ class MassActionReaction(AbstractReaction):
             rate_expr, Species
         ):
             raise ValueError(
-                f"Rate expression must be a TensorExpression (not Species)or Numeric, got {type(rate_expr)}"
+                f"Rate expression must be a TensorExpression (not Species)"
+                f"or Numeric, got {type(rate_expr)}"
             )
         if isinstance(rate_expr, Numeric):
             rate_expr = TensorLiteral(rate_expr)
@@ -259,7 +257,10 @@ def fast_rxns_to_update_f(fast_rxns: list[FastReaction]):
 class FastReaction:
     """An infinitely fast reaction.
 
-    At every integration step, reactions fire until the reactants are fully consumed. They are useful for modelling reactions that are on a timescale much faster than the dt. Currently, a concrete species can be involved in at most one fast reaction.
+    At every integration step, reactions fire until the reactants are fully
+    consumed. They are useful for modelling reactions that are on a timescale
+    much faster than the dt. Currently, a concrete species can be involved in
+    at most one fast reaction.
     Parameters
     ----------
     reactants : Complex or Species
@@ -304,14 +305,18 @@ class FastReaction:
             if reactants_index_symbols:
                 if reactants_index_symbols != s.index_symbols:
                     raise ValueError(
-                        f"The index symbols must be the same for all species in the reactants, got {reactants_index_symbols} and {s.index_symbols}"
+                        f"The index symbols must be the same for all "
+                        f"species in the reactants, got "
+                        f"{reactants_index_symbols} and {s.index_symbols}"
                     )
             else:
                 reactants_index_symbols = s.index_symbols
 
         if not (isinstance(products, Complex | Species) or products == 0):
             raise ValueError(
-                f"Products must be a Complex or Species or 0, got {type(products)}"
+                f"Products must be a Complex or Species or 0, got {
+                    type(products)
+                }"
             )
         if isinstance(products, Species):
             products = Complex({products: 1})
@@ -321,7 +326,9 @@ class FastReaction:
         for s in products.count_dict.keys():
             if set(s.index_symbols) - set(reactants_index_symbols) != set():
                 raise ValueError(
-                    f"The index symbols of the products must be a subset of the index symbols of the reactants, got {set(s.index_symbols)} and {index_symbols_set}"
+                    "The index symbols of the products must be a subset "
+                    "of the index symbols of the reactants, got "
+                    f"{set(s.index_symbols)} and {set(reactants_index_symbols)}"
                 )
 
         object.__setattr__(self, "reactants", reactants)
@@ -368,5 +375,7 @@ class FastReaction:
 
 
 # # class MichaelisMentenReaction(AbstractReaction):
-# #     def __init__(self, substrate, enzyme, product, rate_constant, aux, name=None):
+# #     def __init__(
+# #         self, substrate, enzyme, product, rate_constant, aux, name=None,
+# #     ):
 # #         pass

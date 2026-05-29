@@ -1,6 +1,8 @@
 import unittest
+
 import jax.numpy as jnp
-from ._interpolation import _linear_interpolation, _hermitian_interpolation
+
+from ._interpolation import _linear_interpolation
 
 
 class TestLinearInterpolation(unittest.TestCase):
@@ -11,7 +13,7 @@ class TestLinearInterpolation(unittest.TestCase):
         a = 2.0
         ys = {"A": y0 * jnp.exp(-a * jnp.arange(20) * dt)}
 
-        times = jnp.array([0, 0.25, 1.2, 3.5, 8.1])
+        jnp.array([0, 0.25, 1.2, 3.5, 8.1])
         steps = jnp.array([0, 0, 2, 7, 16])
         dt_fractions = jnp.array([0.0, 0.5, 0.4, 0.0, 0.2])
 
@@ -36,7 +38,7 @@ class TestLinearInterpolation(unittest.TestCase):
         a = 1.0
         ys = {"A": jnp.array([y0 * jnp.exp(-a * i * dt) for i in range(10)])}
 
-        times = jnp.array([0, 0.25, 1.2, 3.5, 8.1])
+        jnp.array([0, 0.25, 1.2, 3.5, 8.1])
         steps = jnp.array([0, 0, 1, 3, 8])
         dt_fractions = jnp.array([0.0, 0.25, 0.2, 0.5, 0.1])
 

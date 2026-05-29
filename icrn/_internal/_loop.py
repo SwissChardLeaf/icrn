@@ -1,11 +1,8 @@
-from jax import lax, checkpoint, vmap, jit
 import jax.numpy as jnp
-import jax
 import jax.tree as jax_tree
 import numpy as np
+from jax import lax
 
-from ..symbols import Species, TensorSymbol
-from functools import partial
 from ._interpolation import _linear_interpolation
 
 # general purpuse, quite agnositic scan function
@@ -30,7 +27,7 @@ def _times_to_steps(times, dt, length):
     n = len(times)
     # steps = jnp.floor(times / dt).astype(int)
     # segment = jnp.ceil(times / dt / length).astype(int) - 1
-    steps = np.floor(times / dt).astype(int)
+    np.floor(times / dt).astype(int)
     segment = np.ceil(times / dt / length).astype(int) - 1
     max_segment = segment[-1]
 

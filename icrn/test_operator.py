@@ -1,20 +1,20 @@
 import unittest
+
+import jax.numpy as jnp
+
 from .operator import (
     AbstractOperator,
-    ReactionsOperator,
     FastReactionsOperator,
+    ReactionsOperator,
     SpectralDiffusionOperator,
 )
-import jax.numpy as jnp
-import jax
-from .utils.dict_utils import dict_allclose
-
+from .reactions import FastReaction, MassActionReaction
 from .symbols import (
-    many_species,
-    many_rate_constants,
     many_index_symbols,
+    many_rate_constants,
+    many_species,
 )
-from .reactions import MassActionReaction, FastReaction
+from .utils.dict_utils import dict_allclose
 
 rxn = MassActionReaction
 
@@ -143,7 +143,7 @@ class TestReactionsOperator(unittest.TestCase):
             )
         )
 
-        op2 = ReactionsOperator(None, rxns, reaction_solver="RK4")
+        ReactionsOperator(None, rxns, reaction_solver="RK4")
 
     def test_exponential_decay_spatial(self):
 

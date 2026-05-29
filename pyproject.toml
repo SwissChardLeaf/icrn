@@ -25,6 +25,14 @@ Issues = "https://github.com/SwissChardLeaf/icrn/issues"
 [tool.ruff]
 line-length = 80
 
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
 [tool.coverage.run]
 source = ["icrn"]
 omit = [
@@ -39,3 +47,32 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
 ]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["icrn"]
+exclude = [
+    "icrn/test_.*\\.py",
+    "icrn/.*/test_.*\\.py",
+    "icrn/archive/.*",
+    "icrn/_numerics/.*",
+    "icrn/representation/.*",
+]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+disable_error_code = [
+    "misc",
+    "union-attr",
+    "return-value",
+    "assignment",
+    "arg-type",
+    "var-annotated",
+]
+
+[[tool.mypy.overrides]]
+module = ["jax.*", "jaxlib.*"]
+ignore_missing_imports = true

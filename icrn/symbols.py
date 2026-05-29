@@ -1,11 +1,14 @@
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Sequence
+from typing import Any, Callable
+
 import jax.numpy as jnp
 from jax.typing import ArrayLike
 
-### symbols need to be hashable to use in dict, they also need to be ordered to be compatible with jax compilation
+# symbols need to be hashable to use in dict, they also need to be ordered
+# to be compatible with jax compilation
 
 
 @dataclass(frozen=True)
@@ -55,7 +58,8 @@ def _index_symbols_empty(s):
 
 
 def _unify_index_symbols(args):
-    """Unify index symbols; None and () both mean 'no indices' and are compatible."""
+    """Unify index symbols; None and () both mean 'no indices' and are
+    compatible."""
     sym = None
     for arg in args:
         if isinstance(arg, TensorExpression):
@@ -66,7 +70,8 @@ def _unify_index_symbols(args):
                 sym = s
             elif s != sym:
                 raise ValueError(
-                    f"All tensor arguments must share index symbols, got {s} and {sym}"
+                    f"All tensor arguments must share index symbols, "
+                    f"got {s} and {sym}"
                 )
     return sym if sym is not None else ()
 
@@ -84,7 +89,9 @@ def _binary_op_helper(fn, a, b):
 
         if a.index_symbols != b.index_symbols:
             raise ValueError(
-                f"Index symbols must be the same, got {a.index_symbols} and {b.index_symbols}"
+                f"Index symbols must be the same, got {a.index_symbols} and {
+                    b.index_symbols
+                }"
             )
 
         return TensorFunction(fn, (a, b))
@@ -103,7 +110,9 @@ def _check_shape(res: ArrayLike, index_symbols):
         )
     if not all(isinstance(i, IndexSymbol) for i in index_symbols):
         raise ValueError(
-            f"Index symbols must be a tuple of IndexSymbols, got {type(index_symbols)}"
+            f"Index symbols must be a tuple of IndexSymbols, got {
+                type(index_symbols)
+            }"
         )
 
     res_shape = res.shape
@@ -149,7 +158,9 @@ class TensorExpression(ABC):
             return res
         else:
             raise ValueError(
-                f"Shape of {res} does not match index symbols {self.index_symbols}"
+                f"Shape of {res} does not match index symbols {
+                    self.index_symbols
+                }"
             )
 
     @abstractmethod
@@ -226,7 +237,8 @@ class TensorExpression(ABC):
 
 
 class IndexSymbol(OrderedHashableSymbol):
-    """A named index over a finite range, used to subscript species and rate constants.
+    """A named index over a finite range, used to subscript species and rate
+    constants.
 
     Parameters
     ----------
@@ -262,7 +274,8 @@ class IndexSymbol(OrderedHashableSymbol):
                 )
             if index_set < 0:
                 raise ValueError(
-                    f"Index set must be greater than or equal to 0, got {index_set}"
+                    f"Index set must be greater than or equal to 0, "
+                    f"got {index_set}"
                 )
 
         object.__setattr__(self, "label", label)
@@ -327,7 +340,9 @@ class TensorSymbol(OrderedHashableSymbol, TensorExpression):
         #     indexing = (indexing,)
         if not all(isinstance(i, IndexSymbol) for i in indexing):
             raise ValueError(
-                f"Indexing must be a tuple of IndexSymbols, got {type(indexing)}"
+                f"Indexing must be a tuple of IndexSymbols, got {
+                    type(indexing)
+                }"
             )
 
         object.__setattr__(self, "aux", indexing)
@@ -358,7 +373,9 @@ class TensorSymbol(OrderedHashableSymbol, TensorExpression):
             isinstance(i, IndexSymbol) for i in index_symbols
         ):
             raise ValueError(
-                f"Index symbols must be a tuple of IndexSymbols, got {type(index_symbols)}"
+                f"Index symbols must be a tuple of IndexSymbols, got {
+                    type(index_symbols)
+                }"
             )
 
         return self.__class__(self.label, index_symbols)
@@ -408,9 +425,13 @@ class Species(TensorSymbol):
 
 @dataclass(frozen=True)
 class Complex:
-    """A multiset of [`Species`][icrn.Species], used as the reactant or product side of a reaction.
+    """A multiset of [`Species`][icrn.Species], used as the reactant or
+    product side of a reaction.
 
-    Complexes are built ergonomially with opertaors involving [`Species`][icrn.Species] (e.g. `A + 2 * B` produces `Complex({A: 1, B: 2})`). A complex is unlikely to be constructed directly.
+    Complexes are built ergonomially with opertaors involving
+    [`Species`][icrn.Species] (e.g. `A + 2 * B` produces
+    `Complex({A: 1, B: 2})`). A complex is unlikely to be constructed
+    directly.
 
     Parameters
     ----------
@@ -442,7 +463,7 @@ class Complex:
                 raise ValueError(
                     f"count_dict keys must be Species, got {type(s)}"
                 )
-            if type(c) is not int:
+            if not isinstance(c, int):
                 raise ValueError(
                     f"count_dict values must be int, got {type(c)}"
                 )
@@ -520,9 +541,11 @@ class RateConstant(TensorSymbol):
 
 @dataclass(frozen=True)
 class TensorLiteral(TensorExpression):
-    """A scalar numeric constant lifted into a [`TensorExpression`][icrn.TensorExpression].
+    """A scalar numeric constant lifted into a
+    [`TensorExpression`][icrn.TensorExpression].
 
-    TensorLiterals allow for python/JAX scalars to interact with other symbols to form expressions.
+    TensorLiterals allow for python/JAX scalars to interact with other
+    symbols to form expressions.
 
     Parameters
     ----------
@@ -573,16 +596,21 @@ class TensorLiteral(TensorExpression):
 
 @dataclass(frozen=True)
 class TensorFunction(TensorExpression):
-    """A symbolic representation of a JAX function applied to one or more arguments.
+    """A symbolic representation of a JAX function applied to one or more
+    arguments.
 
-    Representing the function symbolically allows for tensor symbol arguments to be indexed, and the function to be applied to the arguments at evaluation time. Currently, all arguments have the same index symbols.
+    Representing the function symbolically allows for tensor symbol arguments
+    to be indexed, and the function to be applied to the arguments at
+    evaluation time. Currently, all arguments have the same index symbols.
 
     Parameters
     ----------
     fn : callable
-        a JAX-compatible callable which takes a number of arguments equal to the length of `args` and returns a scalar.
+        a JAX-compatible callable which takes a number of arguments equal to
+        the length of `args` and returns a scalar.
     args : tuple of TensorExpression
-        arguments passed to `fn` at evaluation time. Must share a single set of `index_symbols`.
+        arguments passed to `fn` at evaluation time. Must share a single set
+        of `index_symbols`.
 
     Attributes
     ----------
@@ -591,10 +619,12 @@ class TensorFunction(TensorExpression):
 
     See Also
     --------
-    [`TensorExpression`][icrn.TensorExpression] : Abstract base class for tensor-valued expressions over indexed symbols.
+    [`TensorExpression`][icrn.TensorExpression] : Abstract base class for
+        tensor-valued expressions over indexed symbols.
     [`TensorLiteral`][icrn.TensorLiteral] : Wraps a scalar numeric value.
     [`TensorSymbol`][icrn.symbols.TensorSymbol] : Indexed array-like symbol.
-    [`RateConstant`][icrn.RateConstant] : A named rate constant, optionally indexed.
+    [`RateConstant`][icrn.RateConstant] : A named rate constant, optionally
+        indexed.
 
     Examples
     --------

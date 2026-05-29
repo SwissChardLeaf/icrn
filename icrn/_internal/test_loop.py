@@ -1,9 +1,10 @@
 import unittest
-from jax._src.distributed import State
-import jax.numpy as jnp
+
 import jax
-from ._loop import _times_to_steps, _scan, _loop_with_checkpointing
+import jax.numpy as jnp
+
 from ..utils.dict_utils import dict_allclose
+from ._loop import _loop_with_checkpointing, _scan, _times_to_steps
 
 
 class TestTimesToSteps(unittest.TestCase):

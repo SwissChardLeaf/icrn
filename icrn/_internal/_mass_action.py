@@ -1,13 +1,12 @@
+from collections import defaultdict
+
+import jax.numpy as jnp
+
 from ..symbols import (
     Complex,
-    Species,
-    TensorExpression,
-    TensorLiteral,
     Numeric,
+    TensorExpression,
 )
-import jax
-import jax.numpy as jnp
-from collections import defaultdict
 
 
 def _tensor_expression_to_index_str(expr: TensorExpression) -> str:
@@ -44,8 +43,7 @@ def _get_base_einsum_str(
 ):
     parts = [_tensor_expression_to_index_str(rate_exp)]
 
-    r_list = list(reactants.count_dict.keys())
-    r_list.sort()
+    r_list = sorted(reactants.count_dict.keys())
 
     for s in r_list:
         parts.append(_tensor_expression_to_index_str(s))
@@ -86,8 +84,7 @@ def _get_tensors(reactants, rate_expr, product_index_symbols):
         r_pow_list.sort(key=lambda x: x[0])
         r_pow_list = [(rate_expr, 1)] + r_pow_list
 
-    product_index_symbols_lst = list(product_index_symbols)
-    product_index_symbols_lst.sort()
+    product_index_symbols_lst = sorted(product_index_symbols)
 
     for idx in product_index_symbols_lst:
         if idx.index_set > 0:
@@ -119,14 +116,16 @@ def _setup_einsums(reactants, products, rate_exp):
     )
 
     diff_dict = _get_diff_dict(reactants, products)
-    einsum_prep = defaultdict(list)
+    defaultdict(list)
 
     return _get_diff_and_einsum_strs(
         diff_dict, reactants, rate_exp, product_index_symbols, base_einsum_str
     )
 
     # for s, diff in diff_dict.items():
-    #     mod, einsum_str = _get_mod_and_einsum_str(s, product_index_symbols, base_einsum_str)
+    #     mod, einsum_str = _get_mod_and_einsum_str(
+    #         s, product_index_symbols, base_einsum_str
+    #     )
     #     einsum_prep[s[()]].append((mod * diff, einsum_str))
 
     # return einsum_prepr
@@ -157,10 +156,12 @@ def mass_action_flux_f(
         for diff, einsum_str, spec in lst:
             try:
                 acc += diff * jnp.einsum(einsum_str, *tensors)
-            except Exception as e:
+            except Exception:
                 # print(f"Error einsumming {einsum_str} with tensors {tensors}")
                 raise Exception(
-                    f"Error einsumming {einsum_str} with tensors {tensors} for species {spec} with reactants {reactants} and products {products} and rate expression {rate_exp}"
+                    f"Error einsumming {einsum_str} with tensors {tensors} "
+                    f"for species {spec} with reactants {reactants} and "
+                    f"products {products} and rate expression {rate_exp}"
                 )
         return acc
 

@@ -1,15 +1,12 @@
-def benchmark_well_mixed(problem: WellMixedProblem, specs):
+def benchmark_well_mixed(problem, specs):
     pass
 
 
-def benchmark_reaction_diffusion(problem: ReactionDiffusionProblem, specs):
-    return benchmark_reaction_diffusion(problem)
+def benchmark_reaction_diffusion(problem, specs):
+    pass
 
 
-def benchmark(problem: AbstractProblem, *args):
-    if isinstance(problem, WellMixedProblem):
-        return benchmark_well_mixed(problem, *args)
-    elif isinstance(problem, ReactionDiffusionProblem):
-        return benchmark_reaction_diffusion(problem, *args)
-    else:
-        raise ValueError(f"Invalid problem type: {type(problem)}")
+def benchmark(problem, *args):
+    raise NotImplementedError(
+        f"benchmark is not implemented for {type(problem)!r}"
+    )
