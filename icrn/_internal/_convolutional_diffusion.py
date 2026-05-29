@@ -1,119 +1,67 @@
-NINE_POINT_STENCIL = jnp.array(
-    [[1 / 6, 4 / 6, 1 / 6], [4 / 6, -20 / 6, 4 / 6], [1 / 6, 4 / 6, 1 / 6]],
-    dtype="float32",
-)[..., jnp.newaxis, jnp.newaxis]
-
-STENCIL_H = jnp.array(
-    [[-1 / 3, -2 / 3, 1 / 3], [0, 0, 0], [1 / 3, 2 / 3, 1 / 3]], dtype="float32"
-)[..., jnp.newaxis, jnp.newaxis]
-
-STENCIL_W = jnp.array(
-    [[-1 / 3, 0, 1 / 3], [-2 / 3, 0, 2 / 3], [-1 / 3, 0, 1 / 3]],
-    dtype="float32",
-)[..., jnp.newaxis, jnp.newaxis]
-
-DIM_NUM = lax.conv_dimension_numbers(
-    (0, 0, 0, 0), (0, 0, 0, 0), ("HWNC", "HWIO", "HWNC")
-)
+from jax import numpy as jnp
+import jax.tree_util as jax_tree
 
 
-dn = lax.conv_dimension_numbers(
-    (0, 0, 0, 0),  # only ndim matters, not shape
-    (0, 0, 0, 0),  # only ndim matters, not shape
-    ("NHWC", "HWIO", "NHWC"),
-)  # the important bit
+_PAD_MODES = {
+    "dirichlet": ("constant", {"constant_values": 0.0}),
+    "neumann": ("edge", {}),
+    "periodic": ("wrap", {}),
+}
 
 
-def _da_dspace(a):
-    change_h = lax.conv_general_dilated(
-        a, STENCIL_H, (1, 1), "SAME", dimension_numbers=DIM_NUM
-    )
-    change_w = lax.conv_general_dilated(
-        a, STENCIL_W, (1, 1), "SAME", dimension_numbers=DIM_NUM
-    )
-    return change_h, change_w
-
-
-def _d2a_dspace2(a):
-    return lax.conv_general_dilated(
-        a, NINE_POINT_STENCIL, (1, 1), "SAME", dimension_numbers=DIM_NUM
-    )
-
-
-def _dCdt_spatially_varying(conc, diff_constant):
-    dDdh, dDdw = _da_dspace(diff_constant)
-    dCdh, dCdw = _da_dspace(conc)
-    out = _d2a_dspace2(conc)
-
-    return dDdh * dCdh + dDdw * dCdw + diff_constant * out
-
-
-def _dCdt_constant(conc, diff_constant):
-    return diff_constant * _d2a_dspace2(conc)
-
-
-def _reshaped_conc_diff_constant(
-    conc, diff_constant, spatially_varying_diffusion_constant
-):
-    original_conc_shape = conc.shape
-    conc_reshape = None
-    diff_constant_reshape = None
-
-    indexed_species = len(conc.shape) > 2
-
-    if indexed_species:
-        prod = 1
-        for i in range(len(conc.shape[2:])):
-            prod *= conc.shape[2:][i]
-        new_shape = conc.shape[:2] + (prod, 1)
-        conc_reshape = jnp.reshape(conc, new_shape)
-    else:
-        conc_reshape = conc[..., jnp.newaxis, jnp.newaxis]
-
-    if spatially_varying_diffusion_constant:
-        diff_constant_reshape = jnp.reshape(diff_constant, conc_reshape.shape)
-    else:
-        diff_constant_broadcasted = jnp.broadcast_to(
-            diff_constant, original_conc_shape
+def _pad_for_bc(a, axis, boundary_condition):
+    if boundary_condition not in _PAD_MODES:
+        raise ValueError(
+            f"unknown boundary_condition: {boundary_condition!r}; "
+            f"expected one of {tuple(_PAD_MODES)}"
         )
-        diff_constant_reshape = jnp.reshape(
-            diff_constant_broadcasted, conc_reshape.shape
-        )
+    mode, kwargs = _PAD_MODES[boundary_condition]
+    pad_widths = [(0, 0)] * a.ndim
+    pad_widths[axis] = (1, 1)
+    return jnp.pad(a, pad_widths, mode=mode, **kwargs)
 
-    return conc_reshape, diff_constant_reshape
+
+def _second_derivative(a, axis, dspace, boundary_condition):
+    a_padded = _pad_for_bc(a, axis, boundary_condition)
+    sl_minus = [slice(None)] * a.ndim
+    sl_zero = [slice(None)] * a.ndim
+    sl_plus = [slice(None)] * a.ndim
+    sl_minus[axis] = slice(0, -2)
+    sl_zero[axis] = slice(1, -1)
+    sl_plus[axis] = slice(2, None)
+    return (
+        a_padded[tuple(sl_plus)]
+        - 2.0 * a_padded[tuple(sl_zero)]
+        + a_padded[tuple(sl_minus)]
+    ) / (dspace ** 2)
+
+
+def _laplacian(a, dspaces, boundary_condition):
+    result = _second_derivative(a, 0, dspaces[0], boundary_condition)
+    for i in range(1, len(dspaces)):
+        result = result + _second_derivative(a, i, dspaces[i], boundary_condition)
+    return result
 
 
 def _conv_species_diffuse(
     conc,
     diff_constant,
     dt,
-    dh=1,
-    dw=1,
-    spatially_varying_diffusion_constant=False,
+    dspaces,
+    boundary_condition="neumann",
 ):
-    # currently assumes dh == dw
-    diff = None
-
-    # spatial_dim = conc.shape[:2]
-    conc_original_shape = conc.shape
-    conc_reshape, diff_constant_reshape = _reshaped_conc_diff_constant(
-        conc, diff_constant, spatially_varying_diffusion_constant
-    )
-
-    # print(conc_reshape.shape)
-    # print(diff_constant_reshape.shape)
-
-    if spatially_varying_diffusion_constant:
-        diff = _dCdt_spatially_varying(conc_reshape, diff_constant_reshape)
-    else:
-        diff = _dCdt_constant(conc_reshape, diff_constant_reshape)
-
-    diff_reshape = jnp.reshape(diff, conc_original_shape)
-    conc += diff_reshape * dt / (dh**2 * dw**2)
-    return conc
+    return conc + diff_constant * _laplacian(conc, dspaces, boundary_condition) * dt
 
 
-def _conv_diffuse(concs, diff_data, dt):
+def _conv_diffuse(
+    concs,
+    diff_data,
+    dt,
+    dspaces,
+    boundary_condition="neumann",
+):
     return jax_tree.tree_map(
-        lambda x, y: _conv_species_diffuse(x, y, dt), concs, diff_data
+        lambda x, y: _conv_species_diffuse(x, y, dt, dspaces, boundary_condition),
+        concs,
+        diff_data,
     )

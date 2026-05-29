@@ -56,7 +56,6 @@ def _times_to_steps(times, dt, length):
 def _loop_with_checkpointing(
     step_f, times, key, state, non_state, dt, checkpoint_length=None
 ):
-    print(f"times: {times}")
     # if checkpoint_length is None:
     #     max_step = jnp.ceil(times[-1] / dt).astype(int)
     #     checkpoint_length = max_step + 1

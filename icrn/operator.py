@@ -91,8 +91,6 @@ def to_reaction_diffusion_ops(
     if fast_rxns:
         ops.append(FastReactionsOperator(fast_rxns, len(spatial_dims)))
 
-    print("spatial_rate_constants", spatial_rate_constants)
-
     if splitting == "LieTrotter":
         ops += [
             ReactionsOperator(
@@ -191,9 +189,6 @@ class ReactionsOperator(AbstractOperator):
             raise ValueError(f"Invalid reaction solver: {reaction_solver}")
 
         _rxns_dynamics_f = rxns_to_dynamics_f(rxns)
-
-        print("spatial_axes", spatial_axes)
-        print("spatial_rate_constants", spatial_rate_constants)
 
         if spatial_axes > 0:
 
