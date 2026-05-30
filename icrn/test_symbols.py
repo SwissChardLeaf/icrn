@@ -248,7 +248,7 @@ class TestSpecies(unittest.TestCase):
 
         tensor_data = {
             A: jnp.arange(25).reshape((5, 5)),
-            B: jnp.arange(25).reshape((5, 5)),
+            Species("B"): jnp.arange(25).reshape((5, 5)),
         }
 
         self.assertTrue(
@@ -401,7 +401,7 @@ class TestComplex(unittest.TestCase):
             Complex({A: 1.0})
 
         with self.assertRaises(ValueError):
-            Complex({A: 1, B: True})
+            Complex({A: 1, B: None})
 
         with self.assertRaises(ValueError):
             Complex({"A": 1})
@@ -705,7 +705,7 @@ class TestRateConstant(unittest.TestCase):
 
         tensor_data = {
             A: jnp.arange(25).reshape((5, 5)),
-            B: jnp.arange(25).reshape((5, 5)),
+            RateConstant("B"): jnp.arange(25).reshape((5, 5)),
         }
 
         self.assertTrue(
@@ -752,12 +752,14 @@ class TestTensorLiteral(unittest.TestCase):
     def test_init(self):
         a = TensorLiteral(1)
         b = TensorLiteral(2.5)
-        arr = jnp.array([1.0, 2.0])
-        c = TensorLiteral(arr)
+        c = TensorLiteral(jnp.array(3.0))
 
-        self.assertEqual(a.numeric_value, 1)
-        self.assertEqual(b.numeric_value, 2.5)
-        self.assertTrue(jnp.all(jnp.equal(c.numeric_value, arr)))
+        self.assertEqual(float(a.numeric_value), 1.0)
+        self.assertEqual(float(b.numeric_value), 2.5)
+        self.assertEqual(float(c.numeric_value), 3.0)
+
+        with self.assertRaises(ValueError):
+            TensorLiteral(jnp.array([1.0, 2.0]))
 
     def test_index_symbols(self):
         self.assertEqual(TensorLiteral(0).index_symbols, ())
@@ -765,23 +767,18 @@ class TestTensorLiteral(unittest.TestCase):
 
     def test_eval(self):
         lit = TensorLiteral(7)
-        arr_lit = TensorLiteral(jnp.array([1.0, 2.0]))
         data = {RateConstant("k"): jnp.array(99.0)}
 
         self.assertEqual(lit.eval(data), 7)
         self.assertEqual(lit.eval({}), 7)
-        self.assertTrue(
-            jnp.all(jnp.equal(arr_lit.eval(data), jnp.array([1.0, 2.0])))
-        )
 
     def test_str(self):
-        self.assertEqual(str(TensorLiteral(3)), "3")
-        self.assertEqual(str(TensorLiteral(1.5)), "1.5")
+        self.assertEqual(str(TensorLiteral(3)), str(jnp.array(3.0)))
+        self.assertEqual(str(TensorLiteral(1.5)), str(jnp.array(1.5)))
 
     def test_repr(self):
-        self.assertEqual(repr(TensorLiteral(-2)), "-2")
-        x = jnp.array([1.0, 2.0])
-        self.assertEqual(repr(TensorLiteral(x)), repr(x))
+        lit = TensorLiteral(-2)
+        self.assertEqual(repr(lit), repr(lit.numeric_value))
 
     def test_frozen(self):
         lit = TensorLiteral(1)

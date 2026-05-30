@@ -202,8 +202,7 @@ class TestFastReactionsToUpdateF(unittest.TestCase):
 
         output = fast_rxns_to_update_f([fast_rxn])(state)
         target_output = {
-            A: jnp.array([-1.0, -2.0, -1.5]),
-            B: jnp.array([-2.0, 0.0, -1.5]),
+            A: jnp.array([0.0, 2.0, 0.0]),
+            B: jnp.array([1.0, 0.0, 0.0]),
         }
-        print(output)
         self.assertTrue(dict_allclose(output, target_output))

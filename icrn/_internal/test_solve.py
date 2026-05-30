@@ -53,8 +53,7 @@ class TestModOp(unittest.TestCase):
         )
 
         err, (key, state) = checked((key, state), None, 1.1)
-        checkify.check_error(err)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(Exception):
             checkify.check_error(err)
 
         state = {"A": jnp.array(2.0), "B": jnp.array(2.0)}

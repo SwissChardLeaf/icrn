@@ -7,6 +7,7 @@ from .dict_utils import (
     arr_add,
     arr_mul,
     dict_add,
+    dict_allclose,
     dict_index,
     dict_sub,
     dict_sum,
@@ -282,6 +283,13 @@ class TestDictOperations(unittest.TestCase):
         self.assertTrue(
             jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict))
         )
+
+    def test_dict_allclose(self):
+        d1 = {"A": jnp.array([1.0, 2.0]), "B": jnp.array(3.0)}
+        d2 = {"A": jnp.array([1.0, 2.1]), "B": jnp.array(3.1)}
+
+        self.assertFalse(dict_allclose(d1, d2))
+        self.assertTrue(dict_allclose(d1, d2, atol=0.2, rtol=0.0))
 
 
 # # SJDict as pytree

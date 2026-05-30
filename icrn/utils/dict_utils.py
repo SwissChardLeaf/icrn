@@ -33,9 +33,26 @@ def dict_index(dct, index):
     return jax_tree.map(lambda x: x[index], dct)
 
 
-def dict_allclose(dct1, dct2):
+def dict_allclose(dct1, dct2, rtol=1e-5, atol=1e-8, equal_nan=False):
+    """Return whether two dicts of arrays match leaf-wise within tolerances.
+
+    Parameters
+    ----------
+    dct1, dct2 : dict
+        PyTrees with the same keys; leaves are compared with ``jnp.allclose``.
+    rtol, atol : float
+        Relative and absolute tolerances passed to ``jnp.allclose``.
+    equal_nan : bool
+        If True, NaNs compare as equal (same as ``jnp.allclose``).
+    """
     return jax_tree.all(
-        jax_tree.map(lambda x, y: jnp.allclose(x, y), dct1, dct2)
+        jax_tree.map(
+            lambda x, y: jnp.allclose(
+                x, y, rtol=rtol, atol=atol, equal_nan=equal_nan
+            ),
+            dct1,
+            dct2,
+        )
     )
 
 

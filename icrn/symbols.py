@@ -593,6 +593,9 @@ class TensorLiteral(TensorExpression):
     def __repr__(self):
         return repr(self.numeric_value)
 
+    def __hash__(self):
+        return hash(float(self.numeric_value))
+
 
 @dataclass(frozen=True)
 class TensorFunction(TensorExpression):
