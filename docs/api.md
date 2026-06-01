@@ -8,9 +8,9 @@ from the top-level package, e.g. `from icrn import MassActionReaction`.
 ::: icrn.IndexSymbol
 ::: icrn.Species
 ::: icrn.RateConstant
-::: icrn.symbols.Complex
+::: icrn.Complex
 ::: icrn.TensorExpression
-::: icrn.symbols.TensorSymbol
+::: icrn.TensorSymbol
 ::: icrn.TensorLiteral
 ::: icrn.TensorFunction
 

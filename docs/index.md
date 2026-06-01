@@ -18,6 +18,10 @@ conditions can be **trained**.
   examples for well-mixed, indexed, and reaction-diffusion systems, plus a
   taste of differentiable simulation.
 - **[API reference](api.md)** — the full public surface of `icrn`.
+- **[Developer notes](developer_notes.md)** — layout, tests, and tooling for
+  library contributors.
+- **[Changelog](https://github.com/SwissChardLeaf/icrn/blob/main/CHANGELOG.md)**
+  on GitHub.
 
 ## Install
 

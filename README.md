@@ -30,6 +30,10 @@
 pip install icrn
 ```
 
+This installs **JAX** and **NumPy** as runtime dependencies. The default JAX
+wheel is CPU-only; for GPU/TPU, install JAX for your platform after `icrn`
+([JAX installation guide](https://docs.jax.dev/en/latest/installation.html)).
+
 ## Quick Start
 
 ### Well Mixed Exponential Decay
@@ -146,17 +150,21 @@ icrn/
   operator.py       # operator construction for the splitting integrator
   _internal/        # private JAX kernels (mass-action, diffusion, time stepping)
   utils/            # small helpers (dict_utils)
-  archive/          # legacy code, unsupported
 docs/               # MkDocs site (Material + mkdocstrings)
 test/               # reference data for end-to-end tests
 ```
+
+Contributing: see [CONTRIBUTING.md](CONTRIBUTING.md). Release notes:
+[CHANGELOG.md](CHANGELOG.md). PyPI releases: tag `vX.Y.Z` after bumping
+`icrn/__init__.py` `__version__` (see
+[Developer notes — Publishing to PyPI](docs/developer_notes.md#publishing-to-pypi)).
 
 ## Development
 
 ```bash
 git clone https://github.com/SwissChardLeaf/icrn
 cd icrn
-pip install -e .
+pip install -e ".[dev]"
 
 # tests
 python -m unittest discover -s icrn -t .

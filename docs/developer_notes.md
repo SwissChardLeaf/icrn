@@ -3,34 +3,15 @@
 Notes for contributors working on the `icrn` library itself. For installation
 and usage examples, see [Getting started](getting_started.md).
 
-## Repository layout
-
-The installable package lives under `icrn/`. A rough map:
-
-| Path | Role |
-|------|------|
-| `icrn/symbols.py` | Symbolic DSL: `Species`, `RateConstant`, indexed tensors |
-| `icrn/reactions.py` | Reaction definitions (`MassActionReaction`, `FastReaction`) |
-| `icrn/operator.py` | Operator splitting: reaction, diffusion, fast-reaction ops |
-| `icrn/solver.py` | Public entry points: `solve_well_mixed`, `solve_reaction_diffusion` |
-| `icrn/_internal/` | Private numerics (integrators, spectral/convolutional diffusion) |
-| `icrn/utils/` | Shared helpers (e.g. `dict_utils`) |
-| `icrn/test_*.py`, `icrn/**/test_*.py` | Unit tests (`unittest`) |
-
-The public surface is re-exported from `icrn/__init__.py` via `__all__`. New
-user-facing symbols should be added there and documented in
-[API reference](api.md).
-
 ## Development setup
 
-Clone the repo and install in editable mode with JAX and test tooling:
+Clone the repo and install in editable mode with test tooling:
 
 ```bash
 git clone https://github.com/SwissChardLeaf/icrn.git
 cd icrn
 python -m pip install --upgrade pip
-pip install -e .
-pip install jax matplotlib coverage pre-commit
+pip install -e ".[dev]"
 ```
 
 Enable pre-commit hooks once:
@@ -95,22 +76,9 @@ publishes to [GitHub Pages](https://swisschardleaf.github.io/icrn/).
 
 ## Continuous integration
 
-Three workflows run on push/PR to `main`:
-
-| Workflow | What it does |
-|----------|----------------|
-| `tests.yml` | `unittest discover` with coverage; uploads to Codecov |
-| `tests_linting.yml` | `pre-commit run --all-files` |
-| `docs.yml` | `mkdocs build --strict`; deploys to GitHub Pages on `main` |
-
-## Contributing
-
-1. Create a branch from `main`.
-2. Make changes; keep the public API changes reflected in `icrn/__init__.py`
-   and `docs/api.md` when adding symbols.
-3. Run `pre-commit run --all-files` and relevant tests locally.
-4. Open a pull request; CI must pass before merge.
-
-For bugs and feature requests, open a
-[GitHub Issue](https://github.com/SwissChardLeaf/icrn/issues) and choose
-**Bug report** or **Feature request**.
+| Workflow | When | What it does |
+|----------|------|----------------|
+| `tests.yml` | push/PR to `main` | `unittest discover` with coverage; uploads to Codecov |
+| `tests_linting.yml` | push/PR | `pre-commit run --all-files` |
+| `docs.yml` | push/PR to `main` | `mkdocs build --strict`; deploys to GitHub Pages on `main` |
+| `publish.yml` | push tag `v*` | Tests, then build and upload to PyPI (trusted publishing) |

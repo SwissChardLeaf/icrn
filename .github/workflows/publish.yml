@@ -1,0 +1,72 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Pre-commit
+        uses: pre-commit/action@v3.0.1
+
+      - name: Run tests
+        run: python -m unittest discover -s icrn -t . -v
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/icrn/
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check tag matches package version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          VERSION=$(python <<'PY'
+          import pathlib
+          import re
+
+          text = pathlib.Path("icrn/__init__.py").read_text()
+          print(re.search(r'^__version__ = ["\']([^"\']+)["\']', text, re.M).group(1))
+          PY
+          )
+          if [ "$TAG" != "$VERSION" ]; then
+            echo "Tag v$TAG does not match icrn/__version__ $VERSION"
+            exit 1
+          fi
+
+      - name: Build package
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

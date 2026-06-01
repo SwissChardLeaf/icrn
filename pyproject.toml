@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "icrn"
-version = "0.1.0"
+dynamic = ["version"]
 authors = [
   { name="Inhoo Lee", email="research22426@gmail.com" },
 ]
@@ -17,10 +17,24 @@ classifiers = [
 ]
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
+dependencies = [
+    "jax>=0.4.20",
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+dev = [
+    "matplotlib>=3.7",
+    "coverage>=7.0",
+    "pre-commit>=3.5",
+]
 
 [project.urls]
 Homepage = "https://github.com/SwissChardLeaf/icrn"
 Issues = "https://github.com/SwissChardLeaf/icrn/issues"
+
+[tool.hatch.version]
+path = "icrn/__init__.py"
 
 [tool.ruff]
 line-length = 80
@@ -54,9 +68,6 @@ files = ["icrn"]
 exclude = [
     "icrn/test_.*\\.py",
     "icrn/.*/test_.*\\.py",
-    "icrn/archive/.*",
-    "icrn/_numerics/.*",
-    "icrn/representation/.*",
 ]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
