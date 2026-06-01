@@ -12,12 +12,14 @@ from .solver import (
     solve_with_ops,
 )
 from .symbols import (
+    Complex,
     IndexSymbol,
     RateConstant,
     Species,
     TensorExpression,
     TensorFunction,
     TensorLiteral,
+    TensorSymbol,
     many_index_symbols,
     many_rate_constants,
     many_species,
@@ -26,9 +28,11 @@ from .symbols import (
 __version__ = "0.1.0"
 
 __all__ = [
+    "Complex",
     "IndexSymbol",
     "Species",
     "RateConstant",
+    "TensorSymbol",
     "TensorExpression",
     "TensorFunction",
     "TensorLiteral",
