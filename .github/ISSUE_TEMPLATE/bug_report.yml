@@ -1,0 +1,62 @@
+name: Bug report
+description: Report incorrect behavior or a crash in icrn
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please include a minimal repro if you can.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug clearly.
+      placeholder: solve_well_mixed returns NaN after ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      placeholder: Concentrations should stay non-negative and finite.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: Short Python snippet we can copy-paste and run.
+      render: python
+      placeholder: |
+        import jax.numpy as jnp
+        from icrn import ...
+
+        # steps to reproduce
+    validations:
+      required: true
+
+  - type: textarea
+    id: versions
+    attributes:
+      label: Environment
+      description: icrn, Python, JAX, and platform (CPU/GPU).
+      render: shell
+      placeholder: |
+        icrn: 0.1.0
+        Python: 3.12
+        JAX: 0.4.x
+        Platform: macOS / CPU
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Tracebacks, screenshots, links to papers/examples, etc.
+    validations:
+      required: false

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "icrn"
-version = "0.1.0"
+dynamic = ["version"]
 authors = [
   { name="Inhoo Lee", email="research22426@gmail.com" },
 ]
@@ -17,7 +17,73 @@ classifiers = [
 ]
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
+dependencies = [
+    "jax>=0.4.20",
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+dev = [
+    "matplotlib>=3.7",
+    "coverage>=7.0",
+    "pre-commit>=3.5",
+]
 
 [project.urls]
 Homepage = "https://github.com/SwissChardLeaf/icrn"
 Issues = "https://github.com/SwissChardLeaf/icrn/issues"
+
+[tool.hatch.version]
+path = "icrn/__init__.py"
+
+[tool.ruff]
+line-length = 80
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.coverage.run]
+source = ["icrn"]
+omit = [
+    "icrn/test_*.py",
+    "icrn/**/test_*.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["icrn"]
+exclude = [
+    "icrn/test_.*\\.py",
+    "icrn/.*/test_.*\\.py",
+]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+disable_error_code = [
+    "misc",
+    "union-attr",
+    "return-value",
+    "assignment",
+    "arg-type",
+    "var-annotated",
+]
+
+[[tool.mypy.overrides]]
+module = ["jax.*", "jaxlib.*"]
+ignore_missing_imports = true

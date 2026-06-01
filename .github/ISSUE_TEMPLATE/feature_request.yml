@@ -1,0 +1,53 @@
+name: Feature request
+description: Suggest a new capability or improvement for icrn
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem you're trying to solve, not only the API you want.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What are you trying to do that icrn doesn't support well today?
+      placeholder: I need Neumann BCs with spatially varying diffusion ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How you'd like this to work (API sketch, behavior, docs).
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds, other libraries, or simpler approaches you tried.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope (check all that apply)
+      options:
+        - label: Public API change (`icrn/__init__.py`, docs)
+        - label: Solver / numerics (`_internal/`)
+        - label: Symbolic DSL (`symbols`, `reactions`)
+        - label: Documentation only
+        - label: Breaking change (acceptable before 1.0)
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Links, benchmarks, related issues, paper references.
+    validations:
+      required: false

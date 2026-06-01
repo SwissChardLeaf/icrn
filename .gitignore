@@ -1,4 +1,52 @@
-**/*.pyc
-.DS_Store
-.vscode
+# Byte-compiled / cache
+__pycache__/
+.cache/
+
+# Distribution / packaging
+build/
 dist/
+*.egg-info/
+*.egg
+
+# Type checkers / linters
+.mypy_cache/
+.ruff_cache/
+
+# Documentation builds (MkDocs)
+site/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+.cursor/
+*.swp
+*.swo
+*~
+
+# Testing / coverage
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.pytest_cache/
+.hypothesis/
+
+# Secrets / env
+.env
+.env.local
+.envrc
+
+# JAX persistent cache (if enabled)
+.jax_cache/

@@ -1,11 +1,6 @@
-# jax==0.4.13
-# numpy==1.24.4
-# optax==0.1.8
-# PyYAML==5.4.1
-# sympy==1.13.3
-sphinx
-jax==0.5.3
-numpy==2.3.1
-optax==0.2.5
-PyYAML==6.0.2
-sympy==1.13.3
+mkdocs
+mkdocs-material
+mkdocstrings[python]
+mkdocs-jupyter
+pymdown-extensions
+ruff
