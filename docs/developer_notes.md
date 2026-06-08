@@ -34,6 +34,16 @@ python -m unittest icrn.test_jax
 python -m unittest icrn.test_solver.TestBoundaryCondition
 ```
 
+After a full run, print a summary or open an HTML report locally:
+
+```bash
+coverage report -m
+coverage html   # open htmlcov/index.html in a browser
+```
+
+On GitHub Actions, the **Tests** workflow uploads `coverage.xml` and `htmlcov/`
+as a **coverage** artifact on each run (download from the workflow summary).
+
 ## Linting, formatting, and type checking
 
 Quality checks run through **pre-commit** (see `.pre-commit-config.yaml`).
@@ -78,7 +88,7 @@ publishes to [GitHub Pages](https://swisschardleaf.github.io/icrn/).
 
 | Workflow | When | What it does |
 |----------|------|----------------|
-| `tests.yml` | push/PR to `main` | `unittest discover` with coverage; uploads to Codecov |
+| `tests.yml` | push/PR to `main` | `unittest discover` with coverage; report in logs + artifacts |
 | `tests_linting.yml` | push/PR | `pre-commit run --all-files` |
 | `docs.yml` | push/PR to `main` | `mkdocs build --strict`; deploys to GitHub Pages on `main` |
 | `publish.yml` | push tag `v*` | Tests, then build and upload to PyPI (trusted publishing) |

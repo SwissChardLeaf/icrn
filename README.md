@@ -5,7 +5,6 @@
 [![License](https://img.shields.io/pypi/l/icrn.svg)](https://github.com/SwissChardLeaf/icrn/blob/main/LICENSE)
 [![DOI](https://img.shields.io/badge/DOI-10.4230%2FLIPIcs.DNA.31.4-blue)](https://doi.org/10.4230/LIPIcs.DNA.31.4)
 [![Tests](https://github.com/SwissChardLeaf/icrn/actions/workflows/tests.yml/badge.svg)](https://github.com/SwissChardLeaf/icrn/actions/workflows/tests.yml)
-[![Coverage](https://codecov.io/gh/SwissChardLeaf/icrn/branch/main/graph/badge.svg)](https://codecov.io/gh/SwissChardLeaf/icrn)
 [![Lint](https://github.com/SwissChardLeaf/icrn/actions/workflows/tests_linting.yml/badge.svg)](https://github.com/SwissChardLeaf/icrn/actions/workflows/tests_linting.yml)
 [![Docs](https://github.com/SwissChardLeaf/icrn/actions/workflows/docs.yml/badge.svg)](https://github.com/SwissChardLeaf/icrn/actions/workflows/docs.yml)
 
