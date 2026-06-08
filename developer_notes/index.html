@@ -794,10 +794,16 @@ The following can be run from the top-level:</p>
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>python<span class="w"> </span>-m<span class="w"> </span>unittest<span class="w"> </span>icrn.test_jax
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>python<span class="w"> </span>-m<span class="w"> </span>unittest<span class="w"> </span>icrn.test_solver.TestBoundaryCondition
 </code></pre></div>
+<p>After a full run, print a summary or open an HTML report locally:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>coverage<span class="w"> </span>report<span class="w"> </span>-m
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>coverage<span class="w"> </span>html<span class="w">   </span><span class="c1"># open htmlcov/index.html in a browser</span>
+</code></pre></div>
+<p>On GitHub Actions, the <strong>Tests</strong> workflow uploads <code>coverage.xml</code> and <code>htmlcov/</code>
+as a <strong>coverage</strong> artifact on each run (download from the workflow summary).</p>
 <h2 id="linting-formatting-and-type-checking">Linting, formatting, and type checking<a class="headerlink" href="#linting-formatting-and-type-checking" title="Permanent link">&para;</a></h2>
 <p>Quality checks run through <strong>pre-commit</strong> (see <code>.pre-commit-config.yaml</code>).
 Run all hooks manually:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
 </code></pre></div>
 <p>Configuration lives in <code>pyproject.toml</code>:</p>
 <p>CI runs the same hooks via the <strong>Linting and Tests</strong> workflow
@@ -806,10 +812,10 @@ Run all hooks manually:</p>
 <p>Docs are built with <strong>MkDocs Material</strong>, <strong>mkdocstrings</strong>, and
 <strong>mkdocs-jupyter</strong>. Source pages live in <code>docs/</code>; config is <code>mkdocs.yml</code> at
 the repo root.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>docs/requirements.txt
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>mkdocs<span class="w"> </span>serve<span class="w">          </span><span class="c1"># local preview at http://127.0.0.1:8000</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>mkdocs<span class="w"> </span>build<span class="w"> </span>--strict<span class="w"> </span><span class="c1"># writes static site to site/ (gitignored)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>docs/requirements.txt
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>mkdocs<span class="w"> </span>serve<span class="w">          </span><span class="c1"># local preview at http://127.0.0.1:8000</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>mkdocs<span class="w"> </span>build<span class="w"> </span>--strict<span class="w"> </span><span class="c1"># writes static site to site/ (gitignored)</span>
 </code></pre></div>
 <p>To add a page, create a Markdown file under <code>docs/</code> and register it in the
 <code>nav</code> section of <code>mkdocs.yml</code>. API docs are generated from NumPy-style
@@ -834,7 +840,7 @@ publishes to <a href="https://swisschardleaf.github.io/icrn/">GitHub Pages</a>.<
 <tr>
 <td><code>tests.yml</code></td>
 <td>push/PR to <code>main</code></td>
-<td><code>unittest discover</code> with coverage; uploads to Codecov</td>
+<td><code>unittest discover</code> with coverage; report in logs + artifacts</td>
 </tr>
 <tr>
 <td><code>tests_linting.yml</code></td>
