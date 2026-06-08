@@ -16,9 +16,8 @@
 
 ## Highlights
 
-- **Indexed reactions**: write `M[i] + M[j] -> D[i, j]` and have it compile to a single `jnp.einsum`.
+- **Indexed reactions**: write `M[i] + M[j] -> D[i, j]` for a dimer system
 - **Well-mixed and reaction–diffusion** in one API (`solve_well_mixed`, `solve_reaction_diffusion`).
-- **Lie–Trotter / Strang** operator splitting with spectral diffusion.
 - **Fast reactions** for limiting-reagent-style annihilation (`FastReaction`).
 - **JAX-native**: works under `jit`, `vmap`, and `grad`.
 - Optional non-negativity guards (`mode="strict"` via `checkify`, or `mode="relu"`).
@@ -114,8 +113,6 @@ sim = solve_reaction_diffusion(
 )
 ```
 
-See the full Gray–Scott, Hopfield-Turing, and winner-take-all tests in `icrn/test_solver.py` for runnable end-to-end examples.
-
 ## Differentiable simulation
 
 Because everything is JAX, you can `jit`, `vmap`, and `grad` straight through a solve:
@@ -130,14 +127,6 @@ def loss(rate_vals):
 
 grad_fn = jax.grad(loss)
 ```
-
-## Tutorials
-
-- [Getting started with icrn](https://colab.research.google.com/github/SwissChardLeaf/icrn/blob/main/docs/tutorials/getting_started.ipynb)
-- [Reaction–diffusion with icrn](https://colab.research.google.com/drive/1DacnTGoGNVpuGdc-yRuHE2z47cNPHbHy?usp=share_link)
-- [Training parameters with icrn](https://colab.research.google.com/drive/1KDA67p3XToZwTD6Soe9eHtf1nq36I0OH?usp=sharing)
-- [Batching simulations](https://colab.research.google.com/drive/18QSaKDSVSacO036ComUYycWPDbwtwWZG?usp=sharing)
-- [DNA31 examples](https://colab.research.google.com/drive/1ioMWwmCQ8ulOcybkvNppgLtMFgGeCscy)
 
 ## Project layout
 
@@ -182,10 +171,6 @@ mkdocs build --strict   # one-shot build into ./site
 - **Stable-ish**: symbolic DSL (`Species`, `IndexSymbol`, `Complex`), `MassActionReaction`, `solve_well_mixed`, `solve_reaction_diffusion` with spectral diffusion.
 - **Experimental**: `FastReaction`, `mode="strict"` runtime checks, Strang splitting.
 - **Planned**: dedicated training utilities, convolutional diffusion solver, benchmarks.
-
-## License
-
-MIT — see [`LICENSE`](LICENSE).
 
 ## Citation
 
