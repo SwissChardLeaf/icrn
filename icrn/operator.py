@@ -6,13 +6,18 @@ from collections.abc import Iterable
 import jax
 
 from ._internal._convolutional_diffusion import _conv_diffuse
-from ._internal._reaction_numerics import _euler_step, _RK4_step
+from ._internal._reaction_numerics import (
+    _euler_step,
+    _patankar_euler_step,
+    _RK4_step,
+)
 from ._internal._spectral_diffusion import _compute_lap_op, _spectral_diffuse
 from .reactions import (
     AbstractReaction,
     FastReaction,
     fast_rxns_to_update_f,
     rxns_to_dynamics_f,
+    rxns_to_pd_dynamics_f,
 )
 
 _VALID_BOUNDARY_CONDITIONS = ("neumann", "dirichlet", "periodic")
@@ -204,12 +209,15 @@ class ReactionsOperator(AbstractOperator):
 
         if reaction_solver == "RK4":
             reaction_solver_f = _RK4_step
+            _rxns_dynamics_f = rxns_to_dynamics_f(rxns)
         elif reaction_solver == "Euler":
             reaction_solver_f = _euler_step
+            _rxns_dynamics_f = rxns_to_dynamics_f(rxns)
+        elif reaction_solver == "PatankarEuler":
+            reaction_solver_f = _patankar_euler_step
+            _rxns_dynamics_f = rxns_to_pd_dynamics_f(rxns)
         else:
             raise ValueError(f"Invalid reaction solver: {reaction_solver}")
-
-        _rxns_dynamics_f = rxns_to_dynamics_f(rxns)
 
         if spatial_axes > 0:
 

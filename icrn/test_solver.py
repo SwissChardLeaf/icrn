@@ -59,6 +59,63 @@ class TestSolveWellMixed(unittest.TestCase):
 
         self.assertTrue(dict_allclose(result, target))
 
+    def test_patankar_euler_exponential_decay(self):
+        A = many_species("A")
+        k = many_rate_constants("k")
+
+        rxns = [
+            MassActionReaction(A, 0, k),
+        ]
+
+        conc_vals = {A: jnp.array(1.0)}
+        rate_constant_vals = {k: jnp.array(1.0)}
+        times = jnp.array([0, jnp.log(2), 1.0])
+        dt = 0.001
+        key = None
+        checkpoint_length = None
+        reaction_solver = "PatankarEuler"
+        mode = None
+
+        result = solve_well_mixed(
+            rxns,
+            conc_vals,
+            rate_constant_vals,
+            times,
+            dt,
+            key,
+            checkpoint_length,
+            reaction_solver,
+            mode,
+        )
+        target = {A: jnp.array([1.0, 0.5, jnp.exp(-1.0)])}
+
+        self.assertTrue(dict_allclose(result, target, atol=1e-3, rtol=1e-3))
+
+    def test_patankar_euler_preserves_positivity(self):
+        # A large dt that drives plain Euler negative should stay positive.
+        A = many_species("A")
+        k = many_rate_constants("k")
+
+        rxns = [
+            MassActionReaction(A, 0, k),
+        ]
+
+        conc_vals = {A: jnp.array(1.0)}
+        rate_constant_vals = {k: jnp.array(1.0)}
+        times = jnp.array([0.0, 5.0])
+        dt = 2.0
+
+        result = solve_well_mixed(
+            rxns,
+            conc_vals,
+            rate_constant_vals,
+            times,
+            dt,
+            reaction_solver="PatankarEuler",
+        )
+
+        self.assertTrue(jnp.all(result[A] > 0))
+
     def test_two_decay(self):
         A = many_species("A")
         k = many_rate_constants("k")

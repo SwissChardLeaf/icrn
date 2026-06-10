@@ -2,7 +2,7 @@
 # from jaxtyping import Float, Array, PyTree, jaxtyped .
 # from typeguard import typechecked
 # import jax.tree as jax_tree
-from ..utils.dict_utils import arr_mul, dict_add, dict_sum
+from ..utils.dict_utils import arr_mul, dict_add, dict_div, dict_mul, dict_sum
 
 # class ExplicitReactionSolver(Operator):
 #     @abstractmethod
@@ -22,6 +22,15 @@ def _euler_step(state, non_state, dyn_f, dt: float):
     next_step = dict_add(state, state_change)
 
     return next_step
+
+
+def _patankar_euler_step(state, non_state, pd_f, dt: float):
+    production, destruction = pd_f(state, non_state)
+
+    numerator = dict_add(state, arr_mul(production, dt))
+    denominator = dict_add(state, arr_mul(destruction, dt))
+
+    return dict_mul(state, dict_div(numerator, denominator))
 
 
 def _RK4_step(

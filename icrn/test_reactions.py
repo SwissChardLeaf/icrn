@@ -9,6 +9,7 @@ from .reactions import (
     _matching_shapes,
     fast_rxns_to_update_f,
     rxns_to_dynamics_f,
+    rxns_to_pd_dynamics_f,
 )
 from .symbols import (
     Complex,
@@ -189,6 +190,42 @@ class TestMassActionReaction(unittest.TestCase):
             C: jnp.array(1.1) * state[A] * state[B],
         }
         self.assertTrue(dict_allclose(output, target_flux))
+
+
+class TestRxnsToPDDynamicsF(unittest.TestCase):
+    def test_pd_values(self):
+        A, B = many_species("A, B")
+        k = RateConstant("k")
+        rxns = [MassActionReaction(A, B, k)]
+
+        state = {A: jnp.array(2.0), B: jnp.array(0.0)}
+        non_state = {k: jnp.array(3.0)}
+
+        production, destruction = rxns_to_pd_dynamics_f(rxns)(state, non_state)
+
+        self.assertTrue(jnp.allclose(production[A], 0.0))
+        self.assertTrue(jnp.allclose(destruction[A], 6.0))
+        self.assertTrue(jnp.allclose(production[B], 6.0))
+        self.assertTrue(jnp.allclose(destruction[B], 0.0))
+
+    def test_pd_matches_net_dynamics(self):
+        A, B, C = many_species("A, B, C")
+        k1, k2 = many_rate_constants("k1, k2")
+        rxns = [
+            MassActionReaction(A, B, k1),
+            MassActionReaction(B, C, k2),
+        ]
+
+        state = {A: jnp.array(2.0), B: jnp.array(3.0), C: jnp.array(1.0)}
+        non_state = {k1: jnp.array(0.5), k2: jnp.array(0.7)}
+
+        net = rxns_to_dynamics_f(rxns)(state, non_state)
+        production, destruction = rxns_to_pd_dynamics_f(rxns)(state, non_state)
+
+        for s in state:
+            self.assertTrue(
+                jnp.allclose(production[s] - destruction[s], net[s])
+            )
 
 
 class TestFastReactionsToUpdateF(unittest.TestCase):

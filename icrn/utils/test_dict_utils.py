@@ -8,7 +8,9 @@ from .dict_utils import (
     arr_mul,
     dict_add,
     dict_allclose,
+    dict_div,
     dict_index,
+    dict_mul,
     dict_sub,
     dict_sum,
 )
@@ -192,6 +194,78 @@ class TestDictOperations(unittest.TestCase):
                     "C": jnp.array([1, 2, 3]),
                 },
             )
+
+    def test_dict_mul(self):
+        ex_dict1 = {
+            "A": jnp.array([1, 2, 3]),
+            "B": jnp.array(
+                [
+                    [1, 2, 3],
+                    [4, 5, 6],
+                ]
+            ),
+        }
+        ex_dict2 = {
+            "A": jnp.array([4, 5, 6]),
+            "B": jnp.array(
+                [
+                    [7, 8, 9],
+                    [10, 11, 12],
+                ]
+            ),
+        }
+        output = dict_mul(ex_dict1, ex_dict2)
+        target_dict = {
+            "A": jnp.array([4, 10, 18]),
+            "B": jnp.array(
+                [
+                    [7, 16, 27],
+                    [40, 55, 72],
+                ]
+            ),
+        }
+        self.assertTrue(
+            jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict))
+        )
+
+        with self.assertRaises(ValueError):
+            dict_mul(ex_dict1, {"A": jnp.array([1, 2, 3])})
+
+    def test_dict_div(self):
+        ex_dict1 = {
+            "A": jnp.array([6.0, 8.0, 10.0]),
+            "B": jnp.array(
+                [
+                    [2.0, 4.0, 6.0],
+                    [8.0, 10.0, 12.0],
+                ]
+            ),
+        }
+        ex_dict2 = {
+            "A": jnp.array([2.0, 4.0, 5.0]),
+            "B": jnp.array(
+                [
+                    [1.0, 2.0, 3.0],
+                    [4.0, 5.0, 6.0],
+                ]
+            ),
+        }
+        output = dict_div(ex_dict1, ex_dict2)
+        target_dict = {
+            "A": jnp.array([3.0, 2.0, 2.0]),
+            "B": jnp.array(
+                [
+                    [2.0, 2.0, 2.0],
+                    [2.0, 2.0, 2.0],
+                ]
+            ),
+        }
+        self.assertTrue(
+            jax_tree.all(jax_tree.map(jnp.allclose, output, target_dict))
+        )
+
+        with self.assertRaises(ValueError):
+            dict_div(ex_dict1, {"A": jnp.array([1.0, 2.0, 3.0])})
 
     def test_dict_sum(self):
         ex_dict1 = {
