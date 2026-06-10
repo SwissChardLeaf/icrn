@@ -3,7 +3,11 @@ import unittest
 from jax import numpy as jnp
 
 from ..utils.dict_utils import dict_allclose
-from ._reaction_numerics import _euler_step, _RK4_step
+from ._reaction_numerics import (
+    _euler_step,
+    _patankar_euler_step,
+    _RK4_step,
+)
 
 
 class TestEulerStep(unittest.TestCase):
@@ -62,6 +66,75 @@ class TestEulerStep(unittest.TestCase):
             "C": state["C"] * (1 - non_state["k3"] * dt),
         }
         self.assertTrue(dict_allclose(computed_state, target_state))
+
+
+class TestPatankarEulerStep(unittest.TestCase):
+    def test_decay_positivity(self):
+        def pd_f(state, non_state):
+            return (
+                {"A": 0.0},
+                {"A": non_state["k"] * state["A"]},
+            )
+
+        state = {"A": jnp.array(1.0)}
+        non_state = {"k": jnp.array(2.0)}
+        dt = 10.0  # large dt; explicit Euler would go negative
+
+        computed_state = _patankar_euler_step(state, non_state, pd_f, dt)
+        target = 1.0 / (1.0 + dt * 2.0)
+
+        self.assertTrue(jnp.allclose(computed_state["A"], target))
+        self.assertTrue(computed_state["A"] > 0)
+
+    def test_production_only(self):
+        def pd_f(state, non_state):
+            return (
+                {"A": non_state["p"]},
+                {"A": 0.0},
+            )
+
+        state = {"A": jnp.array(2.0)}
+        non_state = {"p": jnp.array(3.0)}
+        dt = 0.5
+
+        computed_state = _patankar_euler_step(state, non_state, pd_f, dt)
+        target = 2.0 + dt * 3.0
+
+        self.assertTrue(jnp.allclose(computed_state["A"], target))
+
+    def test_multi_species(self):
+        def pd_f(state, non_state):
+            production = {"A": jnp.array(0.0), "B": state["A"]}
+            destruction = {"A": state["A"], "B": jnp.array(0.0)}
+            return production, destruction
+
+        state = {"A": jnp.array(4.0), "B": jnp.array(1.0)}
+        dt = 0.25
+
+        computed_state = _patankar_euler_step(state, None, pd_f, dt)
+
+        target_A = 4.0 * (4.0 + 0.0) / (4.0 + dt * 4.0)
+        target_B = 1.0 * (1.0 + dt * 4.0) / (1.0 + 0.0)
+
+        self.assertTrue(jnp.allclose(computed_state["A"], target_A))
+        self.assertTrue(jnp.allclose(computed_state["B"], target_B))
+
+    def test_array_state(self):
+        def pd_f(state, non_state):
+            return (
+                {"A": jnp.zeros(3)},
+                {"A": non_state["k"] * state["A"]},
+            )
+
+        state = {"A": jnp.array([1.0, 2.0, 3.0])}
+        non_state = {"k": jnp.array([0.5, 1.0, 2.0])}
+        dt = 0.5
+
+        computed_state = _patankar_euler_step(state, non_state, pd_f, dt)
+        target = state["A"] / (1.0 + dt * non_state["k"])
+
+        self.assertTrue(jnp.allclose(computed_state["A"], target))
+        self.assertTrue(jnp.all(computed_state["A"] > 0))
 
 
 class TestRK4Step(unittest.TestCase):

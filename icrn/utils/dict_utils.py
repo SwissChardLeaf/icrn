@@ -22,6 +22,14 @@ def dict_sub(dct1, dct2):
     return dict_add(dct1, arr_mul(dct2, -1))
 
 
+def dict_mul(dct1, dct2):
+    return jax_tree.map(lambda x, y: x * y, dct1, dct2)
+
+
+def dict_div(dct1, dct2):
+    return jax_tree.map(lambda x, y: x / y, dct1, dct2)
+
+
 def dict_sum(*dcts):
     acc = dcts[0]
     for dct in dcts[1:]:

@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from ._internal._fast_update import _fast_update_f
-from ._internal._mass_action import mass_action_flux_f
+from ._internal._mass_action import mass_action_flux_f, mass_action_flux_pd_f
 from .symbols import (
     Complex,
     Numeric,
@@ -79,6 +79,10 @@ class AbstractReaction(ABC):
     def flux(self):
         pass
 
+    @abstractmethod
+    def flux_pd(self):
+        pass
+
 
 def rxns_to_dynamics_f(rxns: list[AbstractReaction]):
     flux_fs = list(map(lambda r: r.flux(), rxns))
@@ -94,6 +98,25 @@ def rxns_to_dynamics_f(rxns: list[AbstractReaction]):
         return dynamics
 
     return dyn_f
+
+
+def rxns_to_pd_dynamics_f(rxns: list[AbstractReaction]):
+    flux_pd_fs = list(map(lambda r: r.flux_pd(), rxns))
+
+    def pd_f(state, non_state):
+        production = {k: 0 for k in state.keys()}
+        destruction = {k: 0 for k in state.keys()}
+        for flux_pd_f in flux_pd_fs:
+            prod_dict, dest_dict = flux_pd_f(state, non_state)
+
+            for k, v in prod_dict.items():
+                production[k] += v
+            for k, v in dest_dict.items():
+                destruction[k] += v
+
+        return production, destruction
+
+    return pd_f
 
 
 def _matching_shapes(all_species: set[Species]):
@@ -233,6 +256,9 @@ class MassActionReaction(AbstractReaction):
     # we want to control when the bulk of evaluation actually occurs.
     def flux(self):
         return mass_action_flux_f(self.reactants, self.products, self.aux)
+
+    def flux_pd(self):
+        return mass_action_flux_pd_f(self.reactants, self.products, self.aux)
 
     def shapes(self):
         pass

@@ -18,6 +18,7 @@ from ._mass_action import (
     _product_index_symbols,
     _setup_einsums,
     mass_action_flux_f,
+    mass_action_flux_pd_f,
 )
 
 
@@ -485,3 +486,84 @@ class TestMassActionFluxF(unittest.TestCase):
                 ),
             },
         )
+
+
+class TestMassActionFluxPDF(unittest.TestCase):
+    def test_decay(self):
+        A = many_species("A")
+        k = many_rate_constants("k")
+        rxn = MassActionReaction(A, 0, k)
+
+        pd_f = mass_action_flux_pd_f(rxn.reactants, rxn.products, rxn.rate_expr)
+        production, destruction = pd_f({A: jnp.array(2.0)}, {k: jnp.array(3.0)})
+
+        self.assertTrue(jnp.allclose(production[A], 0.0))
+        self.assertTrue(jnp.allclose(destruction[A], 6.0))
+
+    def test_production(self):
+        C = many_species("C")
+        alpha = many_rate_constants("alpha")
+        rxn = MassActionReaction(0, C, alpha)
+
+        pd_f = mass_action_flux_pd_f(rxn.reactants, rxn.products, rxn.rate_expr)
+        production, destruction = pd_f(
+            {C: jnp.array(5.0)}, {alpha: jnp.array(7.0)}
+        )
+
+        self.assertTrue(jnp.allclose(production[C], 7.0))
+        self.assertTrue(jnp.allclose(destruction[C], 0.0))
+
+    def test_bimolecular(self):
+        A, B, C = many_species("A, B, C")
+        alpha = many_rate_constants("alpha")
+        rxn = MassActionReaction(A + B, C, alpha)
+
+        pd_f = mass_action_flux_pd_f(rxn.reactants, rxn.products, rxn.rate_expr)
+        state = {A: jnp.array(2.0), B: jnp.array(3.0), C: jnp.array(0.0)}
+        production, destruction = pd_f(state, {alpha: jnp.array(7.0)})
+
+        self.assertTrue(jnp.allclose(production[A], 0.0))
+        self.assertTrue(jnp.allclose(destruction[A], 42.0))
+        self.assertTrue(jnp.allclose(production[B], 0.0))
+        self.assertTrue(jnp.allclose(destruction[B], 42.0))
+        self.assertTrue(jnp.allclose(production[C], 42.0))
+        self.assertTrue(jnp.allclose(destruction[C], 0.0))
+
+    def test_pd_matches_net_flux(self):
+        A, B, C = many_species("A, B, C")
+        alpha = many_rate_constants("alpha")
+        rxn = MassActionReaction(A + B, C, alpha)
+
+        state = {A: jnp.array(2.0), B: jnp.array(3.0), C: jnp.array(1.0)}
+        non_state = {alpha: jnp.array(7.0)}
+
+        net = mass_action_flux_f(rxn.reactants, rxn.products, rxn.rate_expr)(
+            state, non_state
+        )
+        production, destruction = mass_action_flux_pd_f(
+            rxn.reactants, rxn.products, rxn.rate_expr
+        )(state, non_state)
+
+        for s in net:
+            self.assertTrue(
+                jnp.allclose(production[s] - destruction[s], net[s])
+            )
+
+    def test_indexed_conversion(self):
+        A = many_species("A")
+        i, j = many_index_symbols("i, j", 3)
+        rxn = MassActionReaction(A[i], A[j], 1.0)
+
+        state = {A: jnp.array([1.0, 2.0, 3.0])}
+        non_state = {}
+
+        net = mass_action_flux_f(rxn.reactants, rxn.products, rxn.rate_expr)(
+            state, non_state
+        )
+        production, destruction = mass_action_flux_pd_f(
+            rxn.reactants, rxn.products, rxn.rate_expr
+        )(state, non_state)
+
+        self.assertTrue(jnp.all(production[A] >= 0))
+        self.assertTrue(jnp.all(destruction[A] >= 0))
+        self.assertTrue(jnp.allclose(production[A] - destruction[A], net[A]))

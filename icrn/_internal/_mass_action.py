@@ -173,3 +173,54 @@ def mass_action_flux_f(
         }
 
     return f
+
+
+def mass_action_flux_pd_f(
+    reactants: Complex,
+    products: Complex,
+    rate_exp: TensorExpression,
+):
+    if not isinstance(reactants, Complex):
+        raise ValueError(f"Reactants must be a Complex, got {type(reactants)}")
+    if not isinstance(products, Complex):
+        raise ValueError(f"Products must be a Complex, got {type(products)}")
+    if not isinstance(rate_exp, TensorExpression):
+        raise ValueError(
+            f"Rate expression must be a TensorExpression, got {type(rate_exp)}"
+        )
+
+    einsum_prep = _setup_einsums(reactants, products, rate_exp)
+    product_index_symbols = _product_index_symbols(
+        reactants, products, rate_exp
+    )
+    get_tensors = _get_tensors(reactants, rate_exp, product_index_symbols)
+
+    def _prod_dest_of_list(lst, tensors):
+        prod = 0
+        dest = 0
+        for diff, einsum_str, spec in lst:
+            try:
+                rate = jnp.einsum(einsum_str, *tensors)
+            except Exception:
+                raise Exception(
+                    f"Error einsumming {einsum_str} with tensors {tensors} "
+                    f"for species {spec} with reactants {reactants} and "
+                    f"products {products} and rate expression {rate_exp}"
+                )
+            if diff > 0:
+                prod = prod + diff * rate
+            else:
+                dest = dest - diff * rate
+        return prod, dest
+
+    def f(state, non_state):
+        tensors = get_tensors(state, non_state)
+        production = {}
+        destruction = {}
+        for s, einsum_info_lst in einsum_prep.items():
+            prod, dest = _prod_dest_of_list(einsum_info_lst, tensors)
+            production[s] = prod
+            destruction[s] = dest
+        return production, destruction
+
+    return f
