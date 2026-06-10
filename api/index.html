@@ -3080,30 +3080,7 @@ production reactions.></p>
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>icrn/reactions.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-175">175</a></span>
-<span class="normal"><a href="#__codelineno-0-176">176</a></span>
-<span class="normal"><a href="#__codelineno-0-177">177</a></span>
-<span class="normal"><a href="#__codelineno-0-178">178</a></span>
-<span class="normal"><a href="#__codelineno-0-179">179</a></span>
-<span class="normal"><a href="#__codelineno-0-180">180</a></span>
-<span class="normal"><a href="#__codelineno-0-181">181</a></span>
-<span class="normal"><a href="#__codelineno-0-182">182</a></span>
-<span class="normal"><a href="#__codelineno-0-183">183</a></span>
-<span class="normal"><a href="#__codelineno-0-184">184</a></span>
-<span class="normal"><a href="#__codelineno-0-185">185</a></span>
-<span class="normal"><a href="#__codelineno-0-186">186</a></span>
-<span class="normal"><a href="#__codelineno-0-187">187</a></span>
-<span class="normal"><a href="#__codelineno-0-188">188</a></span>
-<span class="normal"><a href="#__codelineno-0-189">189</a></span>
-<span class="normal"><a href="#__codelineno-0-190">190</a></span>
-<span class="normal"><a href="#__codelineno-0-191">191</a></span>
-<span class="normal"><a href="#__codelineno-0-192">192</a></span>
-<span class="normal"><a href="#__codelineno-0-193">193</a></span>
-<span class="normal"><a href="#__codelineno-0-194">194</a></span>
-<span class="normal"><a href="#__codelineno-0-195">195</a></span>
-<span class="normal"><a href="#__codelineno-0-196">196</a></span>
-<span class="normal"><a href="#__codelineno-0-197">197</a></span>
-<span class="normal"><a href="#__codelineno-0-198">198</a></span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-198">198</a></span>
 <span class="normal"><a href="#__codelineno-0-199">199</a></span>
 <span class="normal"><a href="#__codelineno-0-200">200</a></span>
 <span class="normal"><a href="#__codelineno-0-201">201</a></span>
@@ -3125,52 +3102,75 @@ production reactions.></p>
 <span class="normal"><a href="#__codelineno-0-217">217</a></span>
 <span class="normal"><a href="#__codelineno-0-218">218</a></span>
 <span class="normal"><a href="#__codelineno-0-219">219</a></span>
-<span class="normal"><a href="#__codelineno-0-220">220</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-175" name="__codelineno-0-175"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-<a id="__codelineno-0-176" name="__codelineno-0-176"></a>    <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-177" name="__codelineno-0-177"></a>    <span class="n">reactants</span><span class="p">:</span> <span class="n">Complex</span><span class="p">,</span>
-<a id="__codelineno-0-178" name="__codelineno-0-178"></a>    <span class="n">products</span><span class="p">:</span> <span class="n">Complex</span><span class="p">,</span>
-<a id="__codelineno-0-179" name="__codelineno-0-179"></a>    <span class="n">rate_expr</span><span class="p">:</span> <span class="n">TensorExpression</span><span class="p">,</span>
-<a id="__codelineno-0-180" name="__codelineno-0-180"></a><span class="p">):</span>
-<a id="__codelineno-0-181" name="__codelineno-0-181"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">reactants</span><span class="p">,</span> <span class="n">Complex</span> <span class="o">|</span> <span class="n">Species</span><span class="p">)</span> <span class="ow">or</span> <span class="n">reactants</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-<a id="__codelineno-0-182" name="__codelineno-0-182"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-183" name="__codelineno-0-183"></a>            <span class="sa">f</span><span class="s2">&quot;Reactants must be a Complex or Species or 0, got </span><span class="si">{</span>
-<a id="__codelineno-0-184" name="__codelineno-0-184"></a><span class="w">                </span><span class="nb">type</span><span class="p">(</span><span class="n">reactants</span><span class="p">)</span>
-<a id="__codelineno-0-185" name="__codelineno-0-185"></a><span class="w">            </span><span class="si">}</span><span class="s2">&quot;</span>
-<a id="__codelineno-0-186" name="__codelineno-0-186"></a>        <span class="p">)</span>
-<a id="__codelineno-0-187" name="__codelineno-0-187"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reactants</span><span class="p">,</span> <span class="n">Species</span><span class="p">):</span>
-<a id="__codelineno-0-188" name="__codelineno-0-188"></a>        <span class="n">reactants</span> <span class="o">=</span> <span class="n">Complex</span><span class="p">({</span><span class="n">reactants</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-<a id="__codelineno-0-189" name="__codelineno-0-189"></a>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reactants</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">reactants</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-<a id="__codelineno-0-190" name="__codelineno-0-190"></a>        <span class="n">reactants</span> <span class="o">=</span> <span class="n">Complex</span><span class="p">({})</span>
-<a id="__codelineno-0-191" name="__codelineno-0-191"></a>
-<a id="__codelineno-0-192" name="__codelineno-0-192"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">products</span><span class="p">,</span> <span class="n">Complex</span> <span class="o">|</span> <span class="n">Species</span><span class="p">)</span> <span class="ow">or</span> <span class="n">products</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-<a id="__codelineno-0-193" name="__codelineno-0-193"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-194" name="__codelineno-0-194"></a>            <span class="sa">f</span><span class="s2">&quot;Products must be a Complex or Species, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">products</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-<a id="__codelineno-0-195" name="__codelineno-0-195"></a>        <span class="p">)</span>
-<a id="__codelineno-0-196" name="__codelineno-0-196"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">products</span><span class="p">,</span> <span class="n">Species</span><span class="p">):</span>
-<a id="__codelineno-0-197" name="__codelineno-0-197"></a>        <span class="n">products</span> <span class="o">=</span> <span class="n">Complex</span><span class="p">({</span><span class="n">products</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-<a id="__codelineno-0-198" name="__codelineno-0-198"></a>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">products</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">products</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-<a id="__codelineno-0-199" name="__codelineno-0-199"></a>        <span class="n">products</span> <span class="o">=</span> <span class="n">Complex</span><span class="p">({})</span>
-<a id="__codelineno-0-200" name="__codelineno-0-200"></a>
-<a id="__codelineno-0-201" name="__codelineno-0-201"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rate_expr</span><span class="p">,</span> <span class="n">TensorExpression</span> <span class="o">|</span> <span class="n">Numeric</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
-<a id="__codelineno-0-202" name="__codelineno-0-202"></a>        <span class="n">rate_expr</span><span class="p">,</span> <span class="n">Species</span>
-<a id="__codelineno-0-203" name="__codelineno-0-203"></a>    <span class="p">):</span>
-<a id="__codelineno-0-204" name="__codelineno-0-204"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-205" name="__codelineno-0-205"></a>            <span class="sa">f</span><span class="s2">&quot;Rate expression must be a TensorExpression (not Species)&quot;</span>
-<a id="__codelineno-0-206" name="__codelineno-0-206"></a>            <span class="sa">f</span><span class="s2">&quot;or Numeric, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">rate_expr</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-<a id="__codelineno-0-207" name="__codelineno-0-207"></a>        <span class="p">)</span>
-<a id="__codelineno-0-208" name="__codelineno-0-208"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rate_expr</span><span class="p">,</span> <span class="n">Numeric</span><span class="p">):</span>
-<a id="__codelineno-0-209" name="__codelineno-0-209"></a>        <span class="n">rate_expr</span> <span class="o">=</span> <span class="n">TensorLiteral</span><span class="p">(</span><span class="n">rate_expr</span><span class="p">)</span>
-<a id="__codelineno-0-210" name="__codelineno-0-210"></a>
-<a id="__codelineno-0-211" name="__codelineno-0-211"></a>    <span class="k">try</span><span class="p">:</span>
-<a id="__codelineno-0-212" name="__codelineno-0-212"></a>        <span class="n">reactants_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">reactants</span><span class="o">.</span><span class="n">count_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-<a id="__codelineno-0-213" name="__codelineno-0-213"></a>        <span class="n">products_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">products</span><span class="o">.</span><span class="n">count_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-<a id="__codelineno-0-214" name="__codelineno-0-214"></a>        <span class="n">_matching_shapes</span><span class="p">(</span><span class="n">reactants_set</span> <span class="o">|</span> <span class="n">products_set</span><span class="p">)</span>
-<a id="__codelineno-0-215" name="__codelineno-0-215"></a>    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-<a id="__codelineno-0-216" name="__codelineno-0-216"></a>        <span class="k">raise</span>
-<a id="__codelineno-0-217" name="__codelineno-0-217"></a>
-<a id="__codelineno-0-218" name="__codelineno-0-218"></a>    <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;reactants&quot;</span><span class="p">,</span> <span class="n">reactants</span><span class="p">)</span>
-<a id="__codelineno-0-219" name="__codelineno-0-219"></a>    <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;products&quot;</span><span class="p">,</span> <span class="n">products</span><span class="p">)</span>
-<a id="__codelineno-0-220" name="__codelineno-0-220"></a>    <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;aux&quot;</span><span class="p">,</span> <span class="n">rate_expr</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-220">220</a></span>
+<span class="normal"><a href="#__codelineno-0-221">221</a></span>
+<span class="normal"><a href="#__codelineno-0-222">222</a></span>
+<span class="normal"><a href="#__codelineno-0-223">223</a></span>
+<span class="normal"><a href="#__codelineno-0-224">224</a></span>
+<span class="normal"><a href="#__codelineno-0-225">225</a></span>
+<span class="normal"><a href="#__codelineno-0-226">226</a></span>
+<span class="normal"><a href="#__codelineno-0-227">227</a></span>
+<span class="normal"><a href="#__codelineno-0-228">228</a></span>
+<span class="normal"><a href="#__codelineno-0-229">229</a></span>
+<span class="normal"><a href="#__codelineno-0-230">230</a></span>
+<span class="normal"><a href="#__codelineno-0-231">231</a></span>
+<span class="normal"><a href="#__codelineno-0-232">232</a></span>
+<span class="normal"><a href="#__codelineno-0-233">233</a></span>
+<span class="normal"><a href="#__codelineno-0-234">234</a></span>
+<span class="normal"><a href="#__codelineno-0-235">235</a></span>
+<span class="normal"><a href="#__codelineno-0-236">236</a></span>
+<span class="normal"><a href="#__codelineno-0-237">237</a></span>
+<span class="normal"><a href="#__codelineno-0-238">238</a></span>
+<span class="normal"><a href="#__codelineno-0-239">239</a></span>
+<span class="normal"><a href="#__codelineno-0-240">240</a></span>
+<span class="normal"><a href="#__codelineno-0-241">241</a></span>
+<span class="normal"><a href="#__codelineno-0-242">242</a></span>
+<span class="normal"><a href="#__codelineno-0-243">243</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-198" name="__codelineno-0-198"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<a id="__codelineno-0-199" name="__codelineno-0-199"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-0-200" name="__codelineno-0-200"></a>    <span class="n">reactants</span><span class="p">:</span> <span class="n">Complex</span><span class="p">,</span>
+<a id="__codelineno-0-201" name="__codelineno-0-201"></a>    <span class="n">products</span><span class="p">:</span> <span class="n">Complex</span><span class="p">,</span>
+<a id="__codelineno-0-202" name="__codelineno-0-202"></a>    <span class="n">rate_expr</span><span class="p">:</span> <span class="n">TensorExpression</span><span class="p">,</span>
+<a id="__codelineno-0-203" name="__codelineno-0-203"></a><span class="p">):</span>
+<a id="__codelineno-0-204" name="__codelineno-0-204"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">reactants</span><span class="p">,</span> <span class="n">Complex</span> <span class="o">|</span> <span class="n">Species</span><span class="p">)</span> <span class="ow">or</span> <span class="n">reactants</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+<a id="__codelineno-0-205" name="__codelineno-0-205"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-206" name="__codelineno-0-206"></a>            <span class="sa">f</span><span class="s2">&quot;Reactants must be a Complex or Species or 0, got </span><span class="si">{</span>
+<a id="__codelineno-0-207" name="__codelineno-0-207"></a><span class="w">                </span><span class="nb">type</span><span class="p">(</span><span class="n">reactants</span><span class="p">)</span>
+<a id="__codelineno-0-208" name="__codelineno-0-208"></a><span class="w">            </span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-209" name="__codelineno-0-209"></a>        <span class="p">)</span>
+<a id="__codelineno-0-210" name="__codelineno-0-210"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reactants</span><span class="p">,</span> <span class="n">Species</span><span class="p">):</span>
+<a id="__codelineno-0-211" name="__codelineno-0-211"></a>        <span class="n">reactants</span> <span class="o">=</span> <span class="n">Complex</span><span class="p">({</span><span class="n">reactants</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<a id="__codelineno-0-212" name="__codelineno-0-212"></a>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reactants</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">reactants</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<a id="__codelineno-0-213" name="__codelineno-0-213"></a>        <span class="n">reactants</span> <span class="o">=</span> <span class="n">Complex</span><span class="p">({})</span>
+<a id="__codelineno-0-214" name="__codelineno-0-214"></a>
+<a id="__codelineno-0-215" name="__codelineno-0-215"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">products</span><span class="p">,</span> <span class="n">Complex</span> <span class="o">|</span> <span class="n">Species</span><span class="p">)</span> <span class="ow">or</span> <span class="n">products</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+<a id="__codelineno-0-216" name="__codelineno-0-216"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-217" name="__codelineno-0-217"></a>            <span class="sa">f</span><span class="s2">&quot;Products must be a Complex or Species, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">products</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-218" name="__codelineno-0-218"></a>        <span class="p">)</span>
+<a id="__codelineno-0-219" name="__codelineno-0-219"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">products</span><span class="p">,</span> <span class="n">Species</span><span class="p">):</span>
+<a id="__codelineno-0-220" name="__codelineno-0-220"></a>        <span class="n">products</span> <span class="o">=</span> <span class="n">Complex</span><span class="p">({</span><span class="n">products</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<a id="__codelineno-0-221" name="__codelineno-0-221"></a>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">products</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">products</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<a id="__codelineno-0-222" name="__codelineno-0-222"></a>        <span class="n">products</span> <span class="o">=</span> <span class="n">Complex</span><span class="p">({})</span>
+<a id="__codelineno-0-223" name="__codelineno-0-223"></a>
+<a id="__codelineno-0-224" name="__codelineno-0-224"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rate_expr</span><span class="p">,</span> <span class="n">TensorExpression</span> <span class="o">|</span> <span class="n">Numeric</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
+<a id="__codelineno-0-225" name="__codelineno-0-225"></a>        <span class="n">rate_expr</span><span class="p">,</span> <span class="n">Species</span>
+<a id="__codelineno-0-226" name="__codelineno-0-226"></a>    <span class="p">):</span>
+<a id="__codelineno-0-227" name="__codelineno-0-227"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-228" name="__codelineno-0-228"></a>            <span class="sa">f</span><span class="s2">&quot;Rate expression must be a TensorExpression (not Species)&quot;</span>
+<a id="__codelineno-0-229" name="__codelineno-0-229"></a>            <span class="sa">f</span><span class="s2">&quot;or Numeric, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">rate_expr</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-230" name="__codelineno-0-230"></a>        <span class="p">)</span>
+<a id="__codelineno-0-231" name="__codelineno-0-231"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rate_expr</span><span class="p">,</span> <span class="n">Numeric</span><span class="p">):</span>
+<a id="__codelineno-0-232" name="__codelineno-0-232"></a>        <span class="n">rate_expr</span> <span class="o">=</span> <span class="n">TensorLiteral</span><span class="p">(</span><span class="n">rate_expr</span><span class="p">)</span>
+<a id="__codelineno-0-233" name="__codelineno-0-233"></a>
+<a id="__codelineno-0-234" name="__codelineno-0-234"></a>    <span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-0-235" name="__codelineno-0-235"></a>        <span class="n">reactants_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">reactants</span><span class="o">.</span><span class="n">count_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<a id="__codelineno-0-236" name="__codelineno-0-236"></a>        <span class="n">products_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">products</span><span class="o">.</span><span class="n">count_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<a id="__codelineno-0-237" name="__codelineno-0-237"></a>        <span class="n">_matching_shapes</span><span class="p">(</span><span class="n">reactants_set</span> <span class="o">|</span> <span class="n">products_set</span><span class="p">)</span>
+<a id="__codelineno-0-238" name="__codelineno-0-238"></a>    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+<a id="__codelineno-0-239" name="__codelineno-0-239"></a>        <span class="k">raise</span>
+<a id="__codelineno-0-240" name="__codelineno-0-240"></a>
+<a id="__codelineno-0-241" name="__codelineno-0-241"></a>    <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;reactants&quot;</span><span class="p">,</span> <span class="n">reactants</span><span class="p">)</span>
+<a id="__codelineno-0-242" name="__codelineno-0-242"></a>    <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;products&quot;</span><span class="p">,</span> <span class="n">products</span><span class="p">)</span>
+<a id="__codelineno-0-243" name="__codelineno-0-243"></a>    <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;aux&quot;</span><span class="p">,</span> <span class="n">rate_expr</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -3538,7 +3538,7 @@ trajectories.></p>
                 <code>reaction_solver</code>
             </td>
             <td>
-                  <code>(<span title="RK4">RK4</span>, <span title="Euler">Euler</span>)</code>
+                  <code>(<span title="RK4">RK4</span>, <span title="Euler">Euler</span>, <span title="PatankarEuler">PatankarEuler</span>)</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3706,7 +3706,7 @@ trajectories.></p>
 <a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">    checkpoint_length : int, optional</span>
 <a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="sd">        &lt;TODO: trade memory for time when differentiating long</span>
 <a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="sd">        trajectories.&gt;</span>
-<a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="sd">    reaction_solver : {&quot;RK4&quot;, &quot;Euler&quot;}, optional</span>
+<a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="sd">    reaction_solver : {&quot;RK4&quot;, &quot;Euler&quot;, &quot;PatankarEuler&quot;}, optional</span>
 <a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="sd">        &lt;TODO: integrator used for reaction dynamics.&gt;</span>
 <a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="sd">    mode : str or None, optional</span>
 <a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="sd">        &lt;TODO&gt;</span>
@@ -3961,7 +3961,7 @@ symbols used to declare diffusion in <code>rxns</code>.></p>
                 <code>reaction_solver</code>
             </td>
             <td>
-                  <code>(<span title="RK4">RK4</span>, <span title="Euler">Euler</span>)</code>
+                  <code>(<span title="RK4">RK4</span>, <span title="Euler">Euler</span>, <span title="PatankarEuler">PatankarEuler</span>)</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4207,7 +4207,7 @@ axis followed by spatial and index axes.></p>
 <a id="__codelineno-0-121" name="__codelineno-0-121"></a><span class="sd">        &lt;TODO&gt;</span>
 <a id="__codelineno-0-122" name="__codelineno-0-122"></a><span class="sd">    checkpoint_length : int, optional</span>
 <a id="__codelineno-0-123" name="__codelineno-0-123"></a><span class="sd">        &lt;TODO&gt;</span>
-<a id="__codelineno-0-124" name="__codelineno-0-124"></a><span class="sd">    reaction_solver : {&quot;RK4&quot;, &quot;Euler&quot;}, optional</span>
+<a id="__codelineno-0-124" name="__codelineno-0-124"></a><span class="sd">    reaction_solver : {&quot;RK4&quot;, &quot;Euler&quot;, &quot;PatankarEuler&quot;}, optional</span>
 <a id="__codelineno-0-125" name="__codelineno-0-125"></a><span class="sd">        &lt;TODO&gt;</span>
 <a id="__codelineno-0-126" name="__codelineno-0-126"></a><span class="sd">    splitting : {&quot;LieTrotter&quot;, &quot;Strang&quot;}, optional</span>
 <a id="__codelineno-0-127" name="__codelineno-0-127"></a><span class="sd">        &lt;TODO: operator-splitting scheme combining reaction and diffusion</span>
