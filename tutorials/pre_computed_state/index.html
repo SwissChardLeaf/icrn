@@ -1495,8 +1495,8 @@ rxns = [MassActionReaction(C, A + C, 1.0)]</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="building-the-pre-computed-trajectory">Building the pre-computed trajectory<a class="anchor-link" href="#building-the-pre-computed-trajectory">¶</a></h1><p>The solver takes 'max_steps'. The <code>pre_computed_state</code> is a dictionary mapping a species to the values it should take. The leading axes of the tensors must have length <code>max_steps+1</code> for every solver step and the intial state.</p>
-<p>$$ \texttt{max_step}= \left\lceil \frac{t_\text{final}}{\texttt{dt}} \right\rceil, $$</p>
+<h1 id="building-the-pre-computed-trajectory">Building the pre-computed trajectory<a class="anchor-link" href="#building-the-pre-computed-trajectory">¶</a></h1><p>The solver takes <code>max_steps</code>. The <code>pre_computed_state</code> is a dictionary mapping a species to the values it should take. The leading axes of the tensors must have length <code>max_steps+1</code> for every solver step and the intial state.</p>
+<p>$$ \texttt{max\_step}= \left\lceil \frac{t_\text{final}}{\texttt{dt}} \right\rceil, $$</p>
 <p>In this example, <code>C</code> follows a rectangular pulse: it is off, switches on between $t=3$ and $t=7$, then switches off again.</p>
 </div>
 </div>
@@ -1507,7 +1507,7 @@ rxns = [MassActionReaction(C, A + C, 1.0)]</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-3">
