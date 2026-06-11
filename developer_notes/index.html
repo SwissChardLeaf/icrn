@@ -630,6 +630,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#publishing-to-pypi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Publishing to PyPI
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -746,6 +757,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#publishing-to-pypi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Publishing to PyPI
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -853,12 +875,31 @@ publishes to <a href="https://swisschardleaf.github.io/icrn/">GitHub Pages</a>.<
 <td><code>mkdocs build --strict</code>; deploys to GitHub Pages on <code>main</code></td>
 </tr>
 <tr>
-<td><code>publish.yml</code></td>
-<td>push tag <code>v*</code></td>
-<td>Tests, then build and upload to PyPI (trusted publishing)</td>
+<td><code>release.yml</code></td>
+<td>push to <code>main</code></td>
+<td>If <code>__version__</code> was bumped: tests, then build, upload to PyPI, and create the matching <code>vX.Y.Z</code> tag + GitHub release</td>
 </tr>
 </tbody>
 </table>
+<h2 id="publishing-to-pypi">Publishing to PyPI<a class="headerlink" href="#publishing-to-pypi" title="Permanent link">&para;</a></h2>
+<p>Releases are continuously deployed from <code>main</code>. There is no manual tagging step.</p>
+<ol>
+<li>In your PR, bump <code>__version__</code> in <code>icrn/__init__.py</code> to the new
+   <a href="https://semver.org/">semantic version</a> and move the relevant
+   <code>CHANGELOG.md</code> entries from <strong>Unreleased</strong> into a section for the new
+   version.</li>
+<li>Merge the PR into <code>main</code>.</li>
+<li>The <code>release.yml</code> workflow compares <code>__version__</code> against existing
+   <code>vX.Y.Z</code> tags:</li>
+<li>If the version is unchanged (tag already exists), it does nothing.</li>
+<li>If the version is new, it runs the test suite, builds the
+     distributions, publishes them to
+     <a href="https://pypi.org/project/icrn/">PyPI</a> via trusted publishing, and
+     creates the <code>vX.Y.Z</code> git tag and a GitHub release with generated notes.</li>
+</ol>
+<p>Because publishing only happens when the version changes, ordinary merges
+that do not touch <code>__version__</code> never produce a release. To release, the only
+required action is bumping <code>__version__</code> and merging to <code>main</code>.</p>
 
 
 
