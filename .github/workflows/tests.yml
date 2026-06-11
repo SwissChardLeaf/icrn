@@ -45,3 +45,25 @@ jobs:
           path: |
             coverage.xml
             htmlcov/
+
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      # A non-editable install catches packaging problems (missing modules,
+      # bad package discovery, broken metadata) that "pip install -e ." hides.
+      - name: Install from source (non-editable)
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+
+      - name: Import check
+        run: python -c "import icrn; print('imported icrn', icrn.__version__)"
