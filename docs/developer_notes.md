@@ -91,4 +91,25 @@ publishes to [GitHub Pages](https://swisschardleaf.github.io/icrn/).
 | `tests.yml` | push/PR to `main` | `unittest discover` with coverage; report in logs + artifacts |
 | `tests_linting.yml` | push/PR | `pre-commit run --all-files` |
 | `docs.yml` | push/PR to `main` | `mkdocs build --strict`; deploys to GitHub Pages on `main` |
-| `publish.yml` | push tag `v*` | Tests, then build and upload to PyPI (trusted publishing) |
+| `release.yml` | push to `main` | If `__version__` was bumped: tests, then build, upload to PyPI, and create the matching `vX.Y.Z` tag + GitHub release |
+
+## Publishing to PyPI
+
+Releases are continuously deployed from `main`. There is no manual tagging step.
+
+1. In your PR, bump `__version__` in `icrn/__init__.py` to the new
+   [semantic version](https://semver.org/) and move the relevant
+   `CHANGELOG.md` entries from **Unreleased** into a section for the new
+   version.
+2. Merge the PR into `main`.
+3. The `release.yml` workflow compares `__version__` against existing
+   `vX.Y.Z` tags:
+   - If the version is unchanged (tag already exists), it does nothing.
+   - If the version is new, it runs the test suite, builds the
+     distributions, publishes them to
+     [PyPI](https://pypi.org/project/icrn/) via trusted publishing, and
+     creates the `vX.Y.Z` git tag and a GitHub release with generated notes.
+
+Because publishing only happens when the version changes, ordinary merges
+that do not touch `__version__` never produce a release. To release, the only
+required action is bumping `__version__` and merging to `main`.

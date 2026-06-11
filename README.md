@@ -143,8 +143,8 @@ test/               # reference data for end-to-end tests
 ```
 
 Contributing: see [CONTRIBUTING.md](CONTRIBUTING.md). Release notes:
-[CHANGELOG.md](CHANGELOG.md). PyPI releases: tag `vX.Y.Z` after bumping
-`icrn/__init__.py` `__version__` (see
+[CHANGELOG.md](CHANGELOG.md). PyPI releases are continuously deployed: bump
+`icrn/__init__.py` `__version__` and merge to `main` to publish (see
 [Developer notes — Publishing to PyPI](docs/developer_notes.md#publishing-to-pypi)).
 
 ## Development
