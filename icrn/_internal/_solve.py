@@ -149,11 +149,25 @@ def _ops_to_f(ops):
 
 
 def _solve_with_ops(
-    ops, state, non_state, dt, key, times, checkpoint_length=None
+    ops,
+    state,
+    non_state,
+    dt,
+    key,
+    times,
+    checkpoint_length=None,
+    pre_computed_state=None,
 ):
     ops_f = _ops_to_f(ops)
     return _solve_with_f(
-        ops_f, state, non_state, dt, key, times, checkpoint_length
+        ops_f,
+        state,
+        non_state,
+        dt,
+        key,
+        times,
+        checkpoint_length,
+        pre_computed_state,
     )
 
 
@@ -165,76 +179,16 @@ def _solve_with_f(
     key,
     times,
     checkpoint_length=None,
+    pre_computed_state=None,
 ):
     times_np = np.array(times)
     return _loop_with_checkpointing(
-        ops_f, times_np, key, state, non_state, dt, checkpoint_length
+        ops_f,
+        times_np,
+        key,
+        state,
+        non_state,
+        dt,
+        checkpoint_length,
+        pre_computed_state,
     )
-    # err, out = _loop_with_checkpointing(
-    #     ops_f, times, key, state, dt, checkpoint_length, interpolation_f
-    # )
-    # checkify.check_error(err)
-    # return out
-    # total_steps = jnp.ceil(times[-1] / dt).astype(int)
-
-    # if times:
-    #     return _linear_interpolation_eval_hist(times, eval_times, eval_hist)
-    # else:
-    #     if not inner_scan_length or not outer_scan_length:
-    #         raise ValueError(
-    #             "Inner and outer scan lengths must be provided if "
-    #             "times are not provided"
-    #         )
-    #     return _scan_by_segments_with_checkpointing(
-    #         ops_f, state, non_state, dt, key,
-    #         inner_scan_length, outer_scan_length,
-    #     )
-
-
-# these are not jax_jit compatible immediately because of the ops
-# def solve_with_ops(
-#     ops: list[Callable],
-#     conc_data, rate_constant_data, diff_data, time, dt, debug=False,
-# ):
-#     solver = solver_from_ops(ops)
-#     return solver(conc_data, rate_constant_data, diff_data, time, dt)
-
-# def scan_helper(x, x):
-#     for op in ops.values():
-#         x = op(x, rate_constant_data, diff_data)
-#     return x
-
-# return _scan_by_segments(
-#     scan_helper,
-#     conc_data,
-#     rate_constant_data,
-#     diff_data,
-# )
-
-# the return value is a jax compatible function
-# def _solver_from_ops(ops):
-
-#     def solver(state, non_state, dt, key):
-# return _scan_by_segments( _function_from_ops(ops), state, non_state, dt,
-# key)
-
-#     return solver
-
-# def get_solver_f(
-#     reactions,
-#     dxs=None,
-#     reaction_solver="RK4",
-#     splitting="LieTrotter",
-#     diffusion_solver="spectral",
-#     spatial_dims=None,
-#     mode="relu") -> Callable:
-
-#     if dxs:
-#         ops = _to_reaction_diffusion_ops(
-#             reactions, dxs, reaction_solver, splitting,
-#             diffusion_solver, mode,
-#         )
-#     else:
-#         ops = _to_well_mixed_ops(reactions, reaction_solver, mode)
-
-#     return _solver_from_ops(ops)

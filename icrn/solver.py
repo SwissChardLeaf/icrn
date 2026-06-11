@@ -18,6 +18,7 @@ def solve_well_mixed(
     checkpoint_length=None,
     reaction_solver="RK4",
     mode: str | None = None,
+    pre_computed_state: dict[Species, jnp.ndarray] | None = None,
 ):
     """Integrate a well-mixed reaction network as a system of ODEs.
 
@@ -71,6 +72,7 @@ def solve_well_mixed(
         times=times,
         key=key,
         checkpoint_length=checkpoint_length,
+        pre_computed_state=pre_computed_state,
     )
 
 
@@ -90,6 +92,7 @@ def solve_reaction_diffusion(
     splitting="LieTrotter",
     spatial_rate_constants: bool = False,
     mode: str | None = None,
+    pre_computed_state: dict[Species, jnp.ndarray] | None = None,
 ):
     """Integrate a reaction-diffusion PDE on a regular grid.
 
@@ -167,10 +170,21 @@ def solve_reaction_diffusion(
         times=times,
         key=key,
         checkpoint_length=checkpoint_length,
+        pre_computed_state=pre_computed_state,
     )
 
 
-def solve_with_ops(*, ops, state, non_state, dt, times, key, checkpoint_length):
+def solve_with_ops(
+    *,
+    ops,
+    state,
+    non_state,
+    dt,
+    times,
+    key,
+    checkpoint_length,
+    pre_computed_state=None,
+):
     """Repeatedly apply a sequence of operators.
 
     todo
@@ -204,5 +218,12 @@ def solve_with_ops(*, ops, state, non_state, dt, times, key, checkpoint_length):
     [`solve_reaction_diffusion`][icrn.solve_reaction_diffusion]
     """
     return _solve_with_ops(
-        ops, state, non_state, dt, key, times, checkpoint_length
+        ops,
+        state,
+        non_state,
+        dt,
+        key,
+        times,
+        checkpoint_length,
+        pre_computed_state,
     )

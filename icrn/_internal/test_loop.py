@@ -4,7 +4,12 @@ import jax
 import jax.numpy as jnp
 
 from ..utils.dict_utils import dict_allclose
-from ._loop import _loop_with_checkpointing, _scan, _times_to_steps
+from ._loop import (
+    _loop_with_checkpointing,
+    _scan_segment,
+    _split_pre_computed_state_segments,
+    _times_to_steps,
+)
 
 
 class TestTimesToSteps(unittest.TestCase):
@@ -93,6 +98,82 @@ class TestTimesToSteps(unittest.TestCase):
         self.assertTrue(jnp.allclose(segment_dt_fractions[1], jnp.array([0.2])))
 
 
+class TestSplitPreComputedStateSegments(unittest.TestCase):
+    def test_segments_have_checkpoint_length_plus_one(self):
+        pre_computed_state = {"C": jnp.arange(6)}
+        checkpoint_length = 3
+
+        segments = _split_pre_computed_state_segments(
+            pre_computed_state, checkpoint_length
+        )
+
+        self.assertIsInstance(segments, list)
+        self.assertEqual(len(segments), 2)
+        for segment in segments:
+            self.assertEqual(segment["C"].shape[0], checkpoint_length + 1)
+        # closed intervals: segment 0 holds points 0..3, segment 1 holds 3..6
+        # (point 6 is past the input, so it is zero-padded)
+        self.assertTrue(jnp.allclose(segments[0]["C"], jnp.array([0, 1, 2, 3])))
+        self.assertTrue(jnp.allclose(segments[1]["C"], jnp.array([3, 4, 5, 0])))
+
+    def test_adjacent_segments_share_boundary_states(self):
+        pre_computed_state = {"C": jnp.arange(5)}
+
+        segments = _split_pre_computed_state_segments(pre_computed_state, 2)
+
+        self.assertEqual(len(segments), 3)
+        self.assertTrue(jnp.allclose(segments[0]["C"], jnp.array([0, 1, 2])))
+        self.assertTrue(jnp.allclose(segments[1]["C"], jnp.array([2, 3, 4])))
+        # final segment zero-padded at the end
+        self.assertTrue(jnp.allclose(segments[2]["C"], jnp.array([4, 0, 0])))
+
+        # the end of each segment is the start of the next
+        for i in range(len(segments) - 1):
+            self.assertTrue(
+                jnp.allclose(segments[i]["C"][-1], segments[i + 1]["C"][0])
+            )
+
+    def test_single_segment_when_length_exceeds_steps(self):
+        pre_computed_state = {"C": jnp.arange(3)}
+
+        segments = _split_pre_computed_state_segments(pre_computed_state, 5)
+
+        self.assertEqual(len(segments), 1)
+        self.assertEqual(segments[0]["C"].shape[0], 6)
+        self.assertTrue(
+            jnp.allclose(segments[0]["C"], jnp.array([0, 1, 2, 0, 0, 0]))
+        )
+
+    def test_multiple_keys_and_trailing_dims(self):
+        pre_computed_state = {
+            "C": jnp.arange(10).reshape(5, 2),
+            "D": jnp.arange(5).astype(float),
+        }
+
+        segments = _split_pre_computed_state_segments(pre_computed_state, 2)
+
+        self.assertEqual(len(segments), 3)
+        for segment in segments:
+            self.assertEqual(set(segment.keys()), {"C", "D"})
+            self.assertEqual(segment["C"].shape, (3, 2))
+            self.assertEqual(segment["D"].shape, (3,))
+
+        self.assertTrue(
+            jnp.allclose(segments[0]["C"], jnp.array([[0, 1], [2, 3], [4, 5]]))
+        )
+        self.assertTrue(
+            jnp.allclose(segments[1]["C"], jnp.array([[4, 5], [6, 7], [8, 9]]))
+        )
+        self.assertTrue(
+            jnp.allclose(segments[2]["C"], jnp.array([[8, 9], [0, 0], [0, 0]]))
+        )
+        # shared boundary on the leaf with trailing dims
+        self.assertTrue(jnp.allclose(segments[0]["C"][-1], segments[1]["C"][0]))
+        self.assertTrue(
+            jnp.allclose(segments[2]["D"], jnp.array([4.0, 0.0, 0.0]))
+        )
+
+
 class TestScan(unittest.TestCase):
     def setUp(self):
         def step_add_dt(key_state, non_state, dt):
@@ -123,7 +204,7 @@ class TestScan(unittest.TestCase):
         }
         dt = 1
         key = jax.random.key(0)
-        final_state, hist = _scan(
+        final_state, hist = _scan_segment(
             self.step_add_dt, key, state, None, dt, length=5
         )
 
@@ -137,7 +218,7 @@ class TestScan(unittest.TestCase):
         }
         non_state = {"k": jnp.array([0.1, 0.2]), "c": jnp.array([0.3, 0.4])}
         key = jax.random.key(0)
-        final_state, hist = _scan(
+        final_state, hist = _scan_segment(
             self.step_add_k, key, state, non_state, 1.0, length=5
         )
 
@@ -166,7 +247,7 @@ class TestScan(unittest.TestCase):
             "A": jnp.array(0.0),
         }
         key = jax.random.key(0)
-        final_state, hist = _scan(
+        final_state, hist = _scan_segment(
             self.step_random_uniform, key, state, None, 1.0, length=5
         )
 
@@ -268,6 +349,45 @@ class TestLoopWithCheckpointing(unittest.TestCase):
             dict_allclose(
                 interpolated_hist_change_length, target_hist_change_length
             )
+        )
+
+    def test_pre_computed_state_wrong_length_raises(self):
+        times = jnp.array([0.0, 1.0])
+        dt = 0.1
+        key = jax.random.key(0)
+        state = {"A": jnp.array(0.0), "C": jnp.array(0.0)}
+        # max_step = ceil(1.0 / 0.1) = 10, so the required leading length is 11
+        bad_pre_computed_state = {"C": jnp.zeros(5)}
+
+        with self.assertRaises(ValueError):
+            _loop_with_checkpointing(
+                self.add_one,
+                times,
+                key,
+                state,
+                None,
+                dt,
+                checkpoint_length=4,
+                pre_computed_state=bad_pre_computed_state,
+            )
+
+    def test_pre_computed_state_correct_length_runs(self):
+        times = jnp.array([0.0, 1.0])
+        dt = 0.1
+        key = jax.random.key(0)
+        state = {"A": jnp.array(0.0), "C": jnp.array(0.0)}
+        good_pre_computed_state = {"C": jnp.zeros(11)}
+
+        # should not raise
+        _loop_with_checkpointing(
+            self.add_one,
+            times,
+            key,
+            state,
+            None,
+            dt,
+            checkpoint_length=4,
+            pre_computed_state=good_pre_computed_state,
         )
 
     def test_multiply_by_k(self):

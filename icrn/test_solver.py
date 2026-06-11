@@ -432,6 +432,82 @@ class TestSolveWellMixed(unittest.TestCase):
         with self.assertRaises(ValueError):
             checkify.check_error(err)
 
+    def test_pre_computed_state(self):
+        # C is a "precomputed"/catalytic species that drives production of A.
+        A, C = many_species("A, C")
+        k_prod = many_rate_constants("k_prod")
+
+        rxns = [MassActionReaction(C, A + C, k_prod)]
+
+        dt = 0.1
+        checkpoint_length = 4
+        times = jnp.array([0.0, 0.5, 0.55, 0.6, 1.0])
+
+        c = 2.0
+        conc_vals = {A: jnp.array(0.0), C: jnp.array(0.0)}
+        rate_constant_vals = {k_prod: jnp.array(1.0)}
+
+        # pre_computed_state spans max_step + 1 = ceil(1.0 / 0.1) + 1 = 11
+        num_states = 11
+        pre_computed_state = {
+            C: jnp.array(
+                [0.0] * (num_states // 2) + [c] * (num_states - num_states // 2)
+            )
+        }
+
+        result = solve_well_mixed(
+            rxns,
+            conc_vals,
+            rate_constant_vals,
+            times,
+            dt,
+            checkpoint_length=checkpoint_length,
+            reaction_solver="Euler",
+            pre_computed_state=pre_computed_state,
+        )
+
+        # C follows the precomputed step trajectory.
+        self.assertTrue(jnp.allclose(result[C], jnp.array([0.0, c, c, c, c])))
+        self.assertTrue(
+            jnp.allclose(result[A], jnp.array([0.0, 0.0, 0.1, 0.2, 1.0]))
+        )
+
+        # does not change with checkpoint length
+        checkpoint_length = 5
+        result = solve_well_mixed(
+            rxns,
+            conc_vals,
+            rate_constant_vals,
+            times,
+            dt,
+            checkpoint_length=checkpoint_length,
+            reaction_solver="Euler",
+            pre_computed_state=pre_computed_state,
+        )
+
+        self.assertTrue(jnp.allclose(result[C], jnp.array([0.0, c, c, c, c])))
+        self.assertTrue(
+            jnp.allclose(result[A], jnp.array([0.0, 0.0, 0.1, 0.2, 1.0]))
+        )
+
+        # Without the precomputed trajectory, C stays at its initial value (0),
+        # so no A is produced.
+        baseline = solve_well_mixed(
+            rxns,
+            conc_vals,
+            rate_constant_vals,
+            times,
+            dt,
+            checkpoint_length=checkpoint_length,
+            reaction_solver="Euler",
+        )
+        self.assertTrue(
+            jnp.allclose(baseline[C], jnp.array([0.0, 0.0, 0.0, 0.0, 0.0]))
+        )
+        self.assertTrue(
+            jnp.allclose(baseline[A], jnp.array([0.0, 0.0, 0.0, 0.0, 0.0]))
+        )
+
 
 class TestSolveReactionDiffusion(unittest.TestCase):
     def setUp(self):
