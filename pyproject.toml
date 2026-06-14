@@ -10,9 +10,10 @@ authors = [
 ]
 description = "Indexed Chemical Reaction Networks in a differentiable, tensor-based framework"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
     "Operating System :: OS Independent",
 ]
 license = "MIT"
@@ -40,6 +41,7 @@ path = "icrn/__init__.py"
 
 [tool.ruff]
 line-length = 80
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]

@@ -11,7 +11,7 @@ pip install icrn
 right wheel for your platform; the default `pip install icrn` will pull a
 CPU-only JAX.
 
-Python 3.9 or newer is required.
+Python 3.12 or newer is required.
 
 ## Highlights
 
