@@ -8,6 +8,7 @@ import jax
 from ._internal._convolutional_diffusion import _conv_diffuse
 from ._internal._reaction_numerics import (
     _euler_step,
+    _mpe_step,
     _patankar_euler_step,
     _RK4_step,
 )
@@ -17,6 +18,7 @@ from .reactions import (
     FastReaction,
     fast_rxns_to_update_f,
     rxns_to_dynamics_f,
+    rxns_to_mpe_dynamics_f,
     rxns_to_pd_dynamics_f,
 )
 
@@ -72,13 +74,21 @@ their diffusion coefficients.
 
 
 def to_well_mixed_ops(
-    reactions, reaction_solver="RK4", mode: str | None = None
+    reactions,
+    reaction_solver="RK4",
+    mode: str | None = None,
+    mpe_split: str = "uniform",
 ):
     non_fast_rxns = [
         rxn for rxn in reactions if isinstance(rxn, AbstractReaction)
     ]
     fast_rxns = [rxn for rxn in reactions if isinstance(rxn, FastReaction)]
-    rxn_op = ReactionsOperator(mode, non_fast_rxns, reaction_solver)
+    rxn_op = ReactionsOperator(
+        mode,
+        non_fast_rxns,
+        reaction_solver,
+        mpe_split=mpe_split,
+    )
 
     ops: list[AbstractOperator] = [rxn_op]
     if fast_rxns:
@@ -97,6 +107,7 @@ def to_reaction_diffusion_ops(
     boundary_condition="neumann",
     spatial_rate_constants=False,
     mode: str | None = None,
+    mpe_split: str = "uniform",
 ):
     if boundary_condition not in _VALID_BOUNDARY_CONDITIONS:
         raise ValueError(
@@ -134,6 +145,7 @@ def to_reaction_diffusion_ops(
             spatial_axes=len(spatial_dims),
             spatial_rate_constants=spatial_rate_constants,
             dt_scale=dt_scale,
+            mpe_split=mpe_split,
         )
 
     ops = []
@@ -195,6 +207,7 @@ class ReactionsOperator(AbstractOperator):
         spatial_axes=0,
         spatial_rate_constants=False,
         dt_scale=1.0,
+        mpe_split="uniform",
     ):
         self._mode = mode
         self._dt_scale = dt_scale
@@ -216,6 +229,9 @@ class ReactionsOperator(AbstractOperator):
         elif reaction_solver == "PatankarEuler":
             reaction_solver_f = _patankar_euler_step
             _rxns_dynamics_f = rxns_to_pd_dynamics_f(rxns)
+        elif reaction_solver == "MPE":
+            reaction_solver_f = _mpe_step
+            _rxns_dynamics_f = rxns_to_mpe_dynamics_f(rxns, mpe_split)
         else:
             raise ValueError(f"Invalid reaction solver: {reaction_solver}")
 

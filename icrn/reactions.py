@@ -11,10 +11,15 @@ This module contains the building blocks of ICRNs.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from dataclasses import dataclass
 
 from ._internal._fast_update import _fast_update_f
-from ._internal._mass_action import mass_action_flux_f, mass_action_flux_pd_f
+from ._internal._mass_action import (
+    mass_action_flux_f,
+    mass_action_flux_pairs_f,
+    mass_action_flux_pd_f,
+)
 from .symbols import (
     Complex,
     Numeric,
@@ -83,6 +88,10 @@ class AbstractReaction(ABC):
     def flux_pd(self):
         pass
 
+    @abstractmethod
+    def flux_pairs(self, split="uniform"):
+        pass
+
 
 def rxns_to_dynamics_f(rxns: list[AbstractReaction]):
     flux_fs = list(map(lambda r: r.flux(), rxns))
@@ -117,6 +126,61 @@ def rxns_to_pd_dynamics_f(rxns: list[AbstractReaction]):
         return production, destruction
 
     return pd_f
+
+
+def rxns_to_mpe_dynamics_f(
+    rxns: list[AbstractReaction],
+    split: str = "uniform",
+):
+    """Aggregate the modified-Patankar terms of a reaction network.
+
+    Combines the per-reaction
+    [`flux_pairs`][icrn.MassActionReaction.flux_pairs] callables into a
+    single function that returns the lumped destruction, the source-attributed
+    production pairs, and the sourceless (explicit) production for the whole
+    network. This is the dynamics function consumed by
+    [`_mpe_step`][icrn._internal._reaction_numerics._mpe_step].
+
+    Parameters
+    ----------
+    rxns : list of AbstractReaction
+        Reactions making up the network.
+    split : {"uniform", "stoichiometry"}, optional
+        Strategy used to distribute each product's production across the
+        reactants of the producing reaction. Defaults to ``"uniform"``.
+
+    Returns
+    -------
+    callable
+        A function ``mpe_f(state, non_state)`` returning a tuple
+        ``(destruction, pairs, explicit)`` accumulated over all reactions,
+        with ``destruction`` and ``explicit`` defined for every species in
+        ``state``.
+
+    See Also
+    --------
+    rxns_to_pd_dynamics_f : Lumped production/destruction without source
+        attribution.
+    """
+    pair_fs = list(map(lambda r: r.flux_pairs(split), rxns))
+
+    def mpe_f(state, non_state):
+        destruction = {k: 0.0 for k in state.keys()}
+        explicit = {k: 0.0 for k in state.keys()}
+        pairs = defaultdict(lambda: 0.0)
+        for pair_f in pair_fs:
+            dest_dict, pair_dict, explicit_dict = pair_f(state, non_state)
+
+            for k, v in dest_dict.items():
+                destruction[k] += v
+            for k, v in explicit_dict.items():
+                explicit[k] += v
+            for key, v in pair_dict.items():
+                pairs[key] += v
+
+        return destruction, dict(pairs), explicit
+
+    return mpe_f
 
 
 def _matching_shapes(all_species: set[Species]):
@@ -259,6 +323,14 @@ class MassActionReaction(AbstractReaction):
 
     def flux_pd(self):
         return mass_action_flux_pd_f(self.reactants, self.products, self.aux)
+
+    def flux_pairs(self, split="uniform"):
+        return mass_action_flux_pairs_f(
+            self.reactants,
+            self.products,
+            self.aux,
+            split=split,
+        )
 
     def shapes(self):
         pass
