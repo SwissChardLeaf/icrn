@@ -4,9 +4,17 @@ from pathlib import Path
 
 import jax.numpy as jnp
 
-from .reactions import AbstractReaction, FastReaction, MassActionReaction
-from .symbols import many_index_symbols, many_rate_constants, many_species
-from .utils.dict_utils import dict_allclose
+from ..reactions import (
+    AbstractReaction,
+    FastReaction,
+    MassActionReaction,
+    fast_rxns_to_update_f,
+)
+from ..solver import solve_well_mixed
+from ..symbols import many_index_symbols, many_rate_constants, many_species
+from ..utils.dict_utils import dict_allclose
+
+EXAMPLES_DIR = Path(__file__).resolve().parents[2] / "test" / "reaction_yaml"
 
 
 class TestReactionYaml(unittest.TestCase):
@@ -189,3 +197,116 @@ class TestReactionYaml(unittest.TestCase):
         self.assertIsInstance(loaded[0], MassActionReaction)
         self.assertIsInstance(loaded[1], FastReaction)
         self.assertIsInstance(loaded[2], MassActionReaction)
+
+
+class TestReactionYamlExamples(unittest.TestCase):
+    def test_dimerization_yaml(self):
+        A, B, C = many_species("A, B, C")
+        k_f, k_r = many_rate_constants("k_f, k_r")
+        rxns, symbols = AbstractReaction.load_yaml(
+            EXAMPLES_DIR / "dimerization.yaml"
+        )
+        conc_vals = {
+            A: jnp.array(1.0),
+            B: jnp.array(2.0),
+            C: jnp.array(0.0),
+        }
+        rate_vals = {k_f: jnp.array(0.5), k_r: jnp.array(0.1)}
+        times = jnp.array([0.0, 1.0])
+
+        traj = solve_well_mixed(
+            rxns,
+            conc_vals=conc_vals,
+            rate_constant_vals=rate_vals,
+            times=times,
+            dt=0.01,
+        )
+
+        self.assertEqual(len(rxns), 2)
+        self.assertEqual(sorted(symbols.species), ["A", "B", "C"])
+        self.assertTrue(jnp.allclose(traj[A][-1], jnp.array(0.45835749)))
+        self.assertTrue(jnp.allclose(traj[B][-1], jnp.array(1.45835793)))
+        self.assertTrue(jnp.allclose(traj[C][-1], jnp.array(0.54164225)))
+
+    def test_exponential_decay_yaml(self):
+        A = many_species("A")
+        k = many_rate_constants("k")
+        rxns, symbols = AbstractReaction.load_yaml(
+            EXAMPLES_DIR / "exponential_decay.yaml"
+        )
+        times = jnp.array([0.0, 1.0])
+
+        traj = solve_well_mixed(
+            rxns,
+            conc_vals={A: jnp.array(1.0)},
+            rate_constant_vals={k: jnp.array(1.0)},
+            times=times,
+            dt=0.01,
+        )
+
+        self.assertEqual(len(rxns), 1)
+        self.assertEqual(sorted(symbols.species), ["A"])
+        self.assertTrue(jnp.allclose(traj[A][-1], jnp.array(jnp.exp(-1.0))))
+
+    def test_indexed_dimerization_yaml(self):
+        M, D = many_species("M, D")
+        K1, K2 = many_rate_constants("K1, K2")
+        n = 5
+        rxns, symbols = AbstractReaction.load_yaml(
+            EXAMPLES_DIR / "indexed_dimerization.yaml"
+        )
+        times = jnp.array([0.0, 1.0])
+
+        traj = solve_well_mixed(
+            rxns,
+            conc_vals={M: jnp.ones(n), D: jnp.zeros((n, n))},
+            rate_constant_vals={
+                K1: jnp.ones((n, n)) * 0.1,
+                K2: jnp.ones((n, n)) * 0.05,
+            },
+            times=times,
+            dt=0.01,
+        )
+
+        self.assertEqual(len(rxns), 2)
+        self.assertEqual(sorted(symbols.species), ["D", "M"])
+        self.assertEqual(traj[M][-1].shape, (n,))
+        self.assertEqual(traj[D][-1].shape, (n, n))
+
+    def test_fast_annihilation_yaml(self):
+        A, B = many_species("A, B")
+        rxns, symbols = AbstractReaction.load_yaml(
+            EXAMPLES_DIR / "fast_annihilation.yaml"
+        )
+        conc_vals = {
+            A: jnp.array([1.0, 2.0, 1.5]),
+            B: jnp.array([2.0, 0.0, 1.5]),
+        }
+
+        state = {k: v.copy() for k, v in conc_vals.items()}
+        fast_rxns_to_update_f(rxns)(state)
+
+        self.assertEqual(len(rxns), 1)
+        self.assertEqual(sorted(symbols.species), ["A", "B"])
+        self.assertTrue(
+            dict_allclose(
+                state,
+                {
+                    A: jnp.array([0.0, 2.0, 0.0]),
+                    B: jnp.array([1.0, 0.0, 0.0]),
+                },
+            )
+        )
+
+    def test_mixed_network_yaml(self):
+        A, B = many_species("A, B")
+        k = many_rate_constants("k")
+        rxns, symbols = AbstractReaction.load_yaml(
+            EXAMPLES_DIR / "mixed_network.yaml"
+        )
+
+        self.assertEqual(len(rxns), 2)
+        self.assertEqual(sorted(symbols.species), ["A", "B"])
+        self.assertIsInstance(rxns[0], MassActionReaction)
+        self.assertIsInstance(rxns[1], FastReaction)
+        self.assertEqual(rxns[0].aux, k)
