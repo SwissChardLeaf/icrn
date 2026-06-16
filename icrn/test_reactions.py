@@ -10,6 +10,7 @@ from .reactions import (
     _matching_shapes,
     fast_rxns_to_update_f,
     rxns_to_dynamics_f,
+    rxns_to_mpe_dynamics_f,
     rxns_to_pd_dynamics_f,
 )
 from .solver import solve_well_mixed
@@ -141,6 +142,30 @@ class TestExtendAbstractReaction(unittest.TestCase):
 
             return f
 
+        def flux_pairs(self, split="uniform"):
+            sub, prod, (enz, k_cat_expr, km_expr) = (
+                self.reactants,
+                self.products,
+                self.aux,
+            )
+
+            def f(state, non_state):
+                data = non_state | state
+                s = sub.eval(data)
+                e = enz.eval(data)
+                kcat = k_cat_expr.eval(data)
+                km = km_expr.eval(data)
+
+                rate = kcat * e * s / (km + s)
+
+                destruction = {sub: rate}
+                pairs = {(prod, sub): rate}
+                explicit = {}
+
+                return destruction, pairs, explicit
+
+            return f
+
     def setUp(self):
         self.S, self.P, self.E = many_species("S, P, E")
         self.k_cat, self.K_m = many_rate_constants("k_cat, K_m")
@@ -175,6 +200,21 @@ class TestExtendAbstractReaction(unittest.TestCase):
             self.assertTrue(
                 jnp.allclose(production[s] - destruction[s], net[s])
             )
+
+    def test_flux_pairs_matches_net(self):
+        net = rxns_to_dynamics_f([self.mm_rxn])(self.state, self.non_state)
+        destruction, pairs, explicit = rxns_to_mpe_dynamics_f([self.mm_rxn])(
+            self.state, self.non_state
+        )
+
+        mpe_net = {s: explicit.get(s, 0.0) for s in self.state}
+        for s, v in destruction.items():
+            mpe_net[s] -= v
+        for (prod, _react), v in pairs.items():
+            mpe_net[prod] += v
+
+        for s in self.state:
+            self.assertTrue(jnp.allclose(mpe_net[s], net[s]))
 
     def test_solve_well_mixed(self):
         times = jnp.linspace(0.0, 5.0, 101)
