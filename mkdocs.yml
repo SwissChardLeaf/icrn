@@ -36,12 +36,12 @@ nav:
   - Getting started: getting_started.md
   - Tutorials:
       - Getting started: tutorials/getting_started.ipynb
-      - Pre-computed state: tutorials/pre_computed_state.ipynb
+      - Training Parameters: tutorials/training_parameters.ipynb
+      - Reaction–Diffusion: tutorials/reaction_diffusion.ipynb
+      - Batching Simulations: tutorials/batching_simulations.ipynb
+      - Pre-computed State: tutorials/pre_computed_state.ipynb
+      - Extending Abstract Reactions: tutorials/extending_abstract_reactions.ipynb
   - Developer Notes: developer_notes.md
-  - API reference: api.md
-
-exclude_docs: |
-  requirements.txt
 
 markdown_extensions:
   - admonition
