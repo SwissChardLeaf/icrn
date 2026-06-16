@@ -793,6 +793,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label=" AbstractReaction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#icrn.AbstractReaction.flux" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;flux
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icrn.AbstractReaction.flux_pd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;flux_pd
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1057,6 +1085,34 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label=" AbstractReaction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#icrn.AbstractReaction.flux" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;flux
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icrn.AbstractReaction.flux_pd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;flux_pd
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2753,16 +2809,11 @@ non mass action kinetics should extend this class.</p>
                 <code>reactants</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            Complex
-
-
-  
-      dataclass
-   (icrn.symbols.Complex)" href="#icrn.Complex">Complex</a></code>
+                  <code>Complex or Species of 0</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p><TODO></p>
+                <p>A multiset of indexed species.</p>
               </div>
             </td>
             <td>
@@ -2783,7 +2834,7 @@ non mass action kinetics should extend this class.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p><TODO></p>
+                <p>A multiset of indexed species.</p>
               </div>
             </td>
             <td>
@@ -2799,8 +2850,8 @@ non mass action kinetics should extend this class.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p><TODO: subclass-specific auxiliary data, e.g. the rate expression
-for <a class="autorefs autorefs-internal" title="            MassActionReaction" href="#icrn.MassActionReaction"><code>MassActionReaction</code></a>.></p>
+                <p>Subclass-specific auxiliary data, e.g. the rate expression
+for <a class="autorefs autorefs-internal" title="            MassActionReaction" href="#icrn.MassActionReaction"><code>MassActionReaction</code></a>.</p>
               </div>
             </td>
             <td>
@@ -2822,51 +2873,27 @@ for <a class="autorefs autorefs-internal" title="            MassActionReaction"
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code><span title="icrn.AbstractReaction.reactants">reactants</span></code></td>
+            <td><code><span title="icrn.AbstractReaction.See parameters.">See parameters.</span></code></td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            Complex
-
-
-  
-      dataclass
-   (icrn.symbols.Complex)" href="#icrn.Complex">Complex</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p><TODO></p>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td><code><span title="icrn.AbstractReaction.products">products</span></code></td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="            Complex
-
-
-  
-      dataclass
-   (icrn.symbols.Complex)" href="#icrn.Complex">Complex</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p><TODO></p>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td><code><span title="icrn.AbstractReaction.aux">aux</span></code></td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="            TensorExpression (icrn.symbols.TensorExpression)" href="#icrn.TensorExpression">TensorExpression</a> or None</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p><TODO></p>
+                
               </div>
             </td>
           </tr>
       </tbody>
     </table>
 
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>User should extend this class to implement the <code>flux</code> and <code>flux_pd</code> methods.
+The class is inspired by lazy evaluation. The <code>flux</code> and <code>flux_pd</code> methods
+return callables instead of numerically evaluating values. This is useful
+because the <code>flux</code> and <code>flux_pd</code> methods are expensive to compile and the
+<code>flux</code> and <code>flux_pd</code> will be called repeatedly during integration.</p>
+</details>
 
 <details class="see-also" open>
   <summary>See Also</summary>
@@ -2877,8 +2904,7 @@ for <a class="autorefs autorefs-internal" title="            MassActionReaction"
 
   
       dataclass
-  " href="#icrn.FastReaction"><code>FastReaction</code></a> : Limiting-reagent annihilation
-    reaction.</p>
+  " href="#icrn.FastReaction"><code>FastReaction</code></a> : Limiting-reagent reaction.</p>
 </details>
 
 
@@ -2900,6 +2926,206 @@ for <a class="autorefs autorefs-internal" title="            MassActionReaction"
 
 
 
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="icrn.AbstractReaction.flux" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">flux</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#icrn.AbstractReaction.flux" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">flux</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return a callable that evaluates this reaction's net flux.</p>
+<p>The returned function is compiled from the reaction definition and
+may be called repeatedly during integration. Numerical evaluation is
+deferred until the callable is invoked.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="callable">callable</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A function <code>f(state, non_state)</code> returning a dictionary of
+per-species net flux contributions (production minus
+destruction).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="see-also" open>
+  <summary>See Also</summary>
+  <p>flux_pd : Production/destruction split for Patankar integrators.</p>
+</details>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>icrn/reactions.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-85"> 85</a></span>
+<span class="normal"><a href="#__codelineno-0-86"> 86</a></span>
+<span class="normal"><a href="#__codelineno-0-87"> 87</a></span>
+<span class="normal"><a href="#__codelineno-0-88"> 88</a></span>
+<span class="normal"><a href="#__codelineno-0-89"> 89</a></span>
+<span class="normal"><a href="#__codelineno-0-90"> 90</a></span>
+<span class="normal"><a href="#__codelineno-0-91"> 91</a></span>
+<span class="normal"><a href="#__codelineno-0-92"> 92</a></span>
+<span class="normal"><a href="#__codelineno-0-93"> 93</a></span>
+<span class="normal"><a href="#__codelineno-0-94"> 94</a></span>
+<span class="normal"><a href="#__codelineno-0-95"> 95</a></span>
+<span class="normal"><a href="#__codelineno-0-96"> 96</a></span>
+<span class="normal"><a href="#__codelineno-0-97"> 97</a></span>
+<span class="normal"><a href="#__codelineno-0-98"> 98</a></span>
+<span class="normal"><a href="#__codelineno-0-99"> 99</a></span>
+<span class="normal"><a href="#__codelineno-0-100">100</a></span>
+<span class="normal"><a href="#__codelineno-0-101">101</a></span>
+<span class="normal"><a href="#__codelineno-0-102">102</a></span>
+<span class="normal"><a href="#__codelineno-0-103">103</a></span>
+<span class="normal"><a href="#__codelineno-0-104">104</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-85" name="__codelineno-0-85"></a><span class="nd">@abstractmethod</span>
+<a id="__codelineno-0-86" name="__codelineno-0-86"></a><span class="k">def</span><span class="w"> </span><span class="nf">flux</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-0-87" name="__codelineno-0-87"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a callable that evaluates this reaction&#39;s net flux.</span>
+<a id="__codelineno-0-88" name="__codelineno-0-88"></a>
+<a id="__codelineno-0-89" name="__codelineno-0-89"></a><span class="sd">    The returned function is compiled from the reaction definition and</span>
+<a id="__codelineno-0-90" name="__codelineno-0-90"></a><span class="sd">    may be called repeatedly during integration. Numerical evaluation is</span>
+<a id="__codelineno-0-91" name="__codelineno-0-91"></a><span class="sd">    deferred until the callable is invoked.</span>
+<a id="__codelineno-0-92" name="__codelineno-0-92"></a>
+<a id="__codelineno-0-93" name="__codelineno-0-93"></a><span class="sd">    Returns</span>
+<a id="__codelineno-0-94" name="__codelineno-0-94"></a><span class="sd">    -------</span>
+<a id="__codelineno-0-95" name="__codelineno-0-95"></a><span class="sd">    callable</span>
+<a id="__codelineno-0-96" name="__codelineno-0-96"></a><span class="sd">        A function ``f(state, non_state)`` returning a dictionary of</span>
+<a id="__codelineno-0-97" name="__codelineno-0-97"></a><span class="sd">        per-species net flux contributions (production minus</span>
+<a id="__codelineno-0-98" name="__codelineno-0-98"></a><span class="sd">        destruction).</span>
+<a id="__codelineno-0-99" name="__codelineno-0-99"></a>
+<a id="__codelineno-0-100" name="__codelineno-0-100"></a><span class="sd">    See Also</span>
+<a id="__codelineno-0-101" name="__codelineno-0-101"></a><span class="sd">    --------</span>
+<a id="__codelineno-0-102" name="__codelineno-0-102"></a><span class="sd">    flux_pd : Production/destruction split for Patankar integrators.</span>
+<a id="__codelineno-0-103" name="__codelineno-0-103"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-104" name="__codelineno-0-104"></a>    <span class="k">pass</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="icrn.AbstractReaction.flux_pd" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">flux_pd</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#icrn.AbstractReaction.flux_pd" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">flux_pd</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return a callable that evaluates production and destruction rates.</p>
+<p>The returned function splits each species' net flux into non-negative
+production and destruction terms. This split is used by Patankar-type
+integrators that treat destruction implicitly.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="callable">callable</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A function <code>f(state, non_state)</code> returning
+<code>(production, destruction)</code>, each a dictionary mapping base
+species to non-negative rates.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="see-also" open>
+  <summary>See Also</summary>
+  <p>flux : Net per-species flux for standard integrators.</p>
+</details>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>icrn/reactions.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-106">106</a></span>
+<span class="normal"><a href="#__codelineno-0-107">107</a></span>
+<span class="normal"><a href="#__codelineno-0-108">108</a></span>
+<span class="normal"><a href="#__codelineno-0-109">109</a></span>
+<span class="normal"><a href="#__codelineno-0-110">110</a></span>
+<span class="normal"><a href="#__codelineno-0-111">111</a></span>
+<span class="normal"><a href="#__codelineno-0-112">112</a></span>
+<span class="normal"><a href="#__codelineno-0-113">113</a></span>
+<span class="normal"><a href="#__codelineno-0-114">114</a></span>
+<span class="normal"><a href="#__codelineno-0-115">115</a></span>
+<span class="normal"><a href="#__codelineno-0-116">116</a></span>
+<span class="normal"><a href="#__codelineno-0-117">117</a></span>
+<span class="normal"><a href="#__codelineno-0-118">118</a></span>
+<span class="normal"><a href="#__codelineno-0-119">119</a></span>
+<span class="normal"><a href="#__codelineno-0-120">120</a></span>
+<span class="normal"><a href="#__codelineno-0-121">121</a></span>
+<span class="normal"><a href="#__codelineno-0-122">122</a></span>
+<span class="normal"><a href="#__codelineno-0-123">123</a></span>
+<span class="normal"><a href="#__codelineno-0-124">124</a></span>
+<span class="normal"><a href="#__codelineno-0-125">125</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-106" name="__codelineno-0-106"></a><span class="nd">@abstractmethod</span>
+<a id="__codelineno-0-107" name="__codelineno-0-107"></a><span class="k">def</span><span class="w"> </span><span class="nf">flux_pd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-0-108" name="__codelineno-0-108"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a callable that evaluates production and destruction rates.</span>
+<a id="__codelineno-0-109" name="__codelineno-0-109"></a>
+<a id="__codelineno-0-110" name="__codelineno-0-110"></a><span class="sd">    The returned function splits each species&#39; net flux into non-negative</span>
+<a id="__codelineno-0-111" name="__codelineno-0-111"></a><span class="sd">    production and destruction terms. This split is used by Patankar-type</span>
+<a id="__codelineno-0-112" name="__codelineno-0-112"></a><span class="sd">    integrators that treat destruction implicitly.</span>
+<a id="__codelineno-0-113" name="__codelineno-0-113"></a>
+<a id="__codelineno-0-114" name="__codelineno-0-114"></a><span class="sd">    Returns</span>
+<a id="__codelineno-0-115" name="__codelineno-0-115"></a><span class="sd">    -------</span>
+<a id="__codelineno-0-116" name="__codelineno-0-116"></a><span class="sd">    callable</span>
+<a id="__codelineno-0-117" name="__codelineno-0-117"></a><span class="sd">        A function ``f(state, non_state)`` returning</span>
+<a id="__codelineno-0-118" name="__codelineno-0-118"></a><span class="sd">        ``(production, destruction)``, each a dictionary mapping base</span>
+<a id="__codelineno-0-119" name="__codelineno-0-119"></a><span class="sd">        species to non-negative rates.</span>
+<a id="__codelineno-0-120" name="__codelineno-0-120"></a>
+<a id="__codelineno-0-121" name="__codelineno-0-121"></a><span class="sd">    See Also</span>
+<a id="__codelineno-0-122" name="__codelineno-0-122"></a><span class="sd">    --------</span>
+<a id="__codelineno-0-123" name="__codelineno-0-123"></a><span class="sd">    flux : Net per-species flux for standard integrators.</span>
+<a id="__codelineno-0-124" name="__codelineno-0-124"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-125" name="__codelineno-0-125"></a>    <span class="k">pass</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
 
 
 
@@ -2973,8 +3199,7 @@ to each species (with <span class="arithmatex">\(c\)</span> the stoichiometric c
             </td>
             <td>
               <div class="doc-md-description">
-                <p><TODO: <code>0</code> is accepted as an empty complex, allowing zeroth-order
-production reactions.></p>
+                <p>A multiset of indexed species.</p>
               </div>
             </td>
             <td>
@@ -3000,7 +3225,7 @@ production reactions.></p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p><TODO></p>
+                <p>A multiset of indexed species.</p>
               </div>
             </td>
             <td>
@@ -3110,42 +3335,7 @@ production reactions.></p>
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>icrn/reactions.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-262">262</a></span>
-<span class="normal"><a href="#__codelineno-0-263">263</a></span>
-<span class="normal"><a href="#__codelineno-0-264">264</a></span>
-<span class="normal"><a href="#__codelineno-0-265">265</a></span>
-<span class="normal"><a href="#__codelineno-0-266">266</a></span>
-<span class="normal"><a href="#__codelineno-0-267">267</a></span>
-<span class="normal"><a href="#__codelineno-0-268">268</a></span>
-<span class="normal"><a href="#__codelineno-0-269">269</a></span>
-<span class="normal"><a href="#__codelineno-0-270">270</a></span>
-<span class="normal"><a href="#__codelineno-0-271">271</a></span>
-<span class="normal"><a href="#__codelineno-0-272">272</a></span>
-<span class="normal"><a href="#__codelineno-0-273">273</a></span>
-<span class="normal"><a href="#__codelineno-0-274">274</a></span>
-<span class="normal"><a href="#__codelineno-0-275">275</a></span>
-<span class="normal"><a href="#__codelineno-0-276">276</a></span>
-<span class="normal"><a href="#__codelineno-0-277">277</a></span>
-<span class="normal"><a href="#__codelineno-0-278">278</a></span>
-<span class="normal"><a href="#__codelineno-0-279">279</a></span>
-<span class="normal"><a href="#__codelineno-0-280">280</a></span>
-<span class="normal"><a href="#__codelineno-0-281">281</a></span>
-<span class="normal"><a href="#__codelineno-0-282">282</a></span>
-<span class="normal"><a href="#__codelineno-0-283">283</a></span>
-<span class="normal"><a href="#__codelineno-0-284">284</a></span>
-<span class="normal"><a href="#__codelineno-0-285">285</a></span>
-<span class="normal"><a href="#__codelineno-0-286">286</a></span>
-<span class="normal"><a href="#__codelineno-0-287">287</a></span>
-<span class="normal"><a href="#__codelineno-0-288">288</a></span>
-<span class="normal"><a href="#__codelineno-0-289">289</a></span>
-<span class="normal"><a href="#__codelineno-0-290">290</a></span>
-<span class="normal"><a href="#__codelineno-0-291">291</a></span>
-<span class="normal"><a href="#__codelineno-0-292">292</a></span>
-<span class="normal"><a href="#__codelineno-0-293">293</a></span>
-<span class="normal"><a href="#__codelineno-0-294">294</a></span>
-<span class="normal"><a href="#__codelineno-0-295">295</a></span>
-<span class="normal"><a href="#__codelineno-0-296">296</a></span>
-<span class="normal"><a href="#__codelineno-0-297">297</a></span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-297">297</a></span>
 <span class="normal"><a href="#__codelineno-0-298">298</a></span>
 <span class="normal"><a href="#__codelineno-0-299">299</a></span>
 <span class="normal"><a href="#__codelineno-0-300">300</a></span>
@@ -3155,52 +3345,87 @@ production reactions.></p>
 <span class="normal"><a href="#__codelineno-0-304">304</a></span>
 <span class="normal"><a href="#__codelineno-0-305">305</a></span>
 <span class="normal"><a href="#__codelineno-0-306">306</a></span>
-<span class="normal"><a href="#__codelineno-0-307">307</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-262" name="__codelineno-0-262"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-<a id="__codelineno-0-263" name="__codelineno-0-263"></a>    <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-264" name="__codelineno-0-264"></a>    <span class="n">reactants</span><span class="p">:</span> <span class="n">Complex</span><span class="p">,</span>
-<a id="__codelineno-0-265" name="__codelineno-0-265"></a>    <span class="n">products</span><span class="p">:</span> <span class="n">Complex</span><span class="p">,</span>
-<a id="__codelineno-0-266" name="__codelineno-0-266"></a>    <span class="n">rate_expr</span><span class="p">:</span> <span class="n">TensorExpression</span><span class="p">,</span>
-<a id="__codelineno-0-267" name="__codelineno-0-267"></a><span class="p">):</span>
-<a id="__codelineno-0-268" name="__codelineno-0-268"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">reactants</span><span class="p">,</span> <span class="n">Complex</span> <span class="o">|</span> <span class="n">Species</span><span class="p">)</span> <span class="ow">or</span> <span class="n">reactants</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-<a id="__codelineno-0-269" name="__codelineno-0-269"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-270" name="__codelineno-0-270"></a>            <span class="sa">f</span><span class="s2">&quot;Reactants must be a Complex or Species or 0, got </span><span class="si">{</span>
-<a id="__codelineno-0-271" name="__codelineno-0-271"></a><span class="w">                </span><span class="nb">type</span><span class="p">(</span><span class="n">reactants</span><span class="p">)</span>
-<a id="__codelineno-0-272" name="__codelineno-0-272"></a><span class="w">            </span><span class="si">}</span><span class="s2">&quot;</span>
-<a id="__codelineno-0-273" name="__codelineno-0-273"></a>        <span class="p">)</span>
-<a id="__codelineno-0-274" name="__codelineno-0-274"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reactants</span><span class="p">,</span> <span class="n">Species</span><span class="p">):</span>
-<a id="__codelineno-0-275" name="__codelineno-0-275"></a>        <span class="n">reactants</span> <span class="o">=</span> <span class="n">Complex</span><span class="p">({</span><span class="n">reactants</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-<a id="__codelineno-0-276" name="__codelineno-0-276"></a>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reactants</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">reactants</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-<a id="__codelineno-0-277" name="__codelineno-0-277"></a>        <span class="n">reactants</span> <span class="o">=</span> <span class="n">Complex</span><span class="p">({})</span>
-<a id="__codelineno-0-278" name="__codelineno-0-278"></a>
-<a id="__codelineno-0-279" name="__codelineno-0-279"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">products</span><span class="p">,</span> <span class="n">Complex</span> <span class="o">|</span> <span class="n">Species</span><span class="p">)</span> <span class="ow">or</span> <span class="n">products</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-<a id="__codelineno-0-280" name="__codelineno-0-280"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-281" name="__codelineno-0-281"></a>            <span class="sa">f</span><span class="s2">&quot;Products must be a Complex or Species, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">products</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-<a id="__codelineno-0-282" name="__codelineno-0-282"></a>        <span class="p">)</span>
-<a id="__codelineno-0-283" name="__codelineno-0-283"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">products</span><span class="p">,</span> <span class="n">Species</span><span class="p">):</span>
-<a id="__codelineno-0-284" name="__codelineno-0-284"></a>        <span class="n">products</span> <span class="o">=</span> <span class="n">Complex</span><span class="p">({</span><span class="n">products</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-<a id="__codelineno-0-285" name="__codelineno-0-285"></a>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">products</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">products</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-<a id="__codelineno-0-286" name="__codelineno-0-286"></a>        <span class="n">products</span> <span class="o">=</span> <span class="n">Complex</span><span class="p">({})</span>
-<a id="__codelineno-0-287" name="__codelineno-0-287"></a>
-<a id="__codelineno-0-288" name="__codelineno-0-288"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rate_expr</span><span class="p">,</span> <span class="n">TensorExpression</span> <span class="o">|</span> <span class="n">Numeric</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
-<a id="__codelineno-0-289" name="__codelineno-0-289"></a>        <span class="n">rate_expr</span><span class="p">,</span> <span class="n">Species</span>
-<a id="__codelineno-0-290" name="__codelineno-0-290"></a>    <span class="p">):</span>
-<a id="__codelineno-0-291" name="__codelineno-0-291"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-292" name="__codelineno-0-292"></a>            <span class="sa">f</span><span class="s2">&quot;Rate expression must be a TensorExpression (not Species)&quot;</span>
-<a id="__codelineno-0-293" name="__codelineno-0-293"></a>            <span class="sa">f</span><span class="s2">&quot;or Numeric, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">rate_expr</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-<a id="__codelineno-0-294" name="__codelineno-0-294"></a>        <span class="p">)</span>
-<a id="__codelineno-0-295" name="__codelineno-0-295"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rate_expr</span><span class="p">,</span> <span class="n">Numeric</span><span class="p">):</span>
-<a id="__codelineno-0-296" name="__codelineno-0-296"></a>        <span class="n">rate_expr</span> <span class="o">=</span> <span class="n">TensorLiteral</span><span class="p">(</span><span class="n">rate_expr</span><span class="p">)</span>
-<a id="__codelineno-0-297" name="__codelineno-0-297"></a>
-<a id="__codelineno-0-298" name="__codelineno-0-298"></a>    <span class="k">try</span><span class="p">:</span>
-<a id="__codelineno-0-299" name="__codelineno-0-299"></a>        <span class="n">reactants_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">reactants</span><span class="o">.</span><span class="n">count_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-<a id="__codelineno-0-300" name="__codelineno-0-300"></a>        <span class="n">products_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">products</span><span class="o">.</span><span class="n">count_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-<a id="__codelineno-0-301" name="__codelineno-0-301"></a>        <span class="n">_matching_shapes</span><span class="p">(</span><span class="n">reactants_set</span> <span class="o">|</span> <span class="n">products_set</span><span class="p">)</span>
-<a id="__codelineno-0-302" name="__codelineno-0-302"></a>    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-<a id="__codelineno-0-303" name="__codelineno-0-303"></a>        <span class="k">raise</span>
-<a id="__codelineno-0-304" name="__codelineno-0-304"></a>
-<a id="__codelineno-0-305" name="__codelineno-0-305"></a>    <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;reactants&quot;</span><span class="p">,</span> <span class="n">reactants</span><span class="p">)</span>
-<a id="__codelineno-0-306" name="__codelineno-0-306"></a>    <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;products&quot;</span><span class="p">,</span> <span class="n">products</span><span class="p">)</span>
-<a id="__codelineno-0-307" name="__codelineno-0-307"></a>    <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;aux&quot;</span><span class="p">,</span> <span class="n">rate_expr</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-307">307</a></span>
+<span class="normal"><a href="#__codelineno-0-308">308</a></span>
+<span class="normal"><a href="#__codelineno-0-309">309</a></span>
+<span class="normal"><a href="#__codelineno-0-310">310</a></span>
+<span class="normal"><a href="#__codelineno-0-311">311</a></span>
+<span class="normal"><a href="#__codelineno-0-312">312</a></span>
+<span class="normal"><a href="#__codelineno-0-313">313</a></span>
+<span class="normal"><a href="#__codelineno-0-314">314</a></span>
+<span class="normal"><a href="#__codelineno-0-315">315</a></span>
+<span class="normal"><a href="#__codelineno-0-316">316</a></span>
+<span class="normal"><a href="#__codelineno-0-317">317</a></span>
+<span class="normal"><a href="#__codelineno-0-318">318</a></span>
+<span class="normal"><a href="#__codelineno-0-319">319</a></span>
+<span class="normal"><a href="#__codelineno-0-320">320</a></span>
+<span class="normal"><a href="#__codelineno-0-321">321</a></span>
+<span class="normal"><a href="#__codelineno-0-322">322</a></span>
+<span class="normal"><a href="#__codelineno-0-323">323</a></span>
+<span class="normal"><a href="#__codelineno-0-324">324</a></span>
+<span class="normal"><a href="#__codelineno-0-325">325</a></span>
+<span class="normal"><a href="#__codelineno-0-326">326</a></span>
+<span class="normal"><a href="#__codelineno-0-327">327</a></span>
+<span class="normal"><a href="#__codelineno-0-328">328</a></span>
+<span class="normal"><a href="#__codelineno-0-329">329</a></span>
+<span class="normal"><a href="#__codelineno-0-330">330</a></span>
+<span class="normal"><a href="#__codelineno-0-331">331</a></span>
+<span class="normal"><a href="#__codelineno-0-332">332</a></span>
+<span class="normal"><a href="#__codelineno-0-333">333</a></span>
+<span class="normal"><a href="#__codelineno-0-334">334</a></span>
+<span class="normal"><a href="#__codelineno-0-335">335</a></span>
+<span class="normal"><a href="#__codelineno-0-336">336</a></span>
+<span class="normal"><a href="#__codelineno-0-337">337</a></span>
+<span class="normal"><a href="#__codelineno-0-338">338</a></span>
+<span class="normal"><a href="#__codelineno-0-339">339</a></span>
+<span class="normal"><a href="#__codelineno-0-340">340</a></span>
+<span class="normal"><a href="#__codelineno-0-341">341</a></span>
+<span class="normal"><a href="#__codelineno-0-342">342</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-297" name="__codelineno-0-297"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<a id="__codelineno-0-298" name="__codelineno-0-298"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-0-299" name="__codelineno-0-299"></a>    <span class="n">reactants</span><span class="p">:</span> <span class="n">Complex</span><span class="p">,</span>
+<a id="__codelineno-0-300" name="__codelineno-0-300"></a>    <span class="n">products</span><span class="p">:</span> <span class="n">Complex</span><span class="p">,</span>
+<a id="__codelineno-0-301" name="__codelineno-0-301"></a>    <span class="n">rate_expr</span><span class="p">:</span> <span class="n">TensorExpression</span><span class="p">,</span>
+<a id="__codelineno-0-302" name="__codelineno-0-302"></a><span class="p">):</span>
+<a id="__codelineno-0-303" name="__codelineno-0-303"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">reactants</span><span class="p">,</span> <span class="n">Complex</span> <span class="o">|</span> <span class="n">Species</span><span class="p">)</span> <span class="ow">or</span> <span class="n">reactants</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+<a id="__codelineno-0-304" name="__codelineno-0-304"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-305" name="__codelineno-0-305"></a>            <span class="sa">f</span><span class="s2">&quot;Reactants must be a Complex or Species or 0, got </span><span class="si">{</span>
+<a id="__codelineno-0-306" name="__codelineno-0-306"></a><span class="w">                </span><span class="nb">type</span><span class="p">(</span><span class="n">reactants</span><span class="p">)</span>
+<a id="__codelineno-0-307" name="__codelineno-0-307"></a><span class="w">            </span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-308" name="__codelineno-0-308"></a>        <span class="p">)</span>
+<a id="__codelineno-0-309" name="__codelineno-0-309"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reactants</span><span class="p">,</span> <span class="n">Species</span><span class="p">):</span>
+<a id="__codelineno-0-310" name="__codelineno-0-310"></a>        <span class="n">reactants</span> <span class="o">=</span> <span class="n">Complex</span><span class="p">({</span><span class="n">reactants</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<a id="__codelineno-0-311" name="__codelineno-0-311"></a>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reactants</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">reactants</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<a id="__codelineno-0-312" name="__codelineno-0-312"></a>        <span class="n">reactants</span> <span class="o">=</span> <span class="n">Complex</span><span class="p">({})</span>
+<a id="__codelineno-0-313" name="__codelineno-0-313"></a>
+<a id="__codelineno-0-314" name="__codelineno-0-314"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">products</span><span class="p">,</span> <span class="n">Complex</span> <span class="o">|</span> <span class="n">Species</span><span class="p">)</span> <span class="ow">or</span> <span class="n">products</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+<a id="__codelineno-0-315" name="__codelineno-0-315"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-316" name="__codelineno-0-316"></a>            <span class="sa">f</span><span class="s2">&quot;Products must be a Complex or Species, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">products</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-317" name="__codelineno-0-317"></a>        <span class="p">)</span>
+<a id="__codelineno-0-318" name="__codelineno-0-318"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">products</span><span class="p">,</span> <span class="n">Species</span><span class="p">):</span>
+<a id="__codelineno-0-319" name="__codelineno-0-319"></a>        <span class="n">products</span> <span class="o">=</span> <span class="n">Complex</span><span class="p">({</span><span class="n">products</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<a id="__codelineno-0-320" name="__codelineno-0-320"></a>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">products</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">products</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<a id="__codelineno-0-321" name="__codelineno-0-321"></a>        <span class="n">products</span> <span class="o">=</span> <span class="n">Complex</span><span class="p">({})</span>
+<a id="__codelineno-0-322" name="__codelineno-0-322"></a>
+<a id="__codelineno-0-323" name="__codelineno-0-323"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rate_expr</span><span class="p">,</span> <span class="n">TensorExpression</span> <span class="o">|</span> <span class="n">Numeric</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
+<a id="__codelineno-0-324" name="__codelineno-0-324"></a>        <span class="n">rate_expr</span><span class="p">,</span> <span class="n">Species</span>
+<a id="__codelineno-0-325" name="__codelineno-0-325"></a>    <span class="p">):</span>
+<a id="__codelineno-0-326" name="__codelineno-0-326"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-327" name="__codelineno-0-327"></a>            <span class="sa">f</span><span class="s2">&quot;Rate expression must be a TensorExpression (not Species)&quot;</span>
+<a id="__codelineno-0-328" name="__codelineno-0-328"></a>            <span class="sa">f</span><span class="s2">&quot;or Numeric, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">rate_expr</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-329" name="__codelineno-0-329"></a>        <span class="p">)</span>
+<a id="__codelineno-0-330" name="__codelineno-0-330"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rate_expr</span><span class="p">,</span> <span class="n">Numeric</span><span class="p">):</span>
+<a id="__codelineno-0-331" name="__codelineno-0-331"></a>        <span class="n">rate_expr</span> <span class="o">=</span> <span class="n">TensorLiteral</span><span class="p">(</span><span class="n">rate_expr</span><span class="p">)</span>
+<a id="__codelineno-0-332" name="__codelineno-0-332"></a>
+<a id="__codelineno-0-333" name="__codelineno-0-333"></a>    <span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-0-334" name="__codelineno-0-334"></a>        <span class="n">reactants_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">reactants</span><span class="o">.</span><span class="n">count_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<a id="__codelineno-0-335" name="__codelineno-0-335"></a>        <span class="n">products_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">products</span><span class="o">.</span><span class="n">count_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<a id="__codelineno-0-336" name="__codelineno-0-336"></a>        <span class="n">_matching_shapes</span><span class="p">(</span><span class="n">reactants_set</span> <span class="o">|</span> <span class="n">products_set</span><span class="p">)</span>
+<a id="__codelineno-0-337" name="__codelineno-0-337"></a>    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+<a id="__codelineno-0-338" name="__codelineno-0-338"></a>        <span class="k">raise</span>
+<a id="__codelineno-0-339" name="__codelineno-0-339"></a>
+<a id="__codelineno-0-340" name="__codelineno-0-340"></a>    <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;reactants&quot;</span><span class="p">,</span> <span class="n">reactants</span><span class="p">)</span>
+<a id="__codelineno-0-341" name="__codelineno-0-341"></a>    <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;products&quot;</span><span class="p">,</span> <span class="n">products</span><span class="p">)</span>
+<a id="__codelineno-0-342" name="__codelineno-0-342"></a>    <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;aux&quot;</span><span class="p">,</span> <span class="n">rate_expr</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -3251,7 +3476,7 @@ production reactions.></p>
         <p>An infinitely fast reaction.</p>
 <p>At every integration step, reactions fire until the reactants are fully
 consumed. They are useful for modelling reactions that are on a timescale
-much faster than the dt. Currently, a concrete species can be involved in
+much faster than the dt. Currently, a concrete species can be a reactant in
 at most one fast reaction.</p>
 
 
