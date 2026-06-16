@@ -224,3 +224,179 @@ def mass_action_flux_pd_f(
         return production, destruction
 
     return f
+
+
+_VALID_MPE_SPLITS = ("uniform", "stoichiometry")
+
+
+def _has_indexed_species(*complexes: Complex) -> bool:
+    """Return whether any species in the given complexes is indexed."""
+    for c in complexes:
+        for s in c.count_dict.keys():
+            if s.index_symbols:
+                return True
+    return False
+
+
+def _split_weights(reactant_counts: dict, split: str) -> dict:
+    """Compute the production-attribution weights for one reaction.
+
+    The modified Patankar method attributes each unit of a product's
+    production to the reactants that drive the reaction. This helper turns a
+    reaction's reactant multiset into a normalised weight per reactant
+    species, according to the chosen ``split`` strategy.
+
+    Parameters
+    ----------
+    reactant_counts : dict[Species, int]
+        Stoichiometric coefficient of each (base) reactant species.
+    split : {"uniform", "stoichiometry"}
+        Strategy used to distribute a product's production across the
+        reactants:
+
+        - ``"uniform"`` weights every distinct reactant equally.
+        - ``"stoichiometry"`` weights each reactant by its stoichiometric
+          coefficient.
+
+    Returns
+    -------
+    dict[Species, float]
+        Weights summing to 1, keyed by base species. Empty when the
+        reaction has no reactants.
+
+    Raises
+    ------
+    ValueError
+        If ``split`` is not recognised.
+    """
+    if split not in _VALID_MPE_SPLITS:
+        raise ValueError(
+            f"Invalid split {split!r}; expected one of {_VALID_MPE_SPLITS}"
+        )
+
+    if not reactant_counts:
+        return {}
+
+    if split == "uniform":
+        n = len(reactant_counts)
+        return {s: 1.0 / n for s in reactant_counts}
+
+    # split == "stoichiometry"
+    total = sum(reactant_counts.values())
+    return {s: m / total for s, m in reactant_counts.items()}
+
+
+def _reaction_rate_f(reactants: Complex, rate_exp: TensorExpression):
+    """Build the scalar mass-action rate of a single reaction.
+
+    Parameters
+    ----------
+    reactants : Complex
+        Reactant multiset of the reaction.
+    rate_exp : TensorExpression
+        Rate expression (e.g. a rate constant) of the reaction.
+
+    Returns
+    -------
+    callable
+        A function ``r(state, non_state)`` returning the reaction rate
+        ``rate_exp * prod_s state[s] ** m_s`` for non-indexed species.
+    """
+    reactant_items = [(s[()], m) for s, m in reactants.count_dict.items()]
+
+    def r(state, non_state):
+        val = rate_exp.eval(non_state | state)
+        for s, m in reactant_items:
+            val = val * state[s] ** m
+        return val
+
+    return r
+
+
+def mass_action_flux_pairs_f(
+    reactants: Complex,
+    products: Complex,
+    rate_exp: TensorExpression,
+    split: str = "uniform",
+):
+    """Build the production-destruction terms used by the modified Patankar
+    step.
+
+    Unlike [`mass_action_flux_pd_f`]
+    [icrn._internal._mass_action.mass_action_flux_pd_f],
+    which only lumps each species' production and destruction, this function
+    also attributes every unit of production to the reactant species that
+    caused it. That attribution is what lets the modified Patankar method
+    weight each production term by its source concentration and assemble a
+    linearly-implicit, positivity-preserving update.
+
+    Parameters
+    ----------
+    reactants : Complex
+        Reactant multiset of the reaction.
+    products : Complex
+        Product multiset of the reaction.
+    rate_exp : TensorExpression
+        Rate expression of the reaction.
+    split : {"uniform", "stoichiometry"}, optional
+        Strategy used to distribute each product's production across the
+        reactants. See
+        [`_split_weights`][icrn._internal._mass_action._split_weights].
+        Defaults to ``"uniform"``.
+
+    Returns
+    -------
+    callable
+        A function ``f(state, non_state)`` returning a tuple
+        ``(destruction, pairs, explicit)`` where
+
+        - ``destruction`` maps a base species to its lumped destruction
+          rate (used to build the matrix diagonal),
+        - ``pairs`` maps an ordered ``(product, reactant)`` pair of base
+          species to the production of the product charged to that reactant
+          (used to build the off-diagonal entries),
+        - ``explicit`` maps a base species to production with no reactant
+          source (a sourceless influx), to be added explicitly.
+
+    Raises
+    ------
+    NotImplementedError
+        If any reactant or product species is indexed; the modified
+        Patankar step currently supports non-indexed species only.
+
+    See Also
+    --------
+    mass_action_flux_pd_f : Lumped production/destruction without source
+        attribution.
+    """
+    if _has_indexed_species(reactants, products):
+        raise NotImplementedError(
+            "The modified Patankar method currently supports non-indexed "
+            "species only."
+        )
+
+    rate_f = _reaction_rate_f(reactants, rate_exp)
+    diff_dict = _get_diff_dict(reactants, products)
+    reactant_counts = {s[()]: m for s, m in reactants.count_dict.items()}
+    weights = _split_weights(reactant_counts, split)
+
+    def f(state, non_state):
+        rate = rate_f(state, non_state)
+        destruction = {}
+        pairs = {}
+        explicit = {}
+        for s, diff in diff_dict.items():
+            base = s[()]
+            if diff > 0:
+                produced = diff * rate
+                if weights:
+                    for j, w in weights.items():
+                        key = (base, j)
+                        pairs[key] = pairs.get(key, 0.0) + w * produced
+                else:
+                    explicit[base] = explicit.get(base, 0.0) + produced
+            elif diff < 0:
+                destruction[base] = destruction.get(base, 0.0) + (-diff) * rate
+        return destruction, pairs, explicit
+
+    return f

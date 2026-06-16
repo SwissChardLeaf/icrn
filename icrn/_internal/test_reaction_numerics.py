@@ -2,9 +2,17 @@ import unittest
 
 from jax import numpy as jnp
 
+from ..reactions import MassActionReaction, rxns_to_mpe_dynamics_f
+from ..symbols import (
+    many_index_symbols,
+    many_rate_constants,
+    many_species,
+)
 from ..utils.dict_utils import dict_allclose
+from ._mass_action import _split_weights
 from ._reaction_numerics import (
     _euler_step,
+    _mpe_step,
     _patankar_euler_step,
     _RK4_step,
 )
@@ -307,3 +315,123 @@ class TestRK4Step(unittest.TestCase):
         }
         self.assertTrue(dict_allclose(computed_state, target_state))
         self.assertTrue(dict_allclose(computed_dynamics, target_dynamics))
+
+
+class TestMPEStep(unittest.TestCase):
+    def test_worked_example(self):
+        # A -> B, B + C -> A with k1 = k2 = 1, c = (2, 3, 1), dt = 0.1.
+        # Hand-computed solution of the implicit system.
+        A, B, C = many_species("A, B, C")
+        k1, k2 = many_rate_constants("k1, k2")
+        rxns = [
+            MassActionReaction(A, B, k1),
+            MassActionReaction(B + C, A, k2),
+        ]
+        mpe_f = rxns_to_mpe_dynamics_f(rxns)
+
+        state = {A: jnp.array(2.0), B: jnp.array(3.0), C: jnp.array(1.0)}
+        non_state = {k1: jnp.array(1.0), k2: jnp.array(1.0)}
+
+        out = _mpe_step(state, non_state, mpe_f, 0.1)
+
+        self.assertAlmostEqual(float(out[A]), 2.0555379, places=4)
+        self.assertAlmostEqual(float(out[B]), 2.9141397, places=4)
+        self.assertAlmostEqual(float(out[C]), 0.7692308, places=4)
+
+    def test_unconditional_positivity(self):
+        # Stiff pure decay with a huge dt: explicit Euler would go negative.
+        A = many_species("A")
+        k = many_rate_constants("k")
+        mpe_f = rxns_to_mpe_dynamics_f([MassActionReaction(A, 0, k)])
+
+        out = _mpe_step({A: jnp.array(1.0)}, {k: jnp.array(1.0)}, mpe_f, 1e6)
+
+        self.assertTrue(float(out[A]) > 0.0)
+
+    def test_steady_state_is_fixed(self):
+        # A <-> B with k1 = 1, k2 = 2 has steady state k1 * A = k2 * B,
+        # e.g. A = 2, B = 1. The step must leave it unchanged.
+        A, B = many_species("A, B")
+        k1, k2 = many_rate_constants("k1, k2")
+        rxns = [
+            MassActionReaction(A, B, k1),
+            MassActionReaction(B, A, k2),
+        ]
+        mpe_f = rxns_to_mpe_dynamics_f(rxns)
+
+        state = {A: jnp.array(2.0), B: jnp.array(1.0)}
+        non_state = {k1: jnp.array(1.0), k2: jnp.array(2.0)}
+
+        out = _mpe_step(state, non_state, mpe_f, 0.3)
+
+        self.assertAlmostEqual(float(out[A]), 2.0, places=5)
+        self.assertAlmostEqual(float(out[B]), 1.0, places=5)
+
+    def test_conservative_system_conserves_total(self):
+        # A <-> B is mass-conserving, so MPE preserves A + B exactly.
+        A, B = many_species("A, B")
+        k1, k2 = many_rate_constants("k1, k2")
+        rxns = [
+            MassActionReaction(A, B, k1),
+            MassActionReaction(B, A, k2),
+        ]
+        mpe_f = rxns_to_mpe_dynamics_f(rxns)
+
+        state = {A: jnp.array(0.3), B: jnp.array(0.7)}
+        non_state = {k1: jnp.array(1.0), k2: jnp.array(1.0)}
+
+        out = _mpe_step(state, non_state, mpe_f, 0.1)
+
+        self.assertAlmostEqual(float(out[A] + out[B]), 1.0, places=5)
+
+    def test_nonconservative_invariant_drift_is_first_order(self):
+        # A + B -> C with atomic masses (1, 2, 3): the atomic-mass invariant
+        # is NOT exactly conserved, but its per-step drift shrinks ~dt^2.
+        A, B, C = many_species("A, B, C")
+        k = many_rate_constants("k")
+        mpe_f = rxns_to_mpe_dynamics_f([MassActionReaction(A + B, C, k)])
+
+        masses = {A: 1.0, B: 2.0, C: 3.0}
+        state = {A: jnp.array(1.0), B: jnp.array(1.5), C: jnp.array(0.5)}
+        non_state = {k: jnp.array(1.0)}
+
+        def invariant(s):
+            return float(s[A] * masses[A] + s[B] * masses[B] + s[C] * masses[C])
+
+        i0 = invariant(state)
+        drift_dt = abs(invariant(_mpe_step(state, non_state, mpe_f, 0.1)) - i0)
+        drift_half = abs(
+            invariant(_mpe_step(state, non_state, mpe_f, 0.05)) - i0
+        )
+
+        # not exactly conserved due to not using atomic mass weight splitting
+        self.assertGreater(drift_dt, 1e-5)
+        # halving dt roughly quarters the per-step drift (first order global)
+        self.assertLess(drift_half, 0.35 * drift_dt)
+
+    def test_split_weights(self):
+        A, B = many_species("A, B")
+
+        uniform = _split_weights({A: 1, B: 2}, "uniform")
+        self.assertAlmostEqual(uniform[A], 0.5)
+        self.assertAlmostEqual(uniform[B], 0.5)
+
+        stoich = _split_weights({A: 1, B: 2}, "stoichiometry")
+        self.assertAlmostEqual(stoich[A], 1.0 / 3.0)
+        self.assertAlmostEqual(stoich[B], 2.0 / 3.0)
+
+    def test_invalid_split_raises(self):
+        A, B = many_species("A, B")
+        k = many_rate_constants("k")
+        with self.assertRaises(ValueError):
+            _split_weights({A: 1}, "bogus")
+        with self.assertRaises(ValueError):
+            MassActionReaction(A, B, k).flux_pairs(split="bogus")
+
+    def test_indexed_species_not_supported(self):
+        i = many_index_symbols("i")
+        A, B = many_species("A, B")
+        k = many_rate_constants("k")
+        rxn = MassActionReaction(A[i], B[i], k)
+        with self.assertRaises(NotImplementedError):
+            rxn.flux_pairs()
