@@ -273,25 +273,19 @@ class MassActionReaction(AbstractReaction):
     products : Complex or Species or 0
         A multiset of indexed species.
     rate_expr : TensorExpression or Numeric
-        <TODO: scalar rate (wrapped automatically in a
+        scalar rate (wrapped automatically in a
         [`TensorLiteral`][icrn.TensorLiteral]) or an indexed
         [`RateConstant`][icrn.RateConstant] /
-        [`TensorExpression`][icrn.TensorExpression].>
+        [`TensorExpression`][icrn.TensorExpression].
 
     Attributes
     ----------
     reactants : Complex
-        <TODO>
+        Input reactants are turned into a Complex object.
     products : Complex
-        <TODO>
+        Input products are turned into a Complex object.
     rate_expr : TensorExpression
-        <TODO: alias for `aux`.>
-
-    Examples
-    --------
-    ```python
-    # <TODO: e.g. MassActionReaction(A, B, k) for A --k--> B.>
-    ```
+        Alias for `aux`.
     """
 
     def __init__(
@@ -406,16 +400,9 @@ class FastReaction:
     Attributes
     ----------
     reactants : Complex
-        <TODO>
+        Input reactants are turned into a Complex object.
     products : Complex
-        <TODO>
-
-    Examples
-    --------
-    ```python
-    # <TODO: e.g. FastReaction(A + B, C) drives A + B -> C
-    # to completion at every step.>
-    ```
+        Input products are turned into a Complex object.
     """
 
     reactants: Complex | Species
