@@ -39,29 +39,31 @@ class AbstractReaction(ABC):
 
     Parameters
     ----------
-    reactants : Complex
-        <TODO>
+    reactants : Complex or Species of 0
+        A multiset of indexed species.
     products : Complex
-        <TODO>
+        A multiset of indexed species.
     aux : TensorExpression or None, optional
-        <TODO: subclass-specific auxiliary data, e.g. the rate expression
-        for [`MassActionReaction`][icrn.MassActionReaction].>
+        Subclass-specific auxiliary data, e.g. the rate expression
+        for [`MassActionReaction`][icrn.MassActionReaction].
 
     Attributes
     ----------
-    reactants : Complex
-        <TODO>
-    products : Complex
-        <TODO>
-    aux : TensorExpression or None
-        <TODO>
+    See parameters.
+
+    Notes
+    -----
+    User should extend this class to implement the `flux` and `flux_pd` methods.
+    The class is inspired by lazy evaluation. The `flux` and `flux_pd` methods
+    return callables instead of numerically evaluating values. This is useful
+    because the `flux` and `flux_pd` methods are expensive to compile and the
+    `flux` and `flux_pd` will be called repeatedly during integration.
 
     See Also
     --------
     [`MassActionReaction`][icrn.MassActionReaction] : Standard mass-action
         reaction.
-    [`FastReaction`][icrn.FastReaction] : Limiting-reagent annihilation
-        reaction.
+    [`FastReaction`][icrn.FastReaction] : Limiting-reagent reaction.
     """
 
     reactants: Complex
@@ -82,10 +84,44 @@ class AbstractReaction(ABC):
 
     @abstractmethod
     def flux(self):
+        """Return a callable that evaluates this reaction's net flux.
+
+        The returned function is compiled from the reaction definition and
+        may be called repeatedly during integration. Numerical evaluation is
+        deferred until the callable is invoked.
+
+        Returns
+        -------
+        callable
+            A function ``f(state, non_state)`` returning a dictionary of
+            per-species net flux contributions (production minus
+            destruction).
+
+        See Also
+        --------
+        flux_pd : Production/destruction split for Patankar integrators.
+        """
         pass
 
     @abstractmethod
     def flux_pd(self):
+        """Return a callable that evaluates production and destruction rates.
+
+        The returned function splits each species' net flux into non-negative
+        production and destruction terms. This split is used by Patankar-type
+        integrators that treat destruction implicitly.
+
+        Returns
+        -------
+        callable
+            A function ``f(state, non_state)`` returning
+            ``(production, destruction)``, each a dictionary mapping base
+            species to non-negative rates.
+
+        See Also
+        --------
+        flux : Net per-species flux for standard integrators.
+        """
         pass
 
     @abstractmethod
@@ -233,10 +269,9 @@ class MassActionReaction(AbstractReaction):
     Parameters
     ----------
     reactants : Complex or Species or 0
-        <TODO: `0` is accepted as an empty complex, allowing zeroth-order
-        production reactions.>
+        A multiset of indexed species.
     products : Complex or Species or 0
-        <TODO>
+        A multiset of indexed species.
     rate_expr : TensorExpression or Numeric
         <TODO: scalar rate (wrapped automatically in a
         [`TensorLiteral`][icrn.TensorLiteral]) or an indexed
@@ -357,7 +392,7 @@ class FastReaction:
 
     At every integration step, reactions fire until the reactants are fully
     consumed. They are useful for modelling reactions that are on a timescale
-    much faster than the dt. Currently, a concrete species can be involved in
+    much faster than the dt. Currently, a concrete species can be a reactant in
     at most one fast reaction.
     Parameters
     ----------
@@ -431,49 +466,3 @@ class FastReaction:
 
         object.__setattr__(self, "reactants", reactants)
         object.__setattr__(self, "products", products)
-
-    # @rate_constant_expr.setter
-    # def index_set(self, index_set):
-    #     self.aux = index_set
-
-    # def __init__(self, reactants, products, rate_constant_expr):
-    #     pass
-
-    # def flux_expr(self) -> dict[Species, Expr]:
-    #     r_dict = reactants.count_dict
-    #     p_dict = products.count_dict
-
-    #     flux_expr = 1
-    #     for sp, coeff in r_dict.items():
-    #         flux_expr *= sp ** coeff
-
-    #     all_species = r_dict.keys() | p_dict.keys()
-
-    #     for sp in all_species:
-    #         count_diff = p_dict[sp] - r_dict[sp]
-
-    #         if count_diff == 0:
-    #             continue
-    #         else:
-
-
-# @dataclass(frozen=True)
-# class AbstractFastReaction(ABC):
-#     @abstractmethod
-#     def __str__(self):
-#         pass
-
-#     @abstractmethod
-#     def __repr__(self):
-#         pass
-
-#     @abstractmethod
-#     def update(self, data: DataDict) -> DataDict:
-#         pass
-
-
-# # class MichaelisMentenReaction(AbstractReaction):
-# #     def __init__(
-# #         self, substrate, enzyme, product, rate_constant, aux, name=None,
-# #     ):
-# #         pass

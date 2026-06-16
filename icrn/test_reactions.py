@@ -4,13 +4,16 @@ from dataclasses import FrozenInstanceError
 import jax.numpy as jnp
 
 from .reactions import (
+    AbstractReaction,
     FastReaction,
     MassActionReaction,
     _matching_shapes,
     fast_rxns_to_update_f,
     rxns_to_dynamics_f,
+    rxns_to_mpe_dynamics_f,
     rxns_to_pd_dynamics_f,
 )
+from .solver import solve_well_mixed
 from .symbols import (
     Complex,
     RateConstant,
@@ -90,27 +93,166 @@ class TestRxnsToDynamicsF(unittest.TestCase):
 
 
 class TestExtendAbstractReaction(unittest.TestCase):
-    pass
-    # def setUp(self):
-    #     class TestReaction(AbstractReaction):
-    #         A, B = many_species("A, B")
-    #         alpha = RateConstant("alpha")
+    class MichaelisMentenReaction(AbstractReaction):
+        """Single-substrate enzyme reaction S -> P with Michaelis-Menten
+        kinetics.
 
-    #         def __init__(self, reactants, products, aux):
-    #             super().__init__(reactants, products, aux)
+        The enzyme E appears in the rate law but is not consumed.
+        """
 
-    #         def flux(self):
-    #             def flux_fn(state, rate_constant_data):
-    # return {self.reactants: -self.aux, self.products: self.aux}
+        def flux(self):
+            sub, prod, (enz, k_cat_expr, km_expr) = (
+                self.reactants,
+                self.products,
+                self.aux,
+            )
 
-    #             return flux_fn
+            def f(state, non_state):
+                data = non_state | state
+                s = sub.eval(data)
+                e = enz.eval(data)
+                kcat = k_cat_expr.eval(data)
+                km = km_expr.eval(data)
 
-    #     self.TestReaction = TestReaction(A, B, alpha)
+                rate = kcat * e * s / (km + s)
+                return {sub: -rate, prod: rate}
 
-    # def test_flux(self):
-    #     A, B = many_species("A, B")
-    #     alpha = RateConstant("alpha")
-    #     self.assertEqual(self.TestReaction.flux(), {A: -alpha, B: alpha})
+            return f
+
+        def flux_pd(self):
+            sub, prod, (enz, k_cat_expr, km_expr) = (
+                self.reactants,
+                self.products,
+                self.aux,
+            )
+
+            def f(state, non_state):
+                data = non_state | state
+                s = sub.eval(data)
+                e = enz.eval(data)
+                kcat = k_cat_expr.eval(data)
+                km = km_expr.eval(data)
+
+                rate = kcat * e * s / (km + s)
+
+                production = {sub: 0.0, prod: rate}
+                destruction = {sub: rate, prod: 0.0}
+
+                return production, destruction
+
+            return f
+
+        def flux_pairs(self, split="uniform"):
+            sub, prod, (enz, k_cat_expr, km_expr) = (
+                self.reactants,
+                self.products,
+                self.aux,
+            )
+
+            def f(state, non_state):
+                data = non_state | state
+                s = sub.eval(data)
+                e = enz.eval(data)
+                kcat = k_cat_expr.eval(data)
+                km = km_expr.eval(data)
+
+                rate = kcat * e * s / (km + s)
+
+                destruction = {sub: rate}
+                pairs = {(prod, sub): rate}
+                explicit = {}
+
+                return destruction, pairs, explicit
+
+            return f
+
+    def setUp(self):
+        self.S, self.P, self.E = many_species("S, P, E")
+        self.k_cat, self.K_m = many_rate_constants("k_cat, K_m")
+        self.mm_rxn = self.MichaelisMentenReaction(
+            self.S, self.P, (self.E, self.k_cat, self.K_m)
+        )
+        self.state = {
+            self.S: jnp.array(1.0),
+            self.P: jnp.array(0.0),
+            self.E: jnp.array(0.1),
+        }
+        self.non_state = {
+            self.k_cat: jnp.array(2.0),
+            self.K_m: jnp.array(0.3),
+        }
+
+    def test_flux(self):
+        output = self.mm_rxn.flux()(self.state, self.non_state)
+        # v = k_cat * [E] * [S] / (K_m + [S]) = 2 * 0.1 * 1 / (0.3 + 1)
+        # = 0.2/1.3
+        rate = jnp.array(0.2 / 1.3)
+        target = {self.S: -rate, self.P: rate}
+        self.assertTrue(dict_allclose(output, target))
+
+    def test_flux_pd_matches_net(self):
+        net = rxns_to_dynamics_f([self.mm_rxn])(self.state, self.non_state)
+        production, destruction = rxns_to_pd_dynamics_f([self.mm_rxn])(
+            self.state, self.non_state
+        )
+
+        for s in self.state:
+            self.assertTrue(
+                jnp.allclose(production[s] - destruction[s], net[s])
+            )
+
+    def test_flux_pairs_matches_net(self):
+        net = rxns_to_dynamics_f([self.mm_rxn])(self.state, self.non_state)
+        destruction, pairs, explicit = rxns_to_mpe_dynamics_f([self.mm_rxn])(
+            self.state, self.non_state
+        )
+
+        mpe_net = {s: explicit.get(s, 0.0) for s in self.state}
+        for s, v in destruction.items():
+            mpe_net[s] -= v
+        for (prod, _react), v in pairs.items():
+            mpe_net[prod] += v
+
+        for s in self.state:
+            self.assertTrue(jnp.allclose(mpe_net[s], net[s]))
+
+    def test_solve_well_mixed(self):
+        times = jnp.linspace(0.0, 5.0, 101)
+        traj = solve_well_mixed(
+            [self.mm_rxn],
+            conc_vals=self.state,
+            rate_constant_vals=self.non_state,
+            times=times,
+            dt=0.01,
+            reaction_solver="RK4",
+        )
+
+        self.assertTrue(jnp.allclose(traj[self.E], self.state[self.E]))
+        self.assertTrue(
+            jnp.allclose(traj[self.S] + traj[self.P], self.state[self.S])
+        )
+        self.assertTrue(jnp.allclose(traj[self.S][-1], jnp.array(0.33136249)))
+        self.assertTrue(jnp.allclose(traj[self.P][-1], jnp.array(0.66863739)))
+
+    def test_mixed_with_mass_action_enzyme_decay(self):
+        times = jnp.linspace(0.0, 5.0, 101)
+        ma_rxn = MassActionReaction(self.E, 0, 0.5)
+
+        traj = solve_well_mixed(
+            [self.mm_rxn, ma_rxn],
+            conc_vals=self.state,
+            rate_constant_vals=self.non_state,
+            times=times,
+            dt=0.01,
+            reaction_solver="RK4",
+        )
+
+        self.assertTrue(
+            jnp.allclose(traj[self.S] + traj[self.P], self.state[self.S])
+        )
+        self.assertTrue(jnp.allclose(traj[self.E][-1], jnp.array(0.00820849)))
+        self.assertTrue(jnp.allclose(traj[self.S][-1], jnp.array(0.72804976)))
+        self.assertTrue(jnp.allclose(traj[self.P][-1], jnp.array(0.27195022)))
 
 
 class TestMassActionReaction(unittest.TestCase):
