@@ -404,7 +404,7 @@ class TestMPEStep(unittest.TestCase):
             invariant(_mpe_step(state, non_state, mpe_f, 0.05)) - i0
         )
 
-        # not exactly conserved
+        # not exactly conserved due to not using atomic mass weight splitting
         self.assertGreater(drift_dt, 1e-5)
         # halving dt roughly quarters the per-step drift (first order global)
         self.assertLess(drift_half, 0.35 * drift_dt)
