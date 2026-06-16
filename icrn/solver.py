@@ -42,7 +42,7 @@ def solve_well_mixed(
     checkpoint_length : int, optional
         <TODO: trade memory for time when differentiating long
         trajectories.>
-    reaction_solver : {"RK4", "Euler", "PatankarEuler"}, optional
+    reaction_solver : {"RK4", "Euler", "PatankarEuler", "MPE"}, optional
         <TODO: integrator used for reaction dynamics.>
     mode : str or None, optional
         <TODO>
@@ -124,7 +124,7 @@ def solve_reaction_diffusion(
         <TODO>
     checkpoint_length : int, optional
         <TODO>
-    reaction_solver : {"RK4", "Euler", "PatankarEuler"}, optional
+    reaction_solver : {"RK4", "Euler", "PatankarEuler", "MPE"}, optional
         <TODO>
     splitting : {"LieTrotter", "Strang"}, optional
         <TODO: operator-splitting scheme combining reaction and diffusion
