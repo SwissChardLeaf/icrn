@@ -1,0 +1,32 @@
+symbols:
+  species:
+  - A
+  - B
+  - C
+  rate_constants:
+  - k_f
+  - k_r
+  index_symbols: []
+reactions:
+- type: mass_action
+  reactants:
+  - species: A
+    count: 1
+  - species: B
+    count: 1
+  products:
+  - species: C
+    count: 1
+  rate:
+    rate_constant: k_f
+- type: mass_action
+  reactants:
+  - species: C
+    count: 1
+  products:
+  - species: A
+    count: 1
+  - species: B
+    count: 1
+  rate:
+    rate_constant: k_r

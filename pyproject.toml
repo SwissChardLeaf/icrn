@@ -30,6 +30,8 @@ dev = [
     "pre-commit>=3.5",
     "pytest>=8.0",
     "nbmake>=1.5",
+    "pyyaml>=6.0",
+    "types-PyYAML>=6.0",
 ]
 
 [project.urls]

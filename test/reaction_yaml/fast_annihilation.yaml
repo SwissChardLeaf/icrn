@@ -1,0 +1,21 @@
+symbols:
+  species:
+  - A
+  - B
+  rate_constants: []
+  index_symbols:
+  - names:
+    - i
+    size: 3
+reactions:
+- type: fast
+  reactants:
+  - species: A
+    count: 1
+    indices:
+    - i
+  - species: B
+    count: 1
+    indices:
+    - i
+  products: []

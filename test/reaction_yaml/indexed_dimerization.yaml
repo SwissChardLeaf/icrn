@@ -1,0 +1,57 @@
+symbols:
+  species:
+  - D
+  - M
+  rate_constants:
+  - K1
+  - K2
+  index_symbols:
+  - names:
+    - i
+    size: 5
+  - names:
+    - j
+    size: 5
+reactions:
+- type: mass_action
+  reactants:
+  - species: M
+    count: 1
+    indices:
+    - i
+  - species: M
+    count: 1
+    indices:
+    - j
+  products:
+  - species: D
+    count: 1
+    indices:
+    - i
+    - j
+  rate:
+    rate_constant: K1
+    indices:
+    - i
+    - j
+- type: mass_action
+  reactants:
+  - species: D
+    count: 1
+    indices:
+    - i
+    - j
+  products:
+  - species: M
+    count: 1
+    indices:
+    - i
+  - species: M
+    count: 1
+    indices:
+    - j
+  rate:
+    rate_constant: K2
+    indices:
+    - i
+    - j

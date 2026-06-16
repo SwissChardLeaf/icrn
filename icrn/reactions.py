@@ -20,6 +20,16 @@ from ._internal._mass_action import (
     mass_action_flux_pairs_f,
     mass_action_flux_pd_f,
 )
+from ._internal._reaction_yaml import (
+    ReactionSymbolTable,
+    _complex_from_yaml,
+    _complex_to_yaml,
+    _rate_from_yaml,
+    _rate_to_yaml,
+    load_network_yaml,
+    register_yaml_type,
+    save_network_yaml,
+)
 from .symbols import (
     Complex,
     Numeric,
@@ -127,6 +137,51 @@ class AbstractReaction(ABC):
     @abstractmethod
     def flux_pairs(self, split="uniform"):
         pass
+
+    def to_dict(self) -> dict:
+        """Return a YAML-serializable description of this reaction.
+
+        Subclasses that support YAML I/O should override this method and
+        register with `register_yaml_type`.
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__} does not support YAML serialization."
+        )
+
+    @classmethod
+    def from_dict(cls, entry: dict, symbols: ReactionSymbolTable):
+        """Reconstruct a reaction from a YAML entry and symbol table."""
+        raise NotImplementedError(
+            f"{cls.__name__} does not support YAML deserialization."
+        )
+
+    @classmethod
+    def register_yaml_type(cls, type_name: str, reaction_cls: type):
+        """Register a reaction class for use with `from_dict` / `load_yaml`."""
+        register_yaml_type(type_name, reaction_cls)
+
+    @classmethod
+    def from_dict_entry(cls, entry: dict, symbols: ReactionSymbolTable):
+        """Dispatch ``entry['type']`` to a registered reaction class."""
+        from ._internal._reaction_yaml import dispatch_from_dict
+
+        return dispatch_from_dict(entry, symbols)
+
+    @staticmethod
+    def save_yaml(path, rxns):
+        """Write a list of reactions to a YAML network file."""
+        save_network_yaml(path, rxns)
+
+    @classmethod
+    def load_yaml(cls, path):
+        """Load a reaction network from a YAML file.
+
+        Returns
+        -------
+        reactions : list of AbstractReaction or FastReaction
+        symbols : ReactionSymbolTable
+        """
+        return load_network_yaml(path)
 
 
 def rxns_to_dynamics_f(rxns: list[AbstractReaction]):
@@ -361,8 +416,31 @@ class MassActionReaction(AbstractReaction):
             split=split,
         )
 
+    def to_dict(self) -> dict:
+        return {
+            "type": "mass_action",
+            "reactants": _complex_to_yaml(self.reactants),
+            "products": _complex_to_yaml(self.products),
+            "rate": _rate_to_yaml(self.aux),
+        }
+
+    @classmethod
+    def from_dict(cls, entry: dict, symbols: ReactionSymbolTable):
+        if entry["type"] != "mass_action":
+            raise ValueError(
+                f"Expected type 'mass_action', got {entry['type']!r}"
+            )
+        return cls(
+            _complex_from_yaml(entry.get("reactants", []), symbols),
+            _complex_from_yaml(entry.get("products", []), symbols),
+            _rate_from_yaml(entry["rate"], symbols),
+        )
+
     def shapes(self):
         pass
+
+
+AbstractReaction.register_yaml_type("mass_action", MassActionReaction)
 
 
 def fast_rxns_to_update_f(fast_rxns: list[FastReaction]):
@@ -453,3 +531,27 @@ class FastReaction:
 
         object.__setattr__(self, "reactants", reactants)
         object.__setattr__(self, "products", products)
+
+    def to_dict(self) -> dict:
+        return {
+            "type": "fast",
+            "reactants": _complex_to_yaml(self.reactants),
+            "products": _complex_to_yaml(self.products),
+        }
+
+    @classmethod
+    def from_dict(cls, entry: dict, symbols: ReactionSymbolTable):
+        if entry["type"] != "fast":
+            raise ValueError(f"Expected type 'fast', got {entry['type']!r}")
+        products_entries = entry.get("products", [])
+        if products_entries:
+            products = _complex_from_yaml(products_entries, symbols)
+        else:
+            products = 0
+        return cls(
+            _complex_from_yaml(entry.get("reactants", []), symbols),
+            products,
+        )
+
+
+register_yaml_type("fast", FastReaction)
