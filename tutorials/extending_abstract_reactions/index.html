@@ -1465,7 +1465,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h1 id="extending-abstract-reactions">Extending Abstract Reactions<a class="anchor-link" href="#extending-abstract-reactions">¶</a></h1><p>This notebook shows how to implement custom reaction kinetics in icrn by
-subclassing [<code>AbstractReaction</code>][icrn.AbstractReaction].</p>
+subclassing <a href="../api.md#icrn.AbstractReaction"><code>AbstractReaction</code></a>.</p>
 <p>Part 1 explains the abstract interface and how reactions plug into the
 solver. Part 2 walks through a concrete example: a Michaelis–Menten
 enzyme-catalyzed reaction.</p>
@@ -1533,17 +1533,16 @@ Requirement already satisfied: scipy&gt;=1.13 in /opt/anaconda3/lib/python3.12/s
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h1 id="part-1-the-abstractreaction-interface">Part 1 — The <code>AbstractReaction</code> interface<a class="anchor-link" href="#part-1-the-abstractreaction-interface">¶</a></h1><p>Most examples in this library will utilize mass action kinetics, by using
-networks built from [<code>MassActionReaction</code>][icrn.MassActionReaction].
+networks built from <a href="../api.md#icrn.MassActionReaction"><code>MassActionReaction</code></a>.
 For a different rate law (Michaelis–Menten, Hill, etc.), one should extend
-[<code>AbstractReaction</code>][icrn.AbstractReaction].</p>
+<a href="../api.md#icrn.AbstractReaction"><code>AbstractReaction</code></a>.</p>
 <p>Every reaction object stores three pieces of symbolic data:</p>
 <ul>
-<li><strong><code>reactants</code></strong> — a [<code>Complex</code>][icrn.Complex] describing what is consumed</li>
-<li><strong><code>products</code></strong> — a [<code>Complex</code>][icrn.Complex] describing what is produced</li>
+<li><strong><code>reactants</code></strong> — a <a href="../api.md#icrn.Complex"><code>Complex</code></a> describing what is consumed</li>
+<li><strong><code>products</code></strong> — a <a href="../api.md#icrn.Complex"><code>Complex</code></a> describing what is produced</li>
 <li><strong><code>aux</code></strong> — optional subclass-specific data (for mass action this is the
 rate expression)</li>
 </ul>
-<p>And to extend the abstract class</p>
 </div>
 </div>
 </div>
@@ -1560,8 +1559,8 @@ dictionary. This is deliberate: building the evaluator can be expensive
 integrator sub-step.</p>
 <p>At runtime the callable receives:</p>
 <ul>
-<li><strong><code>state</code></strong> — current species concentrations, keyed by base [<code>Species</code>][icrn.Species]</li>
-<li><strong><code>non_state</code></strong> — rate constants and other parameters, keyed by [<code>RateConstant</code>][icrn.RateConstant] or [<code>TensorExpression</code>][icrn.TensorExpression]</li>
+<li><strong><code>state</code></strong> — current species concentrations, keyed by base <a href="../api.md#icrn.Species"><code>Species</code></a></li>
+<li><strong><code>non_state</code></strong> — rate constants and other parameters, keyed by <a href="../api.md#icrn.RateConstant"><code>RateConstant</code></a> or <a href="../api.md#icrn.TensorExpression"><code>TensorExpression</code></a></li>
 </ul>
 <p>It must return a dictionary <code>{species: net_flux}</code> where positive values are
 production and negative values are consumption.</p>
@@ -1612,7 +1611,7 @@ Michaelis constant, and $[E]$ is the free enzyme concentration. Under this
 lumped model the enzyme acts as a <strong>catalyst</strong>: it appears in the rate but
 is not consumed or produced, so $[E]$ stays constant.</p>
 <p>This is <strong>not</strong> mass action, so we implement it as a custom
-[<code>AbstractReaction</code>][icrn.AbstractReaction].</p>
+<a href="../api.md#icrn.AbstractReaction"><code>AbstractReaction</code></a>.</p>
 </div>
 </div>
 </div>
@@ -2055,15 +2054,15 @@ plt.show()</div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h2 id="summary">Summary<a class="anchor-link" href="#summary">¶</a></h2><ul>
-<li>Extend [<code>AbstractReaction</code>][icrn.AbstractReaction] when the rate law is
+<li>Extend <a href="../api.md#icrn.AbstractReaction"><code>AbstractReaction</code></a> when the rate law is
 not mass action.</li>
 <li>Implement <strong><code>flux()</code></strong> and <strong><code>flux_pd()</code></strong> as factories that return
 callables; the solver handles compilation timing and repeated evaluation.</li>
 <li>Use <strong><code>object.__setattr__</code></strong> in <code>__init__</code> to populate fields on the
 frozen base dataclass.</li>
-<li>Drop custom reaction instances into the same [<code>solve_well_mixed</code>][icrn.solve_well_mixed]
-/ [<code>solve_reaction_diffusion</code>][icrn.solve_reaction_diffusion] APIs as
-[<code>MassActionReaction</code>][icrn.MassActionReaction].</li>
+<li>Drop custom reaction instances into the same <a href="../api.md#icrn.solve_well_mixed"><code>solve_well_mixed</code></a>
+/ <a href="../api.md#icrn.solve_reaction_diffusion"><code>solve_reaction_diffusion</code></a> APIs as
+<a href="../api.md#icrn.MassActionReaction"><code>MassActionReaction</code></a>.</li>
 </ul>
 <p>Possible next steps: add an enzyme–substrate complex explicitly with mass-
 action reactions, implement indexed enzyme pools, or combine custom reactions
