@@ -21,6 +21,7 @@ license-files = ["LICEN[CS]E*"]
 dependencies = [
     "jax>=0.4.20",
     "numpy>=1.24",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
@@ -30,7 +31,6 @@ dev = [
     "pre-commit>=3.5",
     "pytest>=8.0",
     "nbmake>=1.5",
-    "pyyaml>=6.0",
     "types-PyYAML>=6.0",
 ]
 
