@@ -29,7 +29,7 @@ pip install icrn
 ```
 
 This installs **JAX** and **NumPy** as runtime dependencies. The default JAX
-wheel is CPU-only; for GPU/TPU, install JAX for your platform after `icrn`
+wheel is CPU-only; for GPU/TPU, install the best JAX for your platform
 ([JAX installation guide](https://docs.jax.dev/en/latest/installation.html)).
 
 ## Quick Start
