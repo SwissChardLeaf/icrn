@@ -1,3 +1,35 @@
+"""Symbolic building blocks for indexed chemical reaction networks.
+
+Class hierarchy
+---------------
+
+::
+
+    TensorExpression
+    ├── TensorLiteral
+    ├── TensorFunction
+    └── TensorSymbol
+            ^
+            | (multiple inheritance)
+    OrderedHashableSymbol
+    ├── IndexSymbol
+    └── TensorSymbol
+        ├── Species
+        └── RateConstant
+
+    Complex
+
+``TensorSymbol`` multiply-inherits from ``OrderedHashableSymbol`` and
+``TensorExpression``. ``Complex`` stands apart; complexes are built from
+``Species`` via ``+`` and ``*`` rather than by subclassing.
+
+Factory functions
+-----------------
+[`many_index_symbols`][icrn.many_index_symbols],
+[`many_species`][icrn.many_species],
+[`many_rate_constants`][icrn.many_rate_constants]
+"""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -133,23 +165,45 @@ def _check_shape(res: ArrayLike, index_symbols):
 class TensorExpression(ABC):
     """Abstract base class for tensor-valued expressions over indexed symbols.
 
-    A `TensorExpression` is anything that, given a binding of symbols to
-    concrete arrays, evaluates to a JAX array of a known indexed shape.
-    Concrete subclasses include [`Species`][icrn.Species],
-    [`RateConstant`][icrn.RateConstant], [`TensorLiteral`][icrn.TensorLiteral],
-    and [`TensorFunction`][icrn.TensorFunction].
+    A tensor expression is a symbolic representation of a tensor-valued
+    function, with indexed symbols. It is evaluated at solve time by binding the
+    symbols to concrete arrays and calling the `eval` method.
+
+    There are three concrete subclasses: [`TensorLiteral`][icrn.TensorLiteral],
+    [`TensorFunction`][icrn.TensorFunction], and
+    [`TensorSymbol`][icrn.TensorSymbol].
+    [`TensorLiteral`][icrn.TensorLiteral] wraps a scalar numeric value.
+    [`TensorFunction`][icrn.TensorFunction] lifts a JAX function into a
+    [`TensorExpression`][icrn.TensorExpression].
+    [`TensorSymbol`][icrn.TensorSymbol] is the class for variables that can
+    be replaced by concrete arrays at solve time.
+
+    Trees of tensor expressions can be built by combining the three concrete
+    subclasses. [`TensorLiteral`][icrn.TensorLiteral] and
+    [`TensorSymbol`][icrn.TensorSymbol] instances are the leaves of the
+    tree, and [`TensorFunction`][icrn.TensorFunction] instances are the
+    internal nodes.
 
     Notes
     -----
-    <TODO: explain how arithmetic operators (`+`, `*`, `-`, `/`) compose
-    `TensorExpression` instances into new ones, and how `index_symbols`
-    propagates through these operations.>
+    Binary arithmetic operators (`+`, `*`, `-`, `/`) combine two
+    [`TensorExpression`][icrn.TensorExpression] instances into a
+    [`TensorFunction`][icrn.TensorFunction] when both operands are tensor
+    expressions or numeric literals. Operands must share the same
+    `index_symbols`; numeric literals are promoted to
+    [`TensorLiteral`][icrn.TensorLiteral]. Unary `-` wraps the expression in a
+    [`TensorFunction`][icrn.TensorFunction] as well.
+
+    The exception is [`Species`][icrn.Species]; it does not support these
+    operators; use species operators to build [`Complex`][icrn.Complex]
+    objects instead.
 
     See Also
     --------
     [`TensorLiteral`][icrn.TensorLiteral] : Wraps a scalar numeric value.
     [`TensorFunction`][icrn.TensorFunction] : Lifts a JAX function into a
-        `TensorExpression`.
+        [`TensorExpression`][icrn.TensorExpression].
+    [`TensorSymbol`][icrn.TensorSymbol] : Indexed array-like symbol.
     """
 
     def eval_with_check(self, data):
@@ -251,17 +305,7 @@ class IndexSymbol(OrderedHashableSymbol):
 
     Attributes
     ----------
-    label : str
-        <TODO>
-    index_set : int
-        <TODO>
-
-    Examples
-    --------
-    ```python
-    # <TODO: minimal usage example, e.g. constructing an IndexSymbol
-    # and using it to subscript a Species.>
-    ```
+    See Parameters.
     """
 
     def __init__(self, label: str, index_set: int = 0):
@@ -329,6 +373,25 @@ class IndexSymbol(OrderedHashableSymbol):
 
 
 class TensorSymbol(OrderedHashableSymbol, TensorExpression):
+    """Base class for indexed tensor symbols looked up in solver data.
+
+    Subclasses include [`Species`][icrn.Species] and
+    [`RateConstant`][icrn.RateConstant]. Use ``symbol[i, j]`` to subscript a
+    base symbol with index symbols.
+
+    Parameters
+    ----------
+    label : str
+        Display name of the symbol.
+    indexing : tuple of IndexSymbol, optional
+        Index symbols subscripting the symbol. Defaults to ``()`` for an
+        unindexed base symbol.
+
+    Attributes
+    ----------
+    See Parameters.
+    """
+
     def __init__(self, label: str, indexing: tuple[IndexSymbol, ...] = ()):
         if not isinstance(label, str):
             raise ValueError(f"Label must be a string, got {type(label)}")
@@ -384,21 +447,15 @@ class TensorSymbol(OrderedHashableSymbol, TensorExpression):
 class Species(TensorSymbol):
     """A chemical species, optionally indexed.
 
-    Use the `+` and `*` operators to build [`Complex`][icrn.symbols.Complex]
-    objects (e.g. `A + 2 * B`), and `[i, j]` to produce an indexed copy.
+    Use the `+` and `*` operators to build [`Complex`][icrn.Complex]
+    objects (e.g. `A + 2 * B`), and `A[i, j]` to produce an indexed copy.
 
     Parameters
     ----------
     label : str
-        <TODO>
+        The display name of the species.
     indexing : tuple of IndexSymbol, optional
-        <TODO>
-
-    Examples
-    --------
-    ```python
-    # <TODO: e.g. A, B = many_species("A, B"); rxn = A + 2*B -> C>
-    ```
+        The index symbols to subscript the species.
     """
 
     def __add__(self, other):
@@ -428,7 +485,7 @@ class Complex:
     """A multiset of [`Species`][icrn.Species], used as the reactant or
     product side of a reaction.
 
-    Complexes are built ergonomially with opertaors involving
+    Complexes are built ergonomically with operators involving
     [`Species`][icrn.Species] (e.g. `A + 2 * B` produces
     `Complex({A: 1, B: 2})`). A complex is unlikely to be constructed
     directly.
@@ -436,19 +493,12 @@ class Complex:
     Parameters
     ----------
     count_dict : dict[Species, int]
-        <TODO: positive integer stoichiometric coefficient for each species.>
+        A dictionary of indexed species and their positive integer
+        stoichiometric coefficients.
 
     Attributes
     ----------
-    count_dict : dict[Species, int]
-        <TODO>
-
-    Examples
-    --------
-    ```python
-    # <TODO: show that A + 2 * B yields a Complex with count_dict
-    # {A: 1, B: 2}.>
-    ```
+    See Parameters.
     """
 
     count_dict: dict
@@ -524,16 +574,9 @@ class RateConstant(TensorSymbol):
     Parameters
     ----------
     label : str
-        <TODO>
+        The display name of the rate constant.
     indexing : tuple of IndexSymbol, optional
-        <TODO>
-
-    Examples
-    --------
-    ```python
-    # <TODO: e.g. k = many_rate_constants("k"); pass {k: jnp.array(1.0)}
-    # as rate_constant_vals.>
-    ```
+        The index symbols to subscript the rate constant.
     """
 
     pass
@@ -550,18 +593,12 @@ class TensorLiteral(TensorExpression):
     Parameters
     ----------
     numeric_value : Numeric
-        <TODO: a scalar (0-d) array-like.>
+        A scalar (0-d) array-like, or anything that can be cast as such.
 
     Attributes
     ----------
     numeric_value : jax.Array
-        <TODO>
-
-    Examples
-    --------
-    ```python
-    # <TODO: e.g. TensorLiteral(2.5).eval({}) -> 2.5>
-    ```
+        The value stored as a 0-d ``float`` JAX array.
     """
 
     numeric_value: Numeric
@@ -609,8 +646,8 @@ class TensorFunction(TensorExpression):
     Parameters
     ----------
     fn : callable
-        a JAX-compatible callable which takes a number of arguments equal to
-        the length of `args` and returns a scalar.
+        A JAX-compatible callable which takes a number of arguments equal to
+        the length of `args` and is expected to return a scalar.
     args : tuple of TensorExpression
         arguments passed to `fn` at evaluation time. Must share a single set
         of `index_symbols`.
@@ -625,16 +662,9 @@ class TensorFunction(TensorExpression):
     [`TensorExpression`][icrn.TensorExpression] : Abstract base class for
         tensor-valued expressions over indexed symbols.
     [`TensorLiteral`][icrn.TensorLiteral] : Wraps a scalar numeric value.
-    [`TensorSymbol`][icrn.symbols.TensorSymbol] : Indexed array-like symbol.
+    [`TensorSymbol`][icrn.TensorSymbol] : Indexed array-like symbol.
     [`RateConstant`][icrn.RateConstant] : A named rate constant, optionally
         indexed.
-
-    Examples
-    --------
-    ```python
-    # <TODO: e.g. relu_x = TensorFunction(jax.nn.relu, (x,)), used inside
-    # a MassActionReaction rate expression.>
-    ```
     """
 
     fn: Callable
@@ -682,14 +712,15 @@ def many_index_symbols(
     names: str, index_set: int = 0
 ) -> IndexSymbol | tuple[IndexSymbol]:
     """
-    Instanitate multiple index symbols with the same index sets at once.
+    Instantiate multiple index symbols with the same index sets at once.
 
     Parameters
     ----------
     names : str
         A single string with index symbol comma-separated names.
-    index_set : int
-        The upper limit of index sets for each index symbol.
+    index_set : int, optional
+        Size of each index set. ``0`` (the default) leaves the size
+        unspecified until solve time.
 
     Returns
     -------
@@ -709,12 +740,12 @@ def many_index_symbols(
 
 def many_species(names: str) -> Species | tuple[Species]:
     """
-    Instanitate multiple Species at once.
+    Instantiate multiple Species at once.
 
     Parameters
     ----------
     names : str
-        Single string with Species names comma-separated or space-separated.
+        Single string with Species names comma-separated.
 
     Returns
     -------
@@ -734,13 +765,12 @@ def many_species(names: str) -> Species | tuple[Species]:
 
 def many_rate_constants(names: str) -> RateConstant | tuple[RateConstant]:
     """
-    Instanitate multiple RateConstants at once.
+    Instantiate multiple RateConstants at once.
 
     Parameters
     ----------
     names : str
-        Single string with RateConstant names comma-separated or
-        space-separated.
+        Single string with RateConstant names comma-separated.
 
     Returns
     -------

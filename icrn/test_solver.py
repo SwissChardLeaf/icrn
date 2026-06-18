@@ -39,7 +39,6 @@ class TestSolveWellMixed(unittest.TestCase):
         rate_constant_vals = {k: jnp.array(1.0)}
         times = jnp.array([0, jnp.log(2), 1.0])
         dt = 0.005
-        key = None
         checkpoint_length = None
         reaction_solver = "RK4"
         mode = None
@@ -50,7 +49,6 @@ class TestSolveWellMixed(unittest.TestCase):
             rate_constant_vals,
             times,
             dt,
-            key,
             checkpoint_length,
             reaction_solver,
             mode,
@@ -71,7 +69,6 @@ class TestSolveWellMixed(unittest.TestCase):
         rate_constant_vals = {k: jnp.array(1.0)}
         times = jnp.array([0, jnp.log(2), 1.0])
         dt = 0.001
-        key = None
         checkpoint_length = None
         reaction_solver = "PatankarEuler"
         mode = None
@@ -82,7 +79,6 @@ class TestSolveWellMixed(unittest.TestCase):
             rate_constant_vals,
             times,
             dt,
-            key,
             checkpoint_length,
             reaction_solver,
             mode,
@@ -129,7 +125,6 @@ class TestSolveWellMixed(unittest.TestCase):
         rate_constant_vals = {k: jnp.array([1.0, 2.0])}
         times = jnp.array([0, jnp.log(2), 1.0])
         dt = 0.01
-        key = None
         checkpoint_length = None
         reaction_solver = "RK4"
         mode = None
@@ -140,7 +135,6 @@ class TestSolveWellMixed(unittest.TestCase):
             rate_constant_vals,
             times,
             dt,
-            key,
             checkpoint_length,
             reaction_solver,
             mode,
@@ -181,7 +175,6 @@ class TestSolveWellMixed(unittest.TestCase):
 
         times = jnp.array([0, 5, 10.0])
         dt = 0.01
-        key = None
         checkpoint_length = None
         reaction_solver = "RK4"
         mode = None
@@ -192,7 +185,6 @@ class TestSolveWellMixed(unittest.TestCase):
             rate_constant_vals,
             times,
             dt,
-            key,
             checkpoint_length,
             reaction_solver,
             mode,
@@ -232,7 +224,6 @@ class TestSolveWellMixed(unittest.TestCase):
 
         times = jnp.array([1.0])
         dt = 1e-5
-        key = None
         checkpoint_length = None
         reaction_solver = "Euler"
         mode = None
@@ -243,7 +234,6 @@ class TestSolveWellMixed(unittest.TestCase):
             rate_constant_vals,
             times,
             dt,
-            key,
             checkpoint_length,
             reaction_solver,
             mode,
@@ -351,14 +341,13 @@ class TestSolveWellMixed(unittest.TestCase):
 
         times = jnp.array([10.0])
         dt = 1e-4
-        key = None
         checkpoint_length = None
         reaction_solver = "Euler"
         mode = None
 
         batch_solve = jax.vmap(
             solve_well_mixed,
-            in_axes=(None, 0, None, None, None, None, None, None, None),
+            in_axes=(None, 0, None, None, None, None, None, None),
         )
         sim_concs = batch_solve(
             wta_rxns,
@@ -366,7 +355,6 @@ class TestSolveWellMixed(unittest.TestCase):
             rate_constant_vals,
             times,
             dt,
-            key,
             checkpoint_length,
             reaction_solver,
             mode,
@@ -534,7 +522,6 @@ class TestSolveReactionDiffusion(unittest.TestCase):
 
         times = jnp.array([5e3])
         dt = 1
-        key = None
         checkpoint_length = None
         reaction_solver = "RK4"
         mode = "relu"
@@ -558,7 +545,6 @@ class TestSolveReactionDiffusion(unittest.TestCase):
             dt,
             spatial_dims,
             dspaces,
-            key,
             checkpoint_length,
             reaction_solver,
             boundary_condition="periodic",
@@ -603,7 +589,6 @@ class TestSolveReactionDiffusion(unittest.TestCase):
 
         times = jnp.array([5e3])
         dt = 1
-        key = None
         checkpoint_length = None
         reaction_solver = "RK4"
         mode = "relu"
@@ -641,7 +626,6 @@ class TestSolveReactionDiffusion(unittest.TestCase):
             dt,
             spatial_dims,
             dspaces,
-            key,
             checkpoint_length,
             reaction_solver,
             boundary_condition="periodic",
@@ -688,7 +672,6 @@ class TestSolveReactionDiffusion(unittest.TestCase):
 
         spatial_dims = (100, 100)
         dspaces = (1.0, 1.0)
-        key = None
         mode = "relu"
         reaction_solver = "RK4"
         dt = 0.1
@@ -720,7 +703,6 @@ class TestSolveReactionDiffusion(unittest.TestCase):
             dt,
             spatial_dims,
             dspaces,
-            key,
             checkpoint_length,
             reaction_solver,
             boundary_condition="periodic",

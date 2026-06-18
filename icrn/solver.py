@@ -14,7 +14,6 @@ def solve_well_mixed(
     rate_constant_vals: dict[TensorSymbol, jnp.ndarray],
     times: Numeric,
     dt: Numeric,
-    key=None,
     checkpoint_length=None,
     reaction_solver="RK4",
     mode: str | None = None,
@@ -22,46 +21,47 @@ def solve_well_mixed(
 ):
     """Integrate a well-mixed reaction network as a system of ODEs.
 
+    Fast reactions are applied first, followed by the chosen reaction
+    integrator for the remaining network dynamics.
+
     Parameters
     ----------
     rxns : iterable of AbstractReaction or FastReaction
-        <TODO: the reaction network to integrate.>
+        FastReaction dynamics occur first, followed by the AbstractReaction
+        dynamics.
     conc_vals : dict[Species, jax.Array]
-        <TODO: initial concentrations, keyed by `Species`. Array shape
-        must match the species' index sets.>
+        Initial concentrations keyed by `Species`. The dimensions of each
+        array must match the species' index axes.
     rate_constant_vals : dict[TensorSymbol, jax.Array]
-        <TODO: numeric values for every `RateConstant` referenced in
-        `rxns`.>
+        Rate constants for the reactions. The dimensions of each array must
+        match the species' index axes.
     times : Numeric
-        <TODO: total integration time.>
+        The time points at which to evaluate the solution. The sequence must be
+        strictly increasing.
     dt : Numeric
-        <TODO: integrator step size.>
-    key : jax.random.PRNGKey, optional
-        <TODO: required only by stochastic integrators; ignored
-        otherwise.>
+        The time step size. Must be positive.
     checkpoint_length : int, optional
-        <TODO: trade memory for time when differentiating long
-        trajectories.>
+        The number of solver steps to checkpoint.
     reaction_solver : {"RK4", "Euler", "PatankarEuler", "MPE"}, optional
-        <TODO: integrator used for reaction dynamics.>
+        The method used to integrate the reaction dynamics.
     mode : str or None, optional
-        <TODO>
+        Must be one of "strict", "relu", or None.
+    pre_computed_state : dict[Species, jax.Array], optional
+        A pre-computed state where leading dimensions are the same length as the
+        time sequence and trailing dimensions are the same as the `conc_vals`
+        dimensions.
 
     Returns
     -------
     dict[Species, jax.Array]
-        <TODO: time-series of concentrations, with a leading time axis.>
-
-    Examples
-    --------
-    ```python
-    # <TODO: minimal exponential-decay example.>
-    ```
+        A time-series of concentrations, with a leading time axis followed by
+        index axes.
 
     See Also
     --------
     [`solve_reaction_diffusion`][icrn.solve_reaction_diffusion] : Spatial
         counterpart with diffusion.
+    [`solve_with_ops`][icrn.solve_with_ops] : Low-level operator driver.
     """
     ops = to_well_mixed_ops(rxns, reaction_solver, mode)
     return solve_with_ops(
@@ -70,7 +70,7 @@ def solve_well_mixed(
         non_state=rate_constant_vals,
         dt=dt,
         times=times,
-        key=key,
+        key=None,
         checkpoint_length=checkpoint_length,
         pre_computed_state=pre_computed_state,
     )
@@ -85,10 +85,9 @@ def solve_reaction_diffusion(
     dt: Numeric,
     spatial_dims: tuple[int],
     dspaces: tuple[float, ...],
-    key=None,
     checkpoint_length=None,
     reaction_solver="RK4",
-    boundary_condition="neumann",
+    boundary_condition="periodic",
     splitting="LieTrotter",
     spatial_rate_constants: bool = False,
     mode: str | None = None,
@@ -102,50 +101,54 @@ def solve_reaction_diffusion(
     Parameters
     ----------
     rxns : iterable of AbstractReaction or FastReaction
-        <TODO>
+        FastReaction dynamics occur first, followed by the AbstractReaction
+        dynamics.
     conc_vals : dict[Species, jax.Array]
-        <TODO: initial concentrations on the spatial grid; array shape
-        must include both the the spatial axes and the species' index axes.>
+        Initial concentrations on the spatial grid. The dimensions of the array
+        must match the spatial dimensions and the species' index axes, in
+        that order.
     rate_constant_vals : dict[TensorSymbol, jax.Array]
-        <TODO>
+        Rate constants for the reactions. The dimensions of the array must match
+        the species' index axes. If `spatial_rate_constants` is `True`, the
+        dimensions of the array must match the spatial dimensions and the
+        species' index axes, in that order.
     diffusion_constant_vals : dict[TensorSymbol, jax.Array]
-        <TODO: diffusion coefficient for each species, keyed by the same
-        symbols used to declare diffusion in `rxns`.>
+        Diffusion coefficients for the species. The dimensions of the array must
+        match the species' index axes.
     times : Numeric
-        <TODO>
+        The time points at which to evaluate the solution. The sequence must be
+        strictly increasing.
     dt : Numeric
-        <TODO>
+        The time step size. Must be positive.
     spatial_dims : tuple of int
-        <TODO: shape of the spatial grid, e.g. `(64, 64)`.>
+        Shape of the spatial grid, e.g. `(64, 64)`.
     dspaces : tuple of float
-        <TODO: grid spacing along each spatial axis; same length as
-        `spatial_dims`.>
-    key : jax.random.PRNGKey, optional
-        <TODO>
+        Grid spacing along each spatial axis. This mus be the same length as
+        `spatial_dims`.
     checkpoint_length : int, optional
-        <TODO>
+        The number of solver steps to checkpoint.
     reaction_solver : {"RK4", "Euler", "PatankarEuler", "MPE"}, optional
-        <TODO>
+        The method used to integrate the reaction dynamics.
+    boundary_condition : {"neumann", "dirichlet", "periodic"}, optional
+        The boundary condition to apply to the spatial grid.
     splitting : {"LieTrotter", "Strang"}, optional
-        <TODO: operator-splitting scheme combining reaction and diffusion
-        sub-steps.>
+        The operator-splitting scheme combining reaction and diffusion
+        sub-steps.
     spatial_rate_constants : bool, optional
-        <TODO: when `True`, rate constants vary in space and must be
-        supplied as full spatial arrays.>
+        When `True`, rate constants vary in space and must be supplied as full
+        spatial arrays.
     mode : str or None, optional
-        <TODO>
+        Must be one of "strict", "relu", or None.
+    pre_computed_state : dict[Species, jax.Array], optional
+        A pre-computed state where leading dimensions are the same length as the
+        time sequence and trailing dimensions are the same as the `conc_vals`
+        dimensions.
 
     Returns
     -------
     dict[Species, jax.Array]
-        <TODO: time-series of concentrations, with leading time
-        axis followed by spatial and index axes.>
-
-    Examples
-    --------
-    ```python
-    # <TODO: minimal Gray-Scott or Turing example.>
-    ```
+        A time-series of concentrations, with leading time axis followed by
+        spatial and index axes.
 
     See Also
     --------
@@ -168,7 +171,7 @@ def solve_reaction_diffusion(
         non_state=combined_vals,
         dt=dt,
         times=times,
-        key=key,
+        key=None,
         checkpoint_length=checkpoint_length,
         pre_computed_state=pre_computed_state,
     )
@@ -185,32 +188,46 @@ def solve_with_ops(
     checkpoint_length,
     pre_computed_state=None,
 ):
-    """Repeatedly apply a sequence of operators.
+    """Repeatedly apply a sequence of operators over a fixed time step.
 
-    todo
+    This is the low-level driver used by [`solve_well_mixed`]
+    [icrn.solve_well_mixed] and [`solve_reaction_diffusion`]
+    [icrn.solve_reaction_diffusion]. The `ops` sequence is built with
+    [`to_well_mixed_ops`][icrn.operator.to_well_mixed_ops]
+    or [`to_reaction_diffusion_ops`][icrn.operator.to_reaction_diffusion_ops]
+    and applied at every solver step; the trajectory is sampled at `times`.
 
     Parameters
     ----------
     ops : sequence
-        <TODO: sequence of operators to apply
+        Operators to apply in order at each integration step.
     state : dict[Species, jax.Array]
-        <TODO: initial state is updated by the operators.>
+        Initial concentrations keyed by `Species`. The operators update this
+        state at every step.
     non_state : Any
-        <TODO: auxiliary data (rate constants, diffusion constants, etc.)
-        passed through unchanged.>
+        Auxiliary data passed unchanged to each operator on every step. For
+        well-mixed simulations this is `rate_constant_vals`; for
+        reaction-diffusion it is
+        `(rate_constant_vals, diffusion_constant_vals)`.
     dt : Numeric
-        <TODO>
+        The time step size. Must be positive.
     times : Numeric
-        <TODO>
+        The time points at which to evaluate the solution. The sequence must be
+        strictly increasing.
     key : jax.random.PRNGKey or None
-        <TODO>
+        A key for the random number generator. Only required by operators.
     checkpoint_length : int or None
-        <TODO>
+        The number of solver steps to checkpoint.
+    pre_computed_state : dict[Species, jax.Array], optional
+        A pre-computed state where leading dimensions are the same length as the
+        time sequence and trailing dimensions are the same as the `state`
+        dimensions.
 
     Returns
     -------
     dict[Species, jax.Array]
-        <TODO: trajectory.>
+        A time-series of concentrations, with a leading time axis followed by
+        the trailing axes of the corresponding entries in `state`.
 
     See Also
     --------

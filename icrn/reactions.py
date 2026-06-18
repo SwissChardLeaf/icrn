@@ -136,6 +136,34 @@ class AbstractReaction(ABC):
 
     @abstractmethod
     def flux_pairs(self, split="uniform"):
+        """Return a callable that evaluates production and destruction pairs.
+
+        The returned function splits each species' net flux into non-negative
+        production and destruction terms, and attributes the production to the
+        reactant species that caused it. This split is used by the modified
+        Patankar method.
+
+        Parameters
+        ----------
+        split : {"uniform", "stoichiometry"}, optional
+            Strategy used to distribute each product's production across the
+            reactants. See
+            [`_split_weights`][icrn._internal._mass_action._split_weights].
+            Defaults to ``"uniform"``.
+
+        Returns
+        -------
+        callable
+            A function ``f(state, non_state)`` returning a tuple
+            ``(destruction, pairs, explicit)`` where
+            - ``destruction`` maps a base species to its destruction
+              rate (used to build the matrix diagonal),
+            - ``pairs`` maps an ordered ``(product, reactant)`` pair of base
+              species to the production of the product attributed to that
+              reactant (used to build the off-diagonal entries),
+            - ``explicit`` maps a base species to production with no reactant
+              source (a sourceless influx), to be added explicitly.
+        """
         pass
 
     def to_dict(self) -> dict:
@@ -469,11 +497,10 @@ class FastReaction:
     Parameters
     ----------
     reactants : Complex or Species
-        <TODO: must share a single set of `index_symbols` across all
-        reactant species.>
+        All reactants must be indexed by the same tuples.
     products : Complex or Species or 0
-        <TODO: each product's index symbols must be a subset of the
-        reactants'. `0` denotes a sink (no products).>
+        Each product's index symbols must be a subset of the reactants' index
+        symbols. `0` denotes a sink (no products).
 
     Attributes
     ----------
