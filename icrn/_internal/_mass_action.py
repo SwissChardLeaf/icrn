@@ -340,9 +340,9 @@ def mass_action_flux_pairs_f(
         Rate expression of the reaction.
     split : {"uniform", "stoichiometry"}, optional
         Strategy used to distribute each product's production across the
-        reactants. See
-        [`_split_weights`][icrn._internal._mass_action._split_weights].
-        Defaults to ``"uniform"``.
+        reactants: ``"uniform"`` weights every distinct reactant equally,
+        and ``"stoichiometry"`` weights each reactant by its stoichiometric
+        coefficient. Defaults to ``"uniform"``.
 
     Returns
     -------

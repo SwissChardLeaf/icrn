@@ -190,12 +190,12 @@ def solve_with_ops(
 ):
     """Repeatedly apply a sequence of operators over a fixed time step.
 
-    This is the low-level driver used by [`solve_well_mixed`]
-    [icrn.solve_well_mixed] and [`solve_reaction_diffusion`]
-    [icrn.solve_reaction_diffusion]. The `ops` sequence is built with
-    [`to_well_mixed_ops`][icrn.operator.to_well_mixed_ops]
-    or [`to_reaction_diffusion_ops`][icrn.operator.to_reaction_diffusion_ops]
-    and applied at every solver step; the trajectory is sampled at `times`.
+    This is the low-level driver used by
+    [`solve_well_mixed`][icrn.solve_well_mixed]
+    and [`solve_reaction_diffusion`][icrn.solve_reaction_diffusion]. The `ops`
+    sequence is built with ``to_well_mixed_ops`` or
+    ``to_reaction_diffusion_ops`` and applied at every solver step; the
+    trajectory is sampled at `times`.
 
     Parameters
     ----------
