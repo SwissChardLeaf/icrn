@@ -16,6 +16,8 @@
         <link rel="prev" href="../tutorials/extending_abstract_reactions/">
       
       
+        <link rel="next" href="../changelog/">
+      
       
         
       
@@ -294,6 +296,25 @@
     
   
   Developer Notes
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
 
       </a>
     </li>
@@ -760,6 +781,67 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#changelog-bot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changelog bot
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Changelog bot">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-it-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it does
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dry-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dry run
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skipping-the-bot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Skipping the bot
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#publishing-to-pypi" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -774,6 +856,33 @@
   
 </nav>
       
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -856,6 +965,67 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#changelog-bot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changelog bot
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Changelog bot">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-it-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it does
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dry-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dry run
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skipping-the-bot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Skipping the bot
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -977,19 +1147,111 @@ publishes to <a href="https://swisschardleaf.github.io/icrn/">GitHub Pages</a>.<
 <td><code>mkdocs build --strict</code>; deploys to GitHub Pages on <code>main</code></td>
 </tr>
 <tr>
+<td><code>changelog-bot.yml</code></td>
+<td>push to <code>main</code></td>
+<td>Cursor agent updates <code>CHANGELOG.md</code>; may push a follow-up bot commit</td>
+</tr>
+<tr>
 <td><code>release.yml</code></td>
 <td>push to <code>main</code></td>
 <td>If <code>__version__</code> was bumped: tests, then build, upload to PyPI, and create the matching <code>vX.Y.Z</code> tag + GitHub release</td>
 </tr>
 </tbody>
 </table>
+<h2 id="changelog-bot">Changelog bot<a class="headerlink" href="#changelog-bot" title="Permanent link">&para;</a></h2>
+<p>On every push to <code>main</code>, the <strong>Changelog bot</strong> workflow
+(<code>.github/workflows/changelog-bot.yml</code>) runs a Cursor agent that maintains
+<a href="../changelog/">CHANGELOG.md</a> in <a href="https://keepachangelog.com/">Keep a Changelog</a>
+format.</p>
+<h3 id="what-it-does">What it does<a class="headerlink" href="#what-it-does" title="Permanent link">&para;</a></h3>
+<p><strong>Ordinary merges</strong> (no version bump):</p>
+<ul>
+<li>Reads the latest commit on <code>main</code>.</li>
+<li>Adds a concise bullet under <strong><code>[Unreleased]</code></strong> when the change is
+  user-facing (skips CI-only or formatting-only work).</li>
+<li>Pushes a follow-up commit authored by <code>github-actions[bot]</code>, for example:
+  <code>docs(changelog-bot): update changelog for abc1234 [skip changelog]</code>.</li>
+</ul>
+<p><strong>Release merges</strong> (<code>__version__</code> bumped in <code>icrn/__init__.py</code>):</p>
+<ul>
+<li>Promotes <strong><code>[Unreleased]</code></strong> to <strong><code>## [X.Y.Z] - YYYY-MM-DD</code></strong>.</li>
+<li>Opens a fresh empty <strong><code>[Unreleased]</code></strong> section at the top.</li>
+<li>Pushes a follow-up commit such as:
+  <code>docs(changelog-bot): release changelog for vX.Y.Z [skip changelog]</code>.</li>
+</ul>
+<p>The bot never rewrites your original merge commit. PyPI publishing and git
+tagging still come from <code>release.yml</code> on the merge commit itself; the bot's
+changelog commit may land one commit later on <code>main</code>.</p>
+<h3 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h3>
+<p>The workflow requires a repository secret:</p>
+<table>
+<thead>
+<tr>
+<th>Secret</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CURSOR_API_KEY</code></td>
+<td>User API key from the <strong>API</strong> section of the <a href="https://cursor.com/dashboard">Cursor dashboard</a>, or a <a href="https://cursor.com/docs/account/enterprise/service-accounts">team service account</a> key (Enterprise)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dry-run">Dry run<a class="headerlink" href="#dry-run" title="Permanent link">&para;</a></h3>
+<p>Test version detection and the agent prompt without calling Cursor or changing
+files. From the repo root:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>python<span class="w"> </span>.github/scripts/update_changelog.py<span class="w"> </span>--dry-run
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># or</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="nv">DRY_RUN</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>python<span class="w"> </span>.github/scripts/update_changelog.py
+</code></pre></div>
+<p>Dry run prints commit metadata, <code>is_release</code>, and the full prompt to the
+terminal. It does not require <code>CURSOR_API_KEY</code> or <code>cursor-sdk</code>. To exercise
+release mode, make a test commit that bumps <code>__version__</code> in
+<code>icrn/__init__.py</code> relative to its parent commit.</p>
+<p>Automated tests live in <code>.github/scripts/test_update_changelog.py</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>python<span class="w"> </span>.github/scripts/test_update_changelog.py<span class="w"> </span>-v
+</code></pre></div>
+<p>They run in CI alongside the main test suite.</p>
+<h3 id="skipping-the-bot">Skipping the bot<a class="headerlink" href="#skipping-the-bot" title="Permanent link">&para;</a></h3>
+<p>Include <strong><code>[skip changelog]</code></strong> anywhere in the <strong>head commit message</strong> of the
+push to <code>main</code>. The workflow checks that tag and exits without running the
+agent.</p>
+<p><strong>Direct push:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs: fix typo in README [skip changelog]&quot;</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>main
+</code></pre></div>
+<p><strong>Squash merge (GitHub UI):</strong> add <code>[skip changelog]</code> to the squash commit
+message before confirming the merge.</p>
+<p><strong>Create a merge commit (GitHub UI):</strong> edit the merge commit message on the
+confirmation screen and add <code>[skip changelog]</code>. If you already merged and
+forgot, the bot may still run on that push; use a follow-up commit with
+<code>[skip changelog]</code> only when you need to land other work without triggering
+the bot again.</p>
+<p><strong>Rebase merge:</strong> ensure at least one commit on the branch (typically the
+last) includes <code>[skip changelog]</code> before merging, or edit the resulting merge
+commit message if your merge strategy produces one.</p>
+<p>Use this when:</p>
+<ul>
+<li>The change should not appear in the changelog (docs-only typos, CI tweaks,
+  mechanical refactors you do not want summarized).</li>
+<li>You are editing <code>CHANGELOG.md</code> manually and do not want the agent to adjust
+  it on that push.</li>
+<li>The workflow is misbehaving and you need a one-off merge without bot
+  involvement.</li>
+</ul>
+<p>Bot commits always include <code>[skip changelog]</code> in their own messages so they
+do not trigger another bot run.</p>
 <h2 id="publishing-to-pypi">Publishing to PyPI<a class="headerlink" href="#publishing-to-pypi" title="Permanent link">&para;</a></h2>
 <p>Releases are continuously deployed from <code>main</code>. There is no manual tagging step.</p>
 <ol>
-<li>In your PR, bump <code>__version__</code> in <code>icrn/__init__.py</code> to the new
-   <a href="https://semver.org/">semantic version</a> and move the relevant
-   <code>CHANGELOG.md</code> entries from <strong>Unreleased</strong> into a section for the new
-   version.</li>
+<li>Merge feature work to <code>main</code> as usual. The changelog bot accumulates
+   user-facing notes under <strong><code>[Unreleased]</code></strong> (unless you skip it for a given
+   push; see <a href="#skipping-the-bot">Skipping the bot</a>).</li>
+<li>When ready to release, open a PR that bumps <code>__version__</code> in
+   <code>icrn/__init__.py</code> to the new <a href="https://semver.org/">semantic version</a>.
+   You do not need to move changelog entries by hand—the bot performs the
+   release ritual when that merge lands.</li>
 <li>Merge the PR into <code>main</code>.</li>
 <li>The <code>release.yml</code> workflow compares <code>__version__</code> against existing
    <code>vX.Y.Z</code> tags:</li>
