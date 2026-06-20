@@ -98,7 +98,7 @@ publishes to [GitHub Pages](https://swisschardleaf.github.io/icrn/).
 
 On every push to `main`, the **Changelog bot** workflow
 (`.github/workflows/changelog-bot.yml`) runs a Cursor agent that maintains
-[CHANGELOG.md](../CHANGELOG.md) in [Keep a Changelog](https://keepachangelog.com/)
+[CHANGELOG.md](changelog.md) in [Keep a Changelog](https://keepachangelog.com/)
 format.
 
 ### What it does

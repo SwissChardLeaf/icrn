@@ -20,8 +20,7 @@ conditions can be **trained**.
 - **[API reference](api.md)** — the full public surface of `icrn`.
 - **[Developer notes](developer_notes.md)** — layout, tests, and tooling for
   library contributors.
-- **[Changelog](https://github.com/SwissChardLeaf/icrn/blob/main/CHANGELOG.md)**
-  on GitHub.
+- **[Changelog](changelog.md)** — release history.
 
 ## Install
 
