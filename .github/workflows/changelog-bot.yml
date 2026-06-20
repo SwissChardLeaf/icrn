@@ -1,0 +1,59 @@
+name: Changelog bot
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: changelog-bot-main
+  cancel-in-progress: false
+
+jobs:
+  update-changelog:
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      !contains(github.event.head_commit.message, '[skip changelog]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Cursor SDK
+        run: python -m pip install --upgrade pip cursor-sdk
+
+      - name: Update CHANGELOG.md
+        id: changelog
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: python .github/scripts/update_changelog.py
+
+      - name: Commit and push changelog update
+        env:
+          IS_RELEASE: ${{ steps.changelog.outputs.is_release }}
+          RELEASE_VERSION: ${{ steps.changelog.outputs.version }}
+        run: |
+          if git diff --quiet CHANGELOG.md; then
+            echo "No changelog changes needed."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+
+          if [ "$IS_RELEASE" = "true" ]; then
+            git commit -m "docs(changelog-bot): release changelog for v${RELEASE_VERSION} [skip changelog]"
+          else
+            git commit -m "docs(changelog-bot): update changelog for ${GITHUB_SHA:0:7} [skip changelog]"
+          fi
+
+          git push
