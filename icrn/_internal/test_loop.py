@@ -136,7 +136,7 @@ def _read_peak_gpu_bytes():
 
 
 def _backward_worker_gpu(checkpoint_length, n, steps, seed, queue):
-    """Subprocess target: run one GPU backward pass and report peak device memory."""
+    """Subprocess target: GPU backward pass; report peak device memory."""
     device = jax.devices("gpu")[0]
     loss, W = _make_matmul_loss(
         checkpoint_length, n, steps, seed=seed, device=device
@@ -147,7 +147,7 @@ def _backward_worker_gpu(checkpoint_length, n, steps, seed, queue):
 
 
 def _backward_peak_gpu_bytes(checkpoint_length, n, steps, seed=0):
-    """Peak GPU memory (bytes) for ``jax.grad(loss)(W)`` in an isolated subprocess."""
+    """Peak GPU bytes for ``jax.grad(loss)(W)`` in an isolated subprocess."""
     queue = _MP_CONTEXT.Queue()
     process = _MP_CONTEXT.Process(
         target=_backward_worker_gpu,
@@ -157,8 +157,7 @@ def _backward_peak_gpu_bytes(checkpoint_length, n, steps, seed=0):
     process.join()
     if process.exitcode != 0:
         raise RuntimeError(
-            "GPU backward worker failed with exit code "
-            f"{process.exitcode}"
+            f"GPU backward worker failed with exit code {process.exitcode}"
         )
     return queue.get()
 
@@ -179,8 +178,7 @@ def _backward_peak_rss_bytes(checkpoint_length, n, steps, seed=0):
     process.join()
     if process.exitcode != 0:
         raise RuntimeError(
-            "backward worker failed with exit code "
-            f"{process.exitcode}"
+            f"backward worker failed with exit code {process.exitcode}"
         )
     return queue.get()
 
@@ -655,15 +653,13 @@ class TestLoopCheckpointMemoryCPU(unittest.TestCase):
         "peak RSS measurement requires /proc/self/status",
     )
     def test_checkpoint_length_reduces_backward_peak_memory(self):
-        """Segmented ``jax.checkpoint`` uses less peak RSS than no checkpoint."""
+        """``jax.checkpoint`` segments use less peak RSS than no checkpoint."""
         n = 256
         steps = 350
         checkpoint_length = 8
 
         peak_none = _backward_peak_rss_bytes(None, n, steps)
-        peak_ckpt = _backward_peak_rss_bytes(
-            checkpoint_length, n, steps
-        )
+        peak_ckpt = _backward_peak_rss_bytes(checkpoint_length, n, steps)
 
         self.assertLess(peak_ckpt, peak_none)
         self.assertLess(peak_ckpt, 0.7 * peak_none)
@@ -677,15 +673,13 @@ class TestLoopCheckpointMemoryCPU(unittest.TestCase):
         "peak RSS measurement requires /proc/self/status",
     )
     def test_checkpoint_length_large_problem_fits_with_checkpoints(self):
-        """Large problem: checkpointed backward uses much less RSS (manual/CI opt-in)."""
+        """Large problem: checkpointed backward uses much less RSS (opt-in)."""
         n = 512
         steps = 500
         checkpoint_length = 8
 
         peak_none = _backward_peak_rss_bytes(None, n, steps)
-        peak_ckpt = _backward_peak_rss_bytes(
-            checkpoint_length, n, steps
-        )
+        peak_ckpt = _backward_peak_rss_bytes(checkpoint_length, n, steps)
 
         self.assertLess(peak_ckpt, peak_none)
         self.assertLess(peak_ckpt, 0.5 * peak_none)
@@ -730,9 +724,7 @@ class TestLoopCheckpointMemoryGPU(unittest.TestCase):
         checkpoint_length = 8
 
         peak_none = _backward_peak_gpu_bytes(None, n, steps)
-        peak_ckpt = _backward_peak_gpu_bytes(
-            checkpoint_length, n, steps
-        )
+        peak_ckpt = _backward_peak_gpu_bytes(checkpoint_length, n, steps)
 
         self.assertLess(peak_ckpt, peak_none)
         self.assertLess(peak_ckpt, 0.7 * peak_none)
@@ -746,15 +738,13 @@ class TestLoopCheckpointMemoryGPU(unittest.TestCase):
         "GPU device memory_stats peak_bytes_in_use is not available",
     )
     def test_checkpoint_length_large_problem_fits_with_checkpoints(self):
-        """Large GPU problem: checkpointed backward uses much less device memory."""
+        """Large GPU problem: checkpointed backward uses less device memory."""
         n = 512
         steps = 500
         checkpoint_length = 8
 
         peak_none = _backward_peak_gpu_bytes(None, n, steps)
-        peak_ckpt = _backward_peak_gpu_bytes(
-            checkpoint_length, n, steps
-        )
+        peak_ckpt = _backward_peak_gpu_bytes(checkpoint_length, n, steps)
 
         self.assertLess(peak_ckpt, peak_none)
         self.assertLess(peak_ckpt, 0.5 * peak_none)

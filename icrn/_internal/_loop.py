@@ -1,13 +1,14 @@
 import jax.numpy as jnp
 import jax.tree as jax_tree
 import numpy as np
-from jax import lax, checkpoint
+from jax import checkpoint, lax
 
 from ._interpolation import _linear_interpolation
 
 # general purpuse, quite agnositic scan function
 # scan function returns key, state pair even if no operators are
 # stochastic
+
 
 def _scan_segment(
     scan_f, key, state, non_state, dt, length, segment_pre_computed_state=None
