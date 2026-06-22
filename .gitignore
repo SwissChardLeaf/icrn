@@ -24,6 +24,9 @@ venv/
 env/
 ENV/
 
+# uv (local lockfile; library deps are defined in pyproject.toml)
+uv.lock
+
 # Editor / OS
 .DS_Store
 Thumbs.db
