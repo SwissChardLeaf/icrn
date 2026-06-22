@@ -1,7 +1,10 @@
+import multiprocessing as mp
+import os
 import unittest
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 
 from ..utils.dict_utils import dict_allclose
 from ._loop import (
@@ -10,6 +13,174 @@ from ._loop import (
     _split_pre_computed_state_segments,
     _times_to_steps,
 )
+
+# Helpers for checkpoint memory tests (TestLoopCheckpointMemoryCPU/GPU). Each
+# backward pass runs in a fresh subprocess so peak memory reflects that run
+# alone, not prior allocations from comparing unchecked vs checkpointed modes.
+
+GPU_AVAILABLE = any(device.platform == "gpu" for device in jax.devices())
+
+_HAS_PROC_STATUS = os.path.isfile("/proc/self/status")
+# Use spawn (not fork) so child processes start with a clean address space.
+# Fork would inherit the parent's JAX allocations and skew memory comparisons.
+_MP_CONTEXT = mp.get_context("spawn")
+
+
+def _cpu_device():
+    """Return the CPU device for checkpoint memory tests."""
+    return jax.devices("cpu")[0]
+
+
+def _gpu_memory_stats_supported():
+    """True when GPU ``memory_stats()`` exposes ``peak_bytes_in_use``."""
+    if not GPU_AVAILABLE:
+        return False
+    stats = jax.devices("gpu")[0].memory_stats()
+    return isinstance(stats, dict) and "peak_bytes_in_use" in stats
+
+
+def _matmul_step(key_state, non_state, dt):
+    """One solver step: ``tanh(W @ x)`` on a 2D state.
+
+    Matmul + nonlinearity makes reverse mode retain many scan intermediates
+    when checkpointing is disabled, which is what the memory tests exercise.
+    """
+    key, state = key_state
+    x = state["A"]
+    y = jnp.tanh(non_state["W"] @ x)
+    return key, state | {"A": y}
+
+
+def _make_matmul_loss(checkpoint_length, n, steps, seed=0, device=None):
+    """Build a scalar loss through ``_loop_with_checkpointing``.
+
+    Runs ``steps`` fixed steps (``dt=0.01``, single output time at the end).
+    ``checkpoint_length=None`` uses one uncheckpointed scan; an integer splits
+    the trajectory and wraps each segment with ``jax.checkpoint``.
+
+    Parameters
+    ----------
+    device : jax.Device, optional
+        When set, places the initial state and weight matrix on this device
+        (CPU tests use ``_cpu_device()``, GPU tests use a GPU device).
+
+    Returns
+    -------
+    loss : callable
+        Maps the weight matrix ``W`` to a scalar sum of the final state.
+    W : jax.Array
+        Initial weight matrix for ``jax.grad``.
+    """
+    key = jax.random.key(seed)
+    state = {"A": jnp.zeros((n, n))}
+    times = np.array([steps * 0.01])
+    dt = 0.01
+
+    W = jax.random.normal(key, (n, n)) * 0.01
+    if device is not None:
+        state = jax.device_put(state, device)
+        W = jax.device_put(W, device)
+
+    def loss(W):
+        out = _loop_with_checkpointing(
+            _matmul_step,
+            times,
+            key,
+            state,
+            {"W": W},
+            dt,
+            checkpoint_length=checkpoint_length,
+        )
+        return out["A"][-1].sum()
+
+    return loss, W
+
+
+def _read_peak_rss_bytes():
+    """Return peak resident set size (bytes) for the current process.
+
+    Reads ``VmHWM`` from ``/proc/self/status`` (Linux). Only available when
+    ``_HAS_PROC_STATUS`` is true.
+    """
+    with open("/proc/self/status") as status_file:
+        for line in status_file:
+            if line.startswith("VmHWM:"):
+                return int(line.split()[1]) * 1024
+    raise RuntimeError("VmHWM not found in /proc/self/status")
+
+
+def _backward_worker(checkpoint_length, n, steps, seed, queue):
+    """Subprocess target: run one CPU backward pass and report peak RSS."""
+    import gc
+
+    cpu = _cpu_device()
+    with jax.default_device(cpu):
+        loss, W = _make_matmul_loss(
+            checkpoint_length, n, steps, seed=seed, device=cpu
+        )
+        grad = jax.grad(loss)(W)
+        jax.block_until_ready(grad)
+    gc.collect()
+    queue.put(_read_peak_rss_bytes())
+
+
+def _read_peak_gpu_bytes():
+    """Return peak GPU memory use (bytes) for the current process.
+
+    Uses ``peak_bytes_in_use`` from the first GPU device's ``memory_stats()``.
+    """
+    stats = jax.devices("gpu")[0].memory_stats()
+    if not isinstance(stats, dict) or "peak_bytes_in_use" not in stats:
+        raise RuntimeError("GPU peak memory stats are not available")
+    return stats["peak_bytes_in_use"]
+
+
+def _backward_worker_gpu(checkpoint_length, n, steps, seed, queue):
+    """Subprocess target: GPU backward pass; report peak device memory."""
+    device = jax.devices("gpu")[0]
+    loss, W = _make_matmul_loss(
+        checkpoint_length, n, steps, seed=seed, device=device
+    )
+    grad = jax.grad(loss)(W)
+    jax.block_until_ready(grad)
+    queue.put(_read_peak_gpu_bytes())
+
+
+def _backward_peak_gpu_bytes(checkpoint_length, n, steps, seed=0):
+    """Peak GPU bytes for ``jax.grad(loss)(W)`` in an isolated subprocess."""
+    queue = _MP_CONTEXT.Queue()
+    process = _MP_CONTEXT.Process(
+        target=_backward_worker_gpu,
+        args=(checkpoint_length, n, steps, seed, queue),
+    )
+    process.start()
+    process.join()
+    if process.exitcode != 0:
+        raise RuntimeError(
+            f"GPU backward worker failed with exit code {process.exitcode}"
+        )
+    return queue.get()
+
+
+def _backward_peak_rss_bytes(checkpoint_length, n, steps, seed=0):
+    """Peak RSS (bytes) for ``jax.grad(loss)(W)`` in an isolated subprocess.
+
+    Spawns a new process via ``_MP_CONTEXT`` (spawn), runs the backward pass,
+    and returns that process's high-water-mark RSS. Isolation keeps unchecked
+    and checkpointed measurements comparable.
+    """
+    queue = _MP_CONTEXT.Queue()
+    process = _MP_CONTEXT.Process(
+        target=_backward_worker,
+        args=(checkpoint_length, n, steps, seed, queue),
+    )
+    process.start()
+    process.join()
+    if process.exitcode != 0:
+        raise RuntimeError(
+            f"backward worker failed with exit code {process.exitcode}"
+        )
+    return queue.get()
 
 
 class TestTimesToSteps(unittest.TestCase):
@@ -446,3 +617,135 @@ class TestLoopWithCheckpointing(unittest.TestCase):
         )
 
         self.assertTrue(dict_allclose(interpolated_hist, target_hist))
+
+
+class TestLoopCheckpointMemoryCPU(unittest.TestCase):
+    """CPU tests: ``checkpoint_length`` lowers backward-pass host RSS.
+
+    Arrays are placed on the CPU explicitly (via ``jax.default_device``) so
+    these tests still measure host RSS when a GPU is available. Peak RSS
+    comparisons run each backward pass in a fresh subprocess (see module
+    helpers above) because ``VmHWM`` is cumulative for the lifetime of a
+    process.
+    """
+
+    def test_checkpoint_length_grad_matches_no_checkpoint(self):
+        """Checkpointing must not change reverse-mode gradients on CPU."""
+        cpu = _cpu_device()
+        n = 128
+        steps = 200
+        with jax.default_device(cpu):
+            loss_none, W = _make_matmul_loss(None, n, steps, device=cpu)
+            loss_ckpt, _ = _make_matmul_loss(8, n, steps, device=cpu)
+
+            grad_none = jax.grad(loss_none)(W)
+            grad_ckpt = jax.grad(loss_ckpt)(W)
+            jax.block_until_ready((grad_none, grad_ckpt))
+
+        self.assertEqual(grad_none.device, cpu)
+        self.assertEqual(grad_ckpt.device, cpu)
+        self.assertTrue(
+            jnp.allclose(grad_none, grad_ckpt, rtol=1e-4, atol=1e-4)
+        )
+
+    @unittest.skipUnless(
+        _HAS_PROC_STATUS,
+        "peak RSS measurement requires /proc/self/status",
+    )
+    def test_checkpoint_length_reduces_backward_peak_memory(self):
+        """``jax.checkpoint`` segments use less peak RSS than no checkpoint."""
+        n = 256
+        steps = 350
+        checkpoint_length = 8
+
+        peak_none = _backward_peak_rss_bytes(None, n, steps)
+        peak_ckpt = _backward_peak_rss_bytes(checkpoint_length, n, steps)
+
+        self.assertLess(peak_ckpt, peak_none)
+        self.assertLess(peak_ckpt, 0.7 * peak_none)
+
+    @unittest.skipUnless(
+        os.environ.get("ICRN_MEMORY_STRESS_TEST"),
+        "set ICRN_MEMORY_STRESS_TEST=1 to run",
+    )
+    @unittest.skipUnless(
+        _HAS_PROC_STATUS,
+        "peak RSS measurement requires /proc/self/status",
+    )
+    def test_checkpoint_length_large_problem_fits_with_checkpoints(self):
+        """Large problem: checkpointed backward uses much less RSS (opt-in)."""
+        n = 512
+        steps = 500
+        checkpoint_length = 8
+
+        peak_none = _backward_peak_rss_bytes(None, n, steps)
+        peak_ckpt = _backward_peak_rss_bytes(checkpoint_length, n, steps)
+
+        self.assertLess(peak_ckpt, peak_none)
+        self.assertLess(peak_ckpt, 0.5 * peak_none)
+        self.assertGreater(peak_none - peak_ckpt, 500 * 1024 * 1024)
+
+
+@unittest.skipUnless(GPU_AVAILABLE, "no GPU available")
+class TestLoopCheckpointMemoryGPU(unittest.TestCase):
+    """GPU tests: ``checkpoint_length`` lowers backward-pass device memory.
+
+    Mirrors ``TestLoopCheckpointMemoryCPU`` but places arrays on the GPU and
+    reads ``peak_bytes_in_use`` from ``device.memory_stats()`` in isolated
+    subprocesses.
+    """
+
+    def test_checkpoint_length_grad_matches_no_checkpoint(self):
+        """Checkpointing must not change reverse-mode gradients on GPU."""
+        device = jax.devices("gpu")[0]
+        n = 128
+        steps = 200
+        loss_none, W = _make_matmul_loss(None, n, steps, device=device)
+        loss_ckpt, _ = _make_matmul_loss(8, n, steps, device=device)
+
+        grad_none = jax.grad(loss_none)(W)
+        grad_ckpt = jax.grad(loss_ckpt)(W)
+        jax.block_until_ready((grad_none, grad_ckpt))
+
+        self.assertEqual(grad_none.device, device)
+        self.assertEqual(grad_ckpt.device, device)
+        self.assertTrue(
+            jnp.allclose(grad_none, grad_ckpt, rtol=1e-4, atol=1e-4)
+        )
+
+    @unittest.skipUnless(
+        _gpu_memory_stats_supported(),
+        "GPU device memory_stats peak_bytes_in_use is not available",
+    )
+    def test_checkpoint_length_reduces_backward_peak_memory(self):
+        """Segmented ``jax.checkpoint`` uses less peak GPU memory."""
+        n = 256
+        steps = 350
+        checkpoint_length = 8
+
+        peak_none = _backward_peak_gpu_bytes(None, n, steps)
+        peak_ckpt = _backward_peak_gpu_bytes(checkpoint_length, n, steps)
+
+        self.assertLess(peak_ckpt, peak_none)
+        self.assertLess(peak_ckpt, 0.7 * peak_none)
+
+    @unittest.skipUnless(
+        os.environ.get("ICRN_MEMORY_STRESS_TEST"),
+        "set ICRN_MEMORY_STRESS_TEST=1 to run",
+    )
+    @unittest.skipUnless(
+        _gpu_memory_stats_supported(),
+        "GPU device memory_stats peak_bytes_in_use is not available",
+    )
+    def test_checkpoint_length_large_problem_fits_with_checkpoints(self):
+        """Large GPU problem: checkpointed backward uses less device memory."""
+        n = 512
+        steps = 500
+        checkpoint_length = 8
+
+        peak_none = _backward_peak_gpu_bytes(None, n, steps)
+        peak_ckpt = _backward_peak_gpu_bytes(checkpoint_length, n, steps)
+
+        self.assertLess(peak_ckpt, peak_none)
+        self.assertLess(peak_ckpt, 0.5 * peak_none)
+        self.assertGreater(peak_none - peak_ckpt, 500 * 1024 * 1024)

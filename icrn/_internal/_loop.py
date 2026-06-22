@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 import jax.tree as jax_tree
 import numpy as np
-from jax import lax
+from jax import checkpoint, lax
 
 from ._interpolation import _linear_interpolation
 
@@ -266,9 +266,9 @@ def _loop_with_checkpointing(
 
     Runs the dynamics in contiguous segments of `checkpoint_length` steps,
     scanning each segment with `_scan_segment` and linearly interpolating the
-    resulting history onto the requested `times`. Breaking the trajectory into
-    segments bounds the memory retained for reverse-mode differentiation
-    (gradient checkpointing).
+    resulting history onto the requested `times`. When `checkpoint_length` is
+    set, each segment scan is wrapped with ``jax.checkpoint`` so reverse-mode
+    differentiation rematerializes segment internals instead of storing them.
 
     Parameters
     ----------
@@ -288,8 +288,10 @@ def _loop_with_checkpointing(
     dt : float
         Solver step size.
     checkpoint_length : int, optional
-        Number of steps per segment. When `None`, a single segment spanning
-        the whole trajectory is used (`ceil(times[-1] / dt) + 1` steps).
+        Number of steps per segment. When set, each segment is wrapped with
+        ``jax.checkpoint`` for gradient checkpointing. When `None`, a single
+        segment spanning the whole trajectory is used
+        (`ceil(times[-1] / dt) + 1` steps) with no checkpointing.
     pre_computed_state : dict, optional
         Externally supplied trajectory for a subset of species, injected during
         the scan so the dynamics see it while the species itself follows the
@@ -317,8 +319,15 @@ def _loop_with_checkpointing(
                     f"leading axis {leaf.shape[0]}"
                 )
 
+    use_gradient_checkpoint = checkpoint_length is not None
     if checkpoint_length is None:
         checkpoint_length = max_step + 1
+
+    scan_segment = (
+        checkpoint(_scan_segment, static_argnums=(0, 5))
+        if use_gradient_checkpoint
+        else _scan_segment
+    )
 
     interpolated_hist = []
 
@@ -351,14 +360,14 @@ def _loop_with_checkpointing(
         else:
             scan_pre_computed_state = None
 
-        (key, state), hist = _scan_segment(
+        (key, state), hist = scan_segment(
             step_f,
             key,
             state,
             non_state,
             dt,
-            length=checkpoint_length,
-            segment_pre_computed_state=scan_pre_computed_state,
+            checkpoint_length,
+            scan_pre_computed_state,
         )
 
         if segment_pre_computed_state is not None:
