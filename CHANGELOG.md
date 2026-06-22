@@ -7,3 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 for public releases.
 
 ## [Unreleased]
+
+## [0.5.1] - 2026-06-22
+
+### Fixed
+
+- Apply `jax.checkpoint` to each segment when `checkpoint_length` is set in `_loop_with_checkpointing`, so gradient checkpointing reduces reverse-mode memory as intended instead of only splitting the scan.
