@@ -285,6 +285,25 @@
   
   
     <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
       <a href="../developer_notes/" class="md-tabs__link">
         
   
@@ -664,6 +683,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../developer_notes/" class="md-nav__link">
         
   
@@ -761,6 +807,34 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#051-2026-06-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.5.1] - 2026-06-22
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.5.1] - 2026-06-22">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -806,6 +880,34 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#051-2026-06-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.5.1] - 2026-06-22
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.5.1] - 2026-06-22">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -837,6 +939,11 @@
 and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>
 for public releases.</p>
 <h2 id="unreleased">[Unreleased]<a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h2 id="051-2026-06-22">[0.5.1] - 2026-06-22<a class="headerlink" href="#051-2026-06-22" title="Permanent link">&para;</a></h2>
+<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Apply <code>jax.checkpoint</code> to each segment when <code>checkpoint_length</code> is set in <code>_loop_with_checkpointing</code>, so gradient checkpointing reduces reverse-mode memory as intended instead of only splitting the scan.</li>
+</ul>
 
 
 
