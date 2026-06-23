@@ -4,6 +4,8 @@ from collections import Counter
 import jax.random as jax_random
 from jax import numpy as jnp
 
+import icrn._testing.configure  # noqa: F401  # CPU JAX before import
+
 from ..reactions import MassActionReaction
 from ..symbols import (
     many_index_symbols,

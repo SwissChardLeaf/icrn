@@ -3,6 +3,8 @@ from collections import Counter
 
 import jax.numpy as jnp
 
+import icrn._testing.configure  # noqa: F401  # CPU JAX before import
+
 from ..reactions import FastReaction
 from ..symbols import (
     many_index_symbols,

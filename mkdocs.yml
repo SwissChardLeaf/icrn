@@ -41,6 +41,7 @@ nav:
       - Batching Simulations: tutorials/batching_simulations.ipynb
       - Pre-computed State: tutorials/pre_computed_state.ipynb
       - Extending Abstract Reactions: tutorials/extending_abstract_reactions.ipynb
+  - API Reference: api.md
   - Developer Notes: developer_notes.md
   - Changelog: changelog.md
 

@@ -14,6 +14,8 @@ import unittest
 import jax
 from jax import numpy as jnp
 
+import icrn._testing.configure  # noqa: F401  # CPU JAX before import
+
 from .reactions import MassActionReaction
 from .solver import solve_reaction_diffusion, solve_well_mixed
 from .symbols import many_rate_constants, many_species

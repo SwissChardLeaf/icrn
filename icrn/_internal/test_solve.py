@@ -4,6 +4,8 @@ import jax
 import jax.numpy as jnp
 from jax.experimental import checkify
 
+import icrn._testing.configure  # noqa: F401  # CPU JAX before import
+
 from ..operator import AbstractOperator
 from ..utils.dict_utils import dict_allclose
 from ._solve import _ops_to_f, _solve_with_f, _to_mod_op

@@ -3,6 +3,8 @@ import unittest
 from jax import numpy as jnp
 from jax.numpy.fft import fftfreq
 
+import icrn._testing.configure  # noqa: F401  # CPU JAX before import
+
 from ..symbols import many_species
 from ..utils.dict_utils import dict_allclose
 from ._spectral_diffusion import (

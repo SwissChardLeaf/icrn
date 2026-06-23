@@ -8,7 +8,7 @@ test: test-unit test-notebooks
 
 # Unit tests (icrn/test_*.py and icrn/**/test_*.py) with coverage.
 test-unit:
-	coverage run -m unittest discover -s icrn -t . -v
+	JAX_PLATFORMS=cpu coverage run -m unittest discover -s icrn -t . -v
 	coverage report -m
 
 # Execute every tutorial notebook and fail on any cell error.

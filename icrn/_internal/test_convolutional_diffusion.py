@@ -3,6 +3,8 @@ import unittest
 import jax
 from jax import numpy as jnp
 
+import icrn._testing.configure  # noqa: F401  # CPU JAX before import
+
 from ._convolutional_diffusion import _conv_diffuse, _conv_species_diffuse
 
 D_DEFAULT = jnp.array(0.1)

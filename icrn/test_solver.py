@@ -7,6 +7,13 @@ import matplotlib.pyplot as plt
 from jax import numpy as jnp
 from jax.experimental import checkify
 
+import icrn._testing.configure  # noqa: F401  # CPU JAX before import
+from icrn._testing.gpu_subprocess import gpu_available, run_gpu_test
+from icrn._testing.solver_gpu_tests import (
+    reaction_diffusion_runs_on_gpu,
+    well_mixed_runs_on_gpu,
+)
+
 from .reactions import FastReaction, MassActionReaction
 from .solver import solve_reaction_diffusion, solve_well_mixed
 from .symbols import (
@@ -16,14 +23,6 @@ from .symbols import (
     many_species,
 )
 from .utils.dict_utils import dict_allclose
-
-GPU_AVAILABLE = any(d.platform == "gpu" for d in jax.devices())
-
-
-def _result_platforms(result):
-    """Return the set of device platforms across all leaves of a solve
-    result."""
-    return {leaf.device.platform for leaf in jax_tree.tree_leaves(result)}
 
 
 class TestSolveWellMixed(unittest.TestCase):
@@ -838,62 +837,10 @@ class TestBoundaryCondition(unittest.TestCase):
         self.assertLess(total_dirichlet, total_init - 1.0)
 
 
-@unittest.skipUnless(GPU_AVAILABLE, "no GPU available")
+@unittest.skipUnless(gpu_available(), "no GPU available")
 class TestDevicePlacement(unittest.TestCase):
     def test_well_mixed_runs_on_gpu(self):
-        A = many_species("A")
-        k = many_rate_constants("k")
-        rxns = [MassActionReaction(A, 0, k)]
-
-        result = solve_well_mixed(
-            rxns,
-            conc_vals={A: jnp.array(1.0)},
-            rate_constant_vals={k: jnp.array(1.0)},
-            times=jnp.array([0.0, 1.0]),
-            dt=0.01,
-        )
-
-        platforms = _result_platforms(result)
-        self.assertEqual(
-            platforms,
-            {"gpu"},
-            f"expected all result leaves on GPU, got {platforms}",
-        )
+        run_gpu_test(well_mixed_runs_on_gpu)
 
     def test_reaction_diffusion_runs_on_gpu(self):
-        U, V = many_species("U, V")
-        F, k = many_rate_constants("F, k")
-
-        rxns = [
-            MassActionReaction(U + 2 * V, 3 * V, 1),
-            MassActionReaction(V, 0, F + k),
-            MassActionReaction(0, U, F),
-            MassActionReaction(U, 0, F),
-        ]
-
-        spatial_dims = (16, 16)
-        conc_vals = {
-            U: jnp.ones(spatial_dims),
-            V: jnp.zeros(spatial_dims),
-        }
-        rate_constant_vals = {F: jnp.array(0.037), k: jnp.array(0.06)}
-        diffusion_constant_vals = {U: jnp.array(0.2), V: jnp.array(0.1)}
-
-        result = solve_reaction_diffusion(
-            rxns,
-            conc_vals,
-            rate_constant_vals,
-            diffusion_constant_vals,
-            times=jnp.array([1.0]),
-            dt=0.1,
-            spatial_dims=spatial_dims,
-            dspaces=(1.0, 1.0),
-            mode="relu",
-        )
-
-        platforms = _result_platforms(result)
-        self.assertEqual(
-            platforms,
-            {"gpu"},
-            f"expected all result leaves on GPU, got {platforms}",
-        )
+        run_gpu_test(reaction_diffusion_runs_on_gpu)

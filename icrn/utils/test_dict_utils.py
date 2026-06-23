@@ -3,6 +3,8 @@ import unittest
 import jax.numpy as jnp
 import jax.tree as jax_tree
 
+import icrn._testing.configure  # noqa: F401  # CPU JAX before import
+
 from .dict_utils import (
     arr_add,
     arr_mul,

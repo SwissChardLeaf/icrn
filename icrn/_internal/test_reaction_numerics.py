@@ -2,6 +2,8 @@ import unittest
 
 from jax import numpy as jnp
 
+import icrn._testing.configure  # noqa: F401  # CPU JAX before import
+
 from ..reactions import MassActionReaction, rxns_to_mpe_dynamics_f
 from ..symbols import (
     many_index_symbols,
