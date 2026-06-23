@@ -2,6 +2,8 @@ import unittest
 
 import jax.numpy as jnp
 
+import icrn._testing.configure  # noqa: F401  # CPU JAX before import
+
 from .operator import (
     AbstractOperator,
     FastReactionsOperator,

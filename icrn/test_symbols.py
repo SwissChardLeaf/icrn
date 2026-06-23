@@ -3,6 +3,8 @@ from dataclasses import FrozenInstanceError
 
 import jax.numpy as jnp
 
+import icrn._testing.configure  # noqa: F401  # CPU JAX before import
+
 from .symbols import (
     Complex,
     IndexSymbol,

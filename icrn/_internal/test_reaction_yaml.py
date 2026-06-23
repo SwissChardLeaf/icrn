@@ -4,6 +4,8 @@ from pathlib import Path
 
 import jax.numpy as jnp
 
+import icrn._testing.configure  # noqa: F401  # CPU JAX before import
+
 from ..reactions import (
     AbstractReaction,
     FastReaction,
