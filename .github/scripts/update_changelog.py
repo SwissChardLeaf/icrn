@@ -170,6 +170,35 @@ def _print_dry_run(
     print(prompt)
 
 
+def _changed_paths() -> list[str]:
+    modified = [
+        line for line in _run("git", "diff", "--name-only").splitlines() if line
+    ]
+    staged = [
+        line
+        for line in _run("git", "diff", "--cached", "--name-only").splitlines()
+        if line
+    ]
+    untracked = [
+        line
+        for line in _run(
+            "git", "ls-files", "--others", "--exclude-standard"
+        ).splitlines()
+        if line
+    ]
+    return sorted(set(modified + staged + untracked))
+
+
+def _assert_changelog_only_changes() -> None:
+    """Raise if the working tree changed anywhere except CHANGELOG.md."""
+    unexpected = [path for path in _changed_paths() if path != "CHANGELOG.md"]
+    if unexpected:
+        raise RuntimeError(
+            "Changelog bot modified files other than CHANGELOG.md: "
+            + ", ".join(unexpected)
+        )
+
+
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Update CHANGELOG.md using a Cursor agent.",
@@ -181,12 +210,25 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "Print detection metadata and agent prompt without calling Cursor."
         ),
     )
+    parser.add_argument(
+        "--verify-changes-only",
+        action="store_true",
+        help="Exit non-zero if any file other than CHANGELOG.md changed.",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
     dry_run = _dry_run_enabled(cli_flag=args.dry_run)
+
+    if args.verify_changes_only:
+        try:
+            _assert_changelog_only_changes()
+        except RuntimeError as err:
+            print(str(err), file=sys.stderr)
+            return 3
+        return 0
 
     sha = _run("git", "rev-parse", "HEAD")
     commit_message = _run("git", "log", "-1", "--format=%B")
@@ -239,7 +281,10 @@ def main(argv: list[str] | None = None) -> int:
             AgentOptions(
                 api_key=api_key,
                 model="composer-2.5",
-                local=LocalAgentOptions(cwd=os.getcwd()),
+                local=LocalAgentOptions(
+                    cwd=os.getcwd(),
+                    setting_sources=["project"],
+                ),
             ),
         )
     except CursorAgentError as err:
@@ -249,6 +294,12 @@ def main(argv: list[str] | None = None) -> int:
     if result.status == "error":
         print(f"Agent run failed: {result.id}", file=sys.stderr)
         return 2
+
+    try:
+        _assert_changelog_only_changes()
+    except RuntimeError as err:
+        print(str(err), file=sys.stderr)
+        return 3
 
     print(result.result or "Agent finished.")
     return 0

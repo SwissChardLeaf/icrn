@@ -127,6 +127,43 @@ class TestWriteGithubOutput(unittest.TestCase):
             self.assertIn("version=0.5.0\n", content)
 
 
+class TestAssertChangelogOnlyChanges(unittest.TestCase):
+    def test_passes_when_only_changelog_changed(self) -> None:
+        with mock.patch.object(
+            update_changelog,
+            "_changed_paths",
+            return_value=["CHANGELOG.md"],
+        ):
+            update_changelog._assert_changelog_only_changes()
+
+    def test_passes_when_nothing_changed(self) -> None:
+        with mock.patch.object(
+            update_changelog, "_changed_paths", return_value=[]
+        ):
+            update_changelog._assert_changelog_only_changes()
+
+    def test_raises_when_other_files_changed(self) -> None:
+        with mock.patch.object(
+            update_changelog,
+            "_changed_paths",
+            return_value=["CHANGELOG.md", "icrn/solver.py"],
+        ):
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "other than CHANGELOG.md",
+            ):
+                update_changelog._assert_changelog_only_changes()
+
+    def test_verify_flag_exits_nonzero_on_unexpected_changes(self) -> None:
+        with mock.patch.object(
+            update_changelog,
+            "_changed_paths",
+            return_value=["README.md"],
+        ):
+            exit_code = update_changelog.main(["--verify-changes-only"])
+        self.assertEqual(exit_code, 3)
+
+
 class TestMainDryRun(unittest.TestCase):
     def setUp(self) -> None:
         self._old_cwd = Path.cwd()

@@ -36,6 +36,9 @@ jobs:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
         run: python .github/scripts/update_changelog.py
 
+      - name: Verify bot only changed CHANGELOG.md
+        run: python .github/scripts/update_changelog.py --verify-changes-only
+
       - name: Commit and push changelog update
         env:
           IS_RELEASE: ${{ steps.changelog.outputs.is_release }}
